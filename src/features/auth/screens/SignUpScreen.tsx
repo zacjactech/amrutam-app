@@ -6,6 +6,7 @@ import { AppText } from '../../../shared/components/AppText';
 import { Button } from '../../../shared/components/Button';
 import { Input } from '../../../shared/components/Input';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
+import { DoctorIllustration } from '../../../shared/components/Illustrations';
 
 interface SignUpScreenProps {
   navigation: {
@@ -23,10 +24,13 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
   return (
     <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
       <ScrollView contentContainerStyle={styles.content}>
-        <AppText variant="h1" style={{ color: colors.text.primary }}>
-          Create Account
+        <View style={styles.illustrationWrapper}>
+          <DoctorIllustration size={120} />
+        </View>
+        <AppText variant="h1" style={{ color: colors.text.primary, textAlign: 'center' }}>
+          Create your account
         </AppText>
-        <AppText variant="body" style={{ color: colors.text.secondary, marginTop: spacing.sm }}>
+        <AppText variant="body" style={{ color: colors.text.secondary, marginTop: spacing.sm, textAlign: 'center' }}>
           Fill in your details to get started
         </AppText>
         <View style={{ marginTop: spacing.lg, gap: spacing.md }}>
@@ -68,6 +72,10 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  illustrationWrapper: {
+    alignItems: 'center',
+    marginBottom: 24,
   },
   buttons: {
     gap: 12,

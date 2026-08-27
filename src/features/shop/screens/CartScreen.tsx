@@ -13,6 +13,7 @@ import { AppSkeleton } from '../../../shared/components/AppSkeleton';
 import { getProductCache } from '../generator';
 import { CartItem, Product } from '../types';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
+import { EmptyCartIllustration } from '../../../shared/components/Illustrations';
 
 interface CartScreenProps {
   navigation: {
@@ -93,10 +94,8 @@ export function CartScreen({ navigation }: CartScreenProps) {
     <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
       {cartItems.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <View style={[styles.emptyIcon, { backgroundColor: colors.action.primarySoft }]}>
-            <AppText variant="display" style={{ color: colors.action.primary }}>🛒</AppText>
-          </View>
-          <AppText variant="h3" style={{ color: colors.text.primary, marginBottom: spacing.sm }}>
+          <EmptyCartIllustration size={160} />
+          <AppText variant="h3" style={{ color: colors.text.primary, marginBottom: spacing.sm, marginTop: spacing.lg }}>
             Your cart is empty
           </AppText>
           <AppText variant="body" style={{ color: colors.text.secondary, marginBottom: spacing.xl, textAlign: 'center' }}>
@@ -179,14 +178,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 32,
-  },
-  emptyIcon: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
   },
   header: {},
   titleRow: {

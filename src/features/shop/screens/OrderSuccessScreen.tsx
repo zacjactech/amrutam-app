@@ -6,6 +6,7 @@ import { AppText } from '../../../shared/components/AppText';
 import { Button } from '../../../shared/components/Button';
 import { Card } from '../../../shared/components/Card';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
+import { SuccessIllustration } from '../../../shared/components/Illustrations';
 
 interface OrderSuccessScreenProps {
   navigation: {
@@ -34,11 +35,7 @@ export function OrderSuccessScreen({ navigation }: OrderSuccessScreenProps) {
   return (
     <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
       <View style={styles.content}>
-        <View style={[styles.successIcon, { backgroundColor: colors.status.successSoft }]}>
-          <View style={[styles.checkCircle, { backgroundColor: colors.action.primary }]}>
-            <AppText variant="display" style={{ color: colors.text.inverse }}>✓</AppText>
-          </View>
-        </View>
+        <SuccessIllustration size={180} />
 
         <AppText variant="h2" style={{ color: colors.action.primary, textAlign: 'center', marginTop: spacing.xl }}>
           Order confirmed!
@@ -94,20 +91,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 32,
-  },
-  successIcon: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   deliveryRow: {
     flexDirection: 'row',

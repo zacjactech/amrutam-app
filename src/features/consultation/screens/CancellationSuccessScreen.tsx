@@ -5,6 +5,7 @@ import { View, StyleSheet, ScrollView } from 'react-native';
 import { Button } from '../../../shared/components/Button';
 import { AppText } from '../../../shared/components/AppText';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
+import { CancelledIllustration } from '../../../shared/components/Illustrations';
 
 interface CancellationSuccessScreenProps {
   onBackToConsultations: () => void;
@@ -19,10 +20,8 @@ export function CancellationSuccessScreen({
   return (
     <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <View style={[styles.iconCircle, { backgroundColor: '#FEE2E2', marginTop: 100 }]}>
-          <View style={[styles.checkCircle, { backgroundColor: colors.action.destructive }]}>
-            <AppText variant="h1" style={{ color: '#FFFFFF' }}>✓</AppText>
-          </View>
+        <View style={{ marginTop: 100, alignItems: 'center' }}>
+          <CancelledIllustration size={180} />
         </View>
 
         <AppText variant="h1" style={{ textAlign: 'center', marginTop: spacing.xl }}>Consultation cancelled</AppText>
@@ -47,6 +46,4 @@ export function CancellationSuccessScreen({
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scroll: { paddingBottom: 40 },
-  iconCircle: { width: 100, height: 100, borderRadius: 50, justifyContent: 'center', alignItems: 'center', alignSelf: 'center' },
-  checkCircle: { width: 80, height: 80, borderRadius: 40, justifyContent: 'center', alignItems: 'center' },
 });

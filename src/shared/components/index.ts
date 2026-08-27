@@ -23,3 +23,17 @@ export { TabBar } from './TabBar';
 export type { TabKey } from './TabBar';
 export { SectionHeader } from './SectionHeader';
 export { StatusRow } from './StatusRow';
+export {
+  SplashIllustration,
+  OnboardingIllustration,
+  DoctorIllustration,
+  ShoppingIllustration,
+  SuccessIllustration,
+  ErrorIllustration,
+  EmptyCartIllustration,
+  OfflineIllustration,
+  BookingConfirmedIllustration,
+  CancelledIllustration,
+} from './Illustrations';
+export { CharacterAvatar } from './CharacterAvatar';
+export type { CharacterAvatarProps } from './CharacterAvatar';

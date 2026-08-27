@@ -12,6 +12,7 @@ import { AppSkeleton } from '../../../shared/components/AppSkeleton';
 import { getProductCache } from '../generator';
 import { Product } from '../types';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
+import { EmptyCartIllustration } from '../../../shared/components/Illustrations';
 
 interface WishlistScreenProps {
   navigation: {
@@ -113,12 +114,21 @@ export function WishlistScreen({ navigation }: WishlistScreenProps) {
       </View>
 
       {wishlistProducts.length === 0 ? (
-        <AppEmptyState
-          title="Your wishlist is empty"
-          message="Save products you like for later"
-          actionLabel="Start Shopping"
-          onAction={() => navigation.goBack()}
-        />
+        <View style={styles.emptyContainer}>
+          <EmptyCartIllustration size={160} />
+          <AppText variant="h3" style={{ color: colors.text.primary, marginTop: spacing.lg, marginBottom: spacing.sm }}>
+            Your wishlist is empty
+          </AppText>
+          <AppText variant="body" style={{ color: colors.text.secondary, marginBottom: spacing.xl, textAlign: 'center' }}>
+            Save products you like for later
+          </AppText>
+          <Button
+            title="Start Shopping"
+            variant="primary"
+            size="large"
+            onPress={() => navigation.goBack()}
+          />
+        </View>
       ) : (
         <>
           <View style={{ paddingHorizontal: spacing.lg, marginBottom: spacing.md }}>
@@ -157,6 +167,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
   },
   productCard: {
     flex: 1,

@@ -6,6 +6,7 @@ import { AppText } from '../../../shared/components/AppText';
 import { Button } from '../../../shared/components/Button';
 import { Input } from '../../../shared/components/Input';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
+import { DoctorIllustration } from '../../../shared/components/Illustrations';
 
 interface OTPVerificationScreenProps {
   navigation: {
@@ -30,10 +31,13 @@ export function OTPVerificationScreen({ navigation }: OTPVerificationScreenProps
   return (
     <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
       <View style={styles.content}>
-        <AppText variant="h1" style={{ color: colors.text.primary }}>
-          Verify OTP
+        <View style={styles.illustrationWrapper}>
+          <DoctorIllustration size={100} />
+        </View>
+        <AppText variant="h1" style={{ color: colors.text.primary, textAlign: 'center' }}>
+          Verify your phone
         </AppText>
-        <AppText variant="body" style={{ color: colors.text.secondary, marginTop: spacing.sm }}>
+        <AppText variant="body" style={{ color: colors.text.secondary, marginTop: spacing.sm, textAlign: 'center' }}>
           Enter the 6-digit code sent to your phone
         </AppText>
         <View style={{ marginTop: spacing.lg }}>
@@ -71,6 +75,10 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     justifyContent: 'center',
+  },
+  illustrationWrapper: {
+    alignItems: 'center',
+    marginBottom: 24,
   },
   buttons: {
     gap: 12,

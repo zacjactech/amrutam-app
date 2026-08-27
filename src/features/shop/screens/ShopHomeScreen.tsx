@@ -13,6 +13,7 @@ import { AppSkeleton } from '../../../shared/components/AppSkeleton';
 import { AppErrorState } from '../../../shared/components/AppErrorState';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
 import { Product } from '../types';
+import { ShoppingIllustration } from '../../../shared/components/Illustrations';
 
 const CATEGORIES = [
   { label: 'Immunity', icon: '🌿' },
@@ -137,12 +138,17 @@ export function ShopHomeScreen({ navigation }: ShopHomeScreenProps) {
       </View>
 
       <View style={[styles.heroBanner, { backgroundColor: '#1B4332', marginHorizontal: spacing.lg, borderRadius: spacing.lg, padding: spacing.xl }]}>
-        <AppText variant="h2" style={{ color: '#FFFFFF', marginBottom: spacing.sm }}>
-          Ayurveda for Every Day
-        </AppText>
-        <AppText variant="body" style={{ color: 'rgba(255,255,255,0.85)', lineHeight: 22 }}>
-          Authentic Ayurvedic products for everyday wellness and holistic vitality.
-        </AppText>
+        <View style={styles.heroContent}>
+          <View style={{ flex: 1 }}>
+            <AppText variant="h2" style={{ color: '#FFFFFF', marginBottom: spacing.sm }}>
+              Ayurveda for Every Day
+            </AppText>
+            <AppText variant="body" style={{ color: 'rgba(255,255,255,0.85)', lineHeight: 22 }}>
+              Authentic Ayurvedic products for everyday wellness and holistic vitality.
+            </AppText>
+          </View>
+          <ShoppingIllustration size={120} />
+        </View>
       </View>
 
       <View style={[styles.section, { paddingHorizontal: spacing.lg, marginTop: spacing.xxl }]}>
@@ -227,6 +233,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 4,
+  },
+  heroContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
   section: {},
   sectionHeader: {

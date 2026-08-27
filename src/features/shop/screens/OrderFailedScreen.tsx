@@ -5,6 +5,7 @@ import { View, StyleSheet } from 'react-native';
 import { AppText } from '../../../shared/components/AppText';
 import { Button } from '../../../shared/components/Button';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
+import { ErrorIllustration } from '../../../shared/components/Illustrations';
 
 interface OrderFailedScreenProps {
   navigation: {
@@ -20,11 +21,7 @@ export function OrderFailedScreen({ navigation }: OrderFailedScreenProps) {
   return (
     <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
       <View style={styles.content}>
-        <View style={[styles.errorIcon, { backgroundColor: colors.status.errorSoft }]}>
-          <View style={[styles.errorCircle, { backgroundColor: colors.status.error }]}>
-            <AppText variant="display" style={{ color: colors.text.inverse }}>!</AppText>
-          </View>
-        </View>
+        <ErrorIllustration size={180} />
 
         <AppText variant="h2" style={{ textAlign: 'center', marginTop: spacing.xl, color: colors.text.primary }}>
           Couldn't place order
@@ -70,20 +67,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 32,
-  },
-  errorIcon: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  errorCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   actions: {
     gap: 12,

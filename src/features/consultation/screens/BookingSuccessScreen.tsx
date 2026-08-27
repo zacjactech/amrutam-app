@@ -6,6 +6,7 @@ import { Image } from 'expo-image';
 import { Button } from '../../../shared/components/Button';
 import { AppText } from '../../../shared/components/AppText';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
+import { BookingConfirmedIllustration } from '../../../shared/components/Illustrations';
 
 interface BookingSuccessScreenProps {
   doctorName: string;
@@ -34,10 +35,8 @@ export function BookingSuccessScreen({
   return (
     <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <View style={[styles.iconCircle, { backgroundColor: colors.status.successSoft, marginTop: 60 }]}>
-          <View style={[styles.checkCircle, { backgroundColor: colors.action.primary }]}>
-            <AppText variant="h1" style={{ color: colors.surface.default }}>✓</AppText>
-          </View>
+        <View style={{ marginTop: 60, alignItems: 'center' }}>
+          <BookingConfirmedIllustration size={180} />
         </View>
 
         <AppText variant="h1" style={{ textAlign: 'center', marginTop: spacing.lg }}>Consultation booked!</AppText>
@@ -92,8 +91,6 @@ export function BookingSuccessScreen({
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scroll: { paddingBottom: 40 },
-  iconCircle: { width: 100, height: 100, borderRadius: 50, justifyContent: 'center', alignItems: 'center', alignSelf: 'center' },
-  checkCircle: { width: 80, height: 80, borderRadius: 40, justifyContent: 'center', alignItems: 'center' },
   detailsCard: { width: '100%' },
   doctorRow: { flexDirection: 'row', alignItems: 'center' },
   avatar: { width: 48, height: 48, backgroundColor: '#E8F3EC' },
