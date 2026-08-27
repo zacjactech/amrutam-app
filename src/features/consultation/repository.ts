@@ -1,24 +1,31 @@
 // Consultation Module - Repository
 
+import { z } from 'zod';
 import { Doctor, ConsultationSlot, Booking, DoctorFilter } from './types';
-import { generateDoctor, generateSlotsForDoctor } from './generator';
 import { generateIdempotencyKey } from '../../domain/businessLogic';
-import { doctorSchema, bookingSchema } from './schemas';
+import { doctorSchema, consultationSlotSchema, bookingSchema } from './schemas';
 import { shouldFail, createFailureError } from '../../infrastructure/testing/failureInjector';
+import { apiRequest } from '../../infrastructure/api/apiClient';
 
-const DOCTOR_CACHE_SIZE = 5000;
+export interface PaginationParams {
+  page: number;
+  pageSize: number;
+}
 
-let doctorCache: Map<string, Doctor> | null = null;
+export interface PaginatedResult<T> {
+  data: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
+}
 
-function ensureCache(): Map<string, Doctor> {
-  if (doctorCache === null) {
-    doctorCache = new Map();
-    for (let i = 0; i < DOCTOR_CACHE_SIZE; i++) {
-      const doctor = generateDoctor(i);
-      doctorCache.set(doctor.id, doctor);
-    }
-  }
-  return doctorCache;
+export interface BookingRequest {
+  doctorId: string;
+  patientId: string;
+  slotId: string;
+  consultationType: 'video' | 'audio' | 'chat' | 'in-person';
+  notes?: string;
 }
 
 function applyFilter(doctors: Doctor[], filter: DoctorFilter): Doctor[] {
@@ -61,46 +68,6 @@ function applyFilter(doctors: Doctor[], filter: DoctorFilter): Doctor[] {
   });
 }
 
-function sortDoctors(doctors: Doctor[], sortBy: 'rating' | 'experience' | 'fee' | 'name'): Doctor[] {
-  const sorted = [...doctors];
-  switch (sortBy) {
-    case 'rating':
-      sorted.sort((a, b) => b.rating - a.rating);
-      break;
-    case 'experience':
-      sorted.sort((a, b) => b.experience - a.experience);
-      break;
-    case 'fee':
-      sorted.sort((a, b) => a.consultationFee - b.consultationFee);
-      break;
-    case 'name':
-      sorted.sort((a, b) => a.name.localeCompare(b.name));
-      break;
-  }
-  return sorted;
-}
-
-export interface PaginationParams {
-  page: number;
-  pageSize: number;
-}
-
-export interface PaginatedResult<T> {
-  data: T[];
-  total: number;
-  page: number;
-  pageSize: number;
-  hasMore: boolean;
-}
-
-export interface BookingRequest {
-  doctorId: string;
-  patientId: string;
-  slotId: string;
-  consultationType: 'video' | 'audio' | 'chat' | 'in-person';
-  notes?: string;
-}
-
 export const consultationRepository = {
   async getDoctors(
     filter: DoctorFilter,
@@ -112,21 +79,40 @@ export const consultationRepository = {
       throw createFailureError(failure);
     }
 
-    const cache = ensureCache();
-    const allDoctors = Array.from(cache.values());
-    const filtered = applyFilter(allDoctors, filter);
-    const sorted = sortDoctors(filtered, sortBy);
+    const serverSortMap: Record<string, { sort: string; order: string }> = {
+      rating: { sort: 'rating', order: 'desc' },
+      experience: { sort: 'experience', order: 'desc' },
+      fee: { sort: 'consultationFee', order: 'asc' },
+      name: { sort: 'name', order: 'asc' },
+    };
 
-    const start = pagination.page * pagination.pageSize;
-    const end = start + pagination.pageSize;
-    const data = sorted.slice(start, end);
+    const { sort, order } = serverSortMap[sortBy] ?? { sort: 'rating', order: 'desc' };
+    const params = new URLSearchParams({
+      _page: String(pagination.page + 1),
+      _limit: String(pagination.pageSize),
+      _sort: sort,
+      _order: order,
+    });
+
+    if (filter.searchQuery) {
+      params.set('q', filter.searchQuery);
+    }
+
+    const doctors = await apiRequest(
+      { method: 'GET', endpoint: `/doctors?${params.toString()}` },
+      z.array(doctorSchema),
+    );
+
+    const filtered = applyFilter(doctors, filter);
+    const total = filtered.length;
+    const hasMore = total > pagination.pageSize;
 
     return {
-      data,
-      total: sorted.length,
+      data: filtered,
+      total,
       page: pagination.page,
       pageSize: pagination.pageSize,
-      hasMore: end < sorted.length,
+      hasMore,
     };
   },
 
@@ -136,12 +122,17 @@ export const consultationRepository = {
       throw createFailureError(failure);
     }
 
-    const cache = ensureCache();
-    const doctor = cache.get(doctorId);
-    if (doctor === undefined) {
-      return null;
+    try {
+      return await apiRequest(
+        { method: 'GET', endpoint: `/doctors/${doctorId}` },
+        doctorSchema,
+      );
+    } catch (error) {
+      if (error instanceof Error && error.name === 'ApiError') {
+        return null;
+      }
+      throw error;
     }
-    return doctorSchema.parse(doctor);
   },
 
   async getDoctorSlots(doctorId: string): Promise<ConsultationSlot[]> {
@@ -150,7 +141,12 @@ export const consultationRepository = {
       throw createFailureError(failure);
     }
 
-    return generateSlotsForDoctor(doctorId);
+    const slots = await apiRequest(
+      { method: 'GET', endpoint: `/slots?doctorId=${doctorId}` },
+      z.array(consultationSlotSchema),
+    );
+
+    return slots;
   },
 
   async getAvailableSlots(doctorId: string): Promise<ConsultationSlot[]> {
@@ -172,34 +168,76 @@ export const consultationRepository = {
       throw createFailureError(failure);
     }
 
-    const now = new Date().toISOString();
     const idempotencyKey = generateIdempotencyKey(request.patientId, request.slotId);
 
-    const booking = {
-      id: `booking_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
-      doctorId: request.doctorId,
-      patientId: request.patientId,
-      slotId: request.slotId,
-      consultationType: request.consultationType,
-      status: 'pending_sync' as const,
-      createdAt: now,
-      updatedAt: now,
-      idempotencyKey,
-      notes: request.notes,
-    };
+    const booking = await apiRequest(
+      {
+        method: 'POST',
+        endpoint: '/bookings',
+        body: {
+          doctorId: request.doctorId,
+          patientId: request.patientId,
+          slotId: request.slotId,
+          consultationType: request.consultationType,
+          idempotencyKey,
+          notes: request.notes,
+        },
+      },
+      bookingSchema,
+    );
 
-    return bookingSchema.parse(booking);
+    return booking;
   },
 
   async getBookings(_patientId: string): Promise<Booking[]> {
-    return [];
+    const failure = shouldFail({ endpoint: '/bookings', method: 'GET' });
+    if (failure) {
+      throw createFailureError(failure);
+    }
+
+    const bookings = await apiRequest(
+      { method: 'GET', endpoint: '/bookings' },
+      z.array(bookingSchema),
+    );
+
+    return bookings;
   },
 
-  async getBookingById(_bookingId: string): Promise<Booking | null> {
-    return null;
+  async getBookingById(bookingId: string): Promise<Booking | null> {
+    const failure = shouldFail({ endpoint: `/bookings/${bookingId}`, method: 'GET' });
+    if (failure) {
+      throw createFailureError(failure);
+    }
+
+    try {
+      return await apiRequest(
+        { method: 'GET', endpoint: `/bookings/${bookingId}` },
+        bookingSchema,
+      );
+    } catch (error) {
+      if (error instanceof Error && error.name === 'ApiError') {
+        return null;
+      }
+      throw error;
+    }
   },
 
-  async cancelBooking(_bookingId: string): Promise<Booking | null> {
-    return null;
+  async cancelBooking(bookingId: string): Promise<Booking | null> {
+    const failure = shouldFail({ endpoint: `/bookings/${bookingId}/cancel`, method: 'POST' });
+    if (failure) {
+      throw createFailureError(failure);
+    }
+
+    try {
+      return await apiRequest(
+        { method: 'POST', endpoint: `/bookings/${bookingId}/cancel` },
+        bookingSchema,
+      );
+    } catch (error) {
+      if (error instanceof Error && error.name === 'ApiError') {
+        return null;
+      }
+      throw error;
+    }
   },
 };

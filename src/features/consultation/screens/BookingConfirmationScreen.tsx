@@ -1,118 +1,153 @@
-// Consultation Module - Booking Confirmation Screen
+// Consultation Module - Booking Confirmation Screen (C07)
 
-import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import React, { useCallback } from 'react';
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+} from 'react-native';
 import { Image } from 'expo-image';
+import { useDoctor, useBookConsultation } from '../hooks';
+import { ConsultationSlot } from '../types';
 import { Button } from '../../../shared/components/Button';
 import { AppText } from '../../../shared/components/AppText';
-import { Booking, Doctor } from '../types';
+import { AppErrorState } from '../../../shared/components';
+import { useToast } from '../../../shared/components/Toast';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
 
 interface BookingConfirmationScreenProps {
-  booking: Booking;
-  doctor: Doctor;
-  onDone: () => void;
-  onViewConsultations: () => void;
+  doctorId: string;
+  slot: ConsultationSlot;
+  onBack: () => void;
+  onBookingSuccess: (bookingId: string) => void;
+  onConflict: () => void;
 }
 
 export function BookingConfirmationScreen({
-  booking,
-  doctor,
-  onDone,
-  onViewConsultations,
+  doctorId,
+  slot,
+  onBack,
+  onBookingSuccess,
+  onConflict,
 }: BookingConfirmationScreenProps): React.JSX.Element {
   const colors = useThemeColors();
   const spacing = useThemeSpacing();
-  const slotTime = new Date().toLocaleDateString('en-IN', {
+  const { showToast } = useToast();
+  const { data: doctor, isLoading: doctorLoading } = useDoctor(doctorId);
+  const bookMutation = useBookConsultation();
+
+  const slotDate = new Date(slot.startTime);
+  const dateStr = slotDate.toLocaleDateString('en-IN', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
+    year: 'numeric',
   });
+  const timeStr = slotDate.toLocaleTimeString('en-IN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  });
+
+  const handleConfirm = useCallback(async () => {
+    if (doctor === null || doctor === undefined) return;
+
+    try {
+      const booking = await bookMutation.mutateAsync({
+        doctorId: doctor.id,
+        patientId: 'patient_001',
+        slotId: slot.id,
+        consultationType: slot.consultationType,
+      });
+      onBookingSuccess(booking.id);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Booking failed';
+      if (msg.toLowerCase().includes('conflict') || msg.toLowerCase().includes('already booked')) {
+        onConflict();
+      } else {
+        showToast(msg, 'error');
+      }
+    }
+  }, [doctor, slot, bookMutation, onBookingSuccess, onConflict, showToast]);
+
+  if (doctorLoading) {
+    return (
+      <View style={[styles.center, { backgroundColor: colors.background.primary }]}>
+        <ActivityIndicator size="large" color={colors.action.primary} />
+      </View>
+    );
+  }
+
+  if (doctor === null || doctor === undefined) {
+    return (
+      <AppErrorState
+        title="Failed to load"
+        message="Could not load booking details."
+        type="retryable"
+        onRetry={onBack}
+      />
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
-      <ScrollView contentContainerStyle={[styles.content, { padding: spacing.xxl, alignItems: 'center' }]}>
-        <View style={[styles.successIcon, { backgroundColor: colors.action.primarySoft, marginTop: 40, marginBottom: spacing.lg }]}>
-          <AppText variant="h2" style={{ color: colors.action.primary }}>✓</AppText>
+      <View style={[styles.header, { paddingHorizontal: spacing.lg, paddingTop: spacing.xxl, paddingBottom: spacing.sm }]}>
+        <TouchableOpacity onPress={onBack} style={styles.backBtn}>
+          <AppText variant="body" style={{ color: colors.action.primary }}>← Back</AppText>
+        </TouchableOpacity>
+        <AppText variant="h1">Confirm Consultation</AppText>
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <View style={[styles.doctorCard, { marginHorizontal: spacing.lg, backgroundColor: colors.surface.default, borderRadius: spacing.md, padding: spacing.lg, flexDirection: 'row', alignItems: 'center' }]}>
+          <Image source={{ uri: doctor.photoUrl }} style={[styles.avatar, { borderRadius: spacing.md }]} contentFit="cover" />
+          <View style={styles.doctorInfo}>
+            <AppText variant="body" style={{ fontWeight: '600' }}>{doctor.name}</AppText>
+            <AppText variant="bodySmall" style={{ color: colors.text.secondary }}>{doctor.specialization}</AppText>
+          </View>
         </View>
 
-        <AppText variant="h2" style={{ marginBottom: spacing.sm, textAlign: 'center' }}>
-          Booking Confirmed!
-        </AppText>
-        <AppText variant="body" style={{ color: colors.text.secondary, textAlign: 'center', marginBottom: spacing.xxl }}>
-          Your consultation has been scheduled successfully
-        </AppText>
+        <View style={[styles.detailsCard, { marginHorizontal: spacing.lg, marginTop: spacing.md, backgroundColor: colors.surface.default, borderRadius: spacing.md, padding: spacing.lg }]}>
+          <AppText variant="h3" style={{ marginBottom: spacing.md }}>Booking Details</AppText>
 
-        <View style={[styles.card, { backgroundColor: colors.surface.default, borderRadius: spacing.md, padding: spacing.lg }]}>
-          <View style={styles.doctorRow}>
-            <Image
-              source={{ uri: doctor.photoUrl }}
-              style={styles.photo}
-              contentFit="cover"
-            />
-            <View style={styles.doctorInfo}>
-              <AppText variant="body" style={{ color: colors.text.primary, marginBottom: spacing.xs }}>{doctor.name}</AppText>
-              <AppText variant="bodySmall" style={{ color: colors.text.secondary }}>{doctor.specialization}</AppText>
-            </View>
-          </View>
-
-          <View style={[styles.divider, { backgroundColor: colors.border.default, marginVertical: spacing.md }]} />
-
-          <View style={styles.detailRow}>
-            <AppText variant="body" style={{ color: colors.text.secondary }}>Date</AppText>
-            <AppText variant="body" style={{ color: colors.text.primary }}>{slotTime}</AppText>
-          </View>
-
-          <View style={styles.detailRow}>
-            <AppText variant="body" style={{ color: colors.text.secondary }}>Type</AppText>
-            <AppText variant="body" style={{ color: colors.text.primary }}>
-              {booking.consultationType.charAt(0).toUpperCase() + booking.consultationType.slice(1)}
-            </AppText>
-          </View>
-
-          <View style={styles.detailRow}>
-            <AppText variant="body" style={{ color: colors.text.secondary }}>Fee</AppText>
-            <AppText variant="body" style={{ color: colors.text.primary }}>₹{doctor.consultationFee}</AppText>
-          </View>
-
-          <View style={styles.detailRow}>
-            <AppText variant="body" style={{ color: colors.text.secondary }}>Status</AppText>
-            <View style={[styles.statusBadge, { backgroundColor: colors.action.primarySoft, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, borderRadius: 4 }]}>
-              <AppText variant="caption" style={{ color: colors.action.primary }}>
-                {booking.status === 'pending_sync' ? 'Queued' : 'Confirmed'}
+          {[
+            { label: 'Date', value: dateStr },
+            { label: 'Time', value: timeStr },
+            { label: 'Duration', value: `${slot.consultationType === 'video' ? '30 min' : '20 min'}` },
+            { label: 'Type', value: slot.consultationType.charAt(0).toUpperCase() + slot.consultationType.slice(1) },
+            { label: 'Fee', value: `₹${doctor.consultationFee}`, isFee: true },
+            { label: 'Payment', value: 'Pay at clinic' },
+          ].map((row) => (
+            <View key={row.label} style={[styles.detailRow, { borderBottomColor: colors.border.light, borderBottomWidth: 1, paddingVertical: spacing.md }]}>
+              <AppText variant="body" style={{ color: colors.text.secondary }}>{row.label}</AppText>
+              <AppText
+                variant="body"
+                style={{ color: row.isFee ? colors.action.primary : colors.text.primary, fontWeight: row.isFee ? '700' : '500' }}
+              >
+                {row.value}
               </AppText>
             </View>
-          </View>
-
-          <View style={styles.detailRow}>
-            <AppText variant="body" style={{ color: colors.text.secondary }}>Booking ID</AppText>
-            <AppText variant="bodySmall" style={{ color: colors.text.secondary }}>{booking.id.slice(0, 16)}</AppText>
-          </View>
+          ))}
         </View>
 
-        {booking.status === 'pending_sync' && (
-          <View style={[styles.offlineNotice, { marginTop: spacing.md, padding: spacing.md, backgroundColor: colors.status.warning + '20', borderRadius: spacing.sm, width: '100%' }]}>
-            <AppText variant="bodySmall" style={{ color: colors.status.warning, textAlign: 'center' }}>
-              You're offline. This booking will sync when you reconnect.
-            </AppText>
-          </View>
-        )}
+        <View style={{ marginHorizontal: spacing.lg, marginTop: spacing.xl, paddingHorizontal: spacing.md }}>
+          <AppText variant="bodySmall" style={{ color: colors.text.tertiary, textAlign: 'center', lineHeight: 18 }}>
+            By confirming, you agree to our Terms of Service and Privacy Policy. Consultation fees are non-refundable once the session begins.
+          </AppText>
+        </View>
       </ScrollView>
 
-      <View style={[styles.footer, { flexDirection: 'row', padding: spacing.lg, gap: spacing.md, backgroundColor: colors.surface.default, borderTopColor: colors.border.default }]}>
+      <View style={[styles.stickyFooter, { backgroundColor: colors.surface.default, borderTopColor: colors.border.default, padding: spacing.lg }]}>
         <Button
-          title="View My Consultations"
-          variant="outline"
-          size="large"
-          onPress={onViewConsultations}
-          style={styles.footerButton}
-        />
-        <Button
-          title="Done"
+          title={bookMutation.isPending ? 'Booking...' : 'Confirm Booking'}
           variant="primary"
           size="large"
-          onPress={onDone}
-          style={styles.footerButton}
+          onPress={handleConfirm}
+          disabled={bookMutation.isPending}
+          loading={bookMutation.isPending}
+          style={{ width: '100%' }}
         />
       </View>
     </View>
@@ -120,50 +155,15 @@ export function BookingConfirmationScreen({
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  content: {},
-  successIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  card: {
-    width: '100%',
-  },
-  doctorRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  photo: {
-    width: 56,
-    height: 56,
-    borderRadius: 12,
-    backgroundColor: '#E8F3EC',
-    marginRight: 12,
-  },
-  doctorInfo: {
-    marginLeft: 12,
-  },
-  divider: {
-    height: 1,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 10,
-  },
-  statusBadge: {},
-  offlineNotice: {},
-  footer: {
-    borderTopWidth: 1,
-  },
-  footerButton: {
-    flex: 1,
-  },
+  container: { flex: 1 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  backBtn: { padding: 4 },
+  scroll: { paddingBottom: 120 },
+  doctorCard: {},
+  avatar: { width: 56, height: 56, backgroundColor: '#E8F3EC' },
+  doctorInfo: { marginLeft: 14, flex: 1 },
+  detailsCard: {},
+  detailRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  stickyFooter: { position: 'absolute', bottom: 0, left: 0, right: 0, borderTopWidth: 1 },
 });

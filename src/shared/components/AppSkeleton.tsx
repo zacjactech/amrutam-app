@@ -1,11 +1,11 @@
 // AppSkeleton - Loading placeholder
 
 import React from 'react';
-import { View, StyleSheet, ViewStyle } from 'react-native';
+import { View, StyleSheet, ViewStyle, DimensionValue } from 'react-native';
 import { useThemeColors } from './ThemeProvider';
 
 interface AppSkeletonProps {
-  width?: number;
+  width?: DimensionValue;
   height?: number;
   borderRadius?: number;
   style?: ViewStyle;

@@ -1,56 +1,59 @@
-// Consultation Module - Upcoming Consultations Screen
+// Consultation Module - Upcoming Consultations Screen (C11)
 
-import React, { useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   StyleSheet,
-  FlatList,
   TouchableOpacity,
+  FlatList,
   ActivityIndicator,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useBookings, useCancelConsultation } from '../hooks';
 import { Booking, BookingStatus } from '../types';
+import { Badge } from '../../../shared/components/Badge';
 import { Button } from '../../../shared/components/Button';
 import { AppText } from '../../../shared/components/AppText';
 import { AppEmptyState, AppErrorState } from '../../../shared/components';
-import { useToast } from '../../../shared/components/Toast';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
 
-const STATUS_CONFIG: Record<BookingStatus, { label: string; color: string; bg: string }> = {
-  pending_confirmation: { label: 'Pending', color: '#F57F17', bg: '#FFF8E1' },
-  confirmed: { label: 'Confirmed', color: '#1B5E3A', bg: '#E8F5E9' },
-  pending_sync: { label: 'Queued', color: '#1B5E3A', bg: '#E8F5E9' },
-  cancelled: { label: 'Cancelled', color: '#D32F2F', bg: '#FFEBEE' },
-  completed: { label: 'Completed', color: '#5B6B61', bg: '#F1F4F1' },
-  no_show: { label: 'No Show', color: '#D32F2F', bg: '#FFEBEE' },
+const STATUS_CONFIG: Record<BookingStatus, { label: string; badgeVariant: 'confirmed' | 'pending' | 'cancelled' | 'completed' }> = {
+  pending_confirmation: { label: 'Pending', badgeVariant: 'pending' },
+  confirmed: { label: 'Confirmed', badgeVariant: 'confirmed' },
+  pending_sync: { label: 'Confirmed', badgeVariant: 'confirmed' },
+  cancelled: { label: 'Cancelled', badgeVariant: 'cancelled' },
+  completed: { label: 'Completed', badgeVariant: 'completed' },
+  no_show: { label: 'No Show', badgeVariant: 'cancelled' },
 };
+
+interface UpcomingConsultationsScreenProps {
+  onConsultationPress: (bookingId: string) => void;
+  onBack: () => void;
+}
 
 export function UpcomingConsultationsScreen({
   onConsultationPress,
+  onBack,
 }: UpcomingConsultationsScreenProps): React.JSX.Element {
   const colors = useThemeColors();
   const spacing = useThemeSpacing();
+  const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming');
   const { data: bookings = [], isLoading, isError, refetch } = useBookings('patient_001');
   const cancelMutation = useCancelConsultation();
-  const { showToast } = useToast();
 
-  const handleCancel = useCallback(
-    async (bookingId: string) => {
-      try {
-        await cancelMutation.mutateAsync(bookingId);
-        showToast('Consultation cancelled', 'success');
-      } catch (_error) {
-        showToast('Failed to cancel consultation', 'error');
-      }
-    },
-    [cancelMutation, showToast],
+  const upcomingBookings = bookings.filter(
+    (b) => b.status === 'confirmed' || b.status === 'pending_confirmation' || b.status === 'pending_sync',
   );
+  const pastBookings = bookings.filter(
+    (b) => b.status === 'completed' || b.status === 'cancelled' || b.status === 'no_show',
+  );
+
+  const displayedBookings = activeTab === 'upcoming' ? upcomingBookings : pastBookings;
 
   const renderBooking = useCallback(
     ({ item }: { item: Booking }) => {
       const statusConfig = STATUS_CONFIG[item.status];
-      const isCancellable = item.status === 'confirmed' || item.status === 'pending_confirmation';
+      const isUpcoming = item.status === 'confirmed' || item.status === 'pending_confirmation' || item.status === 'pending_sync';
 
       return (
         <TouchableOpacity
@@ -61,146 +64,124 @@ export function UpcomingConsultationsScreen({
           <View style={styles.cardHeader}>
             <View style={styles.doctorInfo}>
               <Image
-                source={{ uri: 'https://api.dicebear.com/7.x/person/svg?seed=' + item.doctorId }}
-                style={styles.photo}
+                source={{ uri: `https://api.dicebear.com/7.x/person/svg?seed=${item.doctorId}` }}
+                style={[styles.photo, { borderRadius: spacing.md }]}
                 contentFit="cover"
               />
-              <View style={styles.info}>
-                <AppText variant="body" style={{ color: colors.text.primary, marginBottom: spacing.xs }}>
-                  Doctor #{item.doctorId.slice(5)}
-                </AppText>
-                <AppText variant="bodySmall" style={{ color: colors.text.secondary }}>
-                  {new Date(item.createdAt).toLocaleDateString('en-IN', {
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric',
-                  })}
+              <View style={{ marginLeft: 12, flex: 1 }}>
+                <AppText variant="body" numberOfLines={1} style={{ fontWeight: '600' }}>Doctor #{item.doctorId.slice(5)}</AppText>
+                <AppText variant="bodySmall" style={{ color: colors.text.secondary, marginTop: 2 }}>
+                  General Ayurveda
                 </AppText>
               </View>
             </View>
-            <View style={[styles.statusBadge, { backgroundColor: statusConfig.bg, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, borderRadius: 4 }]}>
-              <AppText variant="caption" style={{ color: statusConfig.color }}>
-                {statusConfig.label}
-              </AppText>
-            </View>
+            <Badge variant={statusConfig.badgeVariant} label={statusConfig.label} />
           </View>
 
-          <View style={[styles.cardFooter, { marginTop: spacing.md, paddingTop: spacing.md, borderTopColor: colors.border.default }]}>
+          <View style={[styles.cardBody, { marginTop: spacing.md, paddingTop: spacing.md, borderTopColor: colors.border.light, borderTopWidth: 1 }]}>
             <AppText variant="bodySmall" style={{ color: colors.text.secondary }}>
-              {item.consultationType.charAt(0).toUpperCase() + item.consultationType.slice(1)}{' '}
-              Consultation
+              {new Date(item.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} · {' '}
+              {new Date(item.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}
             </AppText>
-            {isCancellable && (
-              <Button
-                title="Cancel"
-                variant="ghost"
-                size="small"
-                onPress={() => handleCancel(item.id)}
-              />
-            )}
+            <View style={{ flexDirection: 'row', marginTop: spacing.sm, gap: spacing.sm }}>
+              {isUpcoming ? (
+                <Button title="View Details" variant="outline" size="small" onPress={() => onConsultationPress(item.id)} />
+              ) : (
+                <Button title="Rate Doctor" variant="outline" size="small" onPress={() => {}} />
+              )}
+            </View>
           </View>
         </TouchableOpacity>
       );
     },
-    [onConsultationPress, handleCancel, colors],
-  );
-
-  const renderEmpty = useCallback(
-    () => (
-      <AppEmptyState
-        title="No consultations yet"
-        message="Book your first consultation to get started"
-      />
-    ),
-    [],
-  );
-
-  const renderError = useCallback(
-    () => (
-      <AppErrorState
-        message="Failed to load consultations"
-        type="retryable"
-        onRetry={() => refetch()}
-      />
-    ),
-    [refetch],
+    [colors, spacing, onConsultationPress],
   );
 
   if (isLoading) {
     return (
-      <View style={[styles.centerContainer, { backgroundColor: colors.background.primary }]}>
+      <View style={[styles.center, { backgroundColor: colors.background.primary }]}>
         <ActivityIndicator size="large" color={colors.action.primary} />
-        <AppText variant="body" style={{ marginTop: spacing.md, color: colors.text.secondary }}>
-          Loading consultations...
-        </AppText>
       </View>
     );
   }
 
   if (isError) {
-    return renderError();
+    return (
+      <AppErrorState
+        title="Failed to load"
+        message="Could not load consultations."
+        type="retryable"
+        onRetry={() => refetch()}
+      />
+    );
   }
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
-      <View style={[styles.header, { padding: spacing.lg, paddingBottom: spacing.sm }]}>
-        <AppText variant="h2" style={{ marginBottom: spacing.xs }}>My Consultations</AppText>
-        <AppText variant="body" style={{ color: colors.text.secondary }}>{bookings.length} total</AppText>
+      <View style={[styles.header, { paddingHorizontal: spacing.lg, paddingTop: spacing.xxl, paddingBottom: spacing.sm }]}>
+        <View style={styles.titleRow}>
+          <TouchableOpacity onPress={onBack} style={styles.backBtn}>
+            <AppText variant="body" style={{ color: colors.action.primary }}>←</AppText>
+          </TouchableOpacity>
+          <AppText variant="h1">My Consultations</AppText>
+        </View>
+
+        <View style={[styles.tabRow, { marginTop: spacing.md, borderBottomColor: colors.border.default, borderBottomWidth: 1 }]}>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'upcoming' && { borderBottomColor: colors.action.primary, borderBottomWidth: 2 }]}
+            onPress={() => setActiveTab('upcoming')}
+          >
+            <AppText variant="body" style={{ color: activeTab === 'upcoming' ? colors.action.primary : colors.text.secondary, fontWeight: activeTab === 'upcoming' ? '600' : '400' }}>Upcoming</AppText>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'past' && { borderBottomColor: colors.action.primary, borderBottomWidth: 2 }]}
+            onPress={() => setActiveTab('past')}
+          >
+            <AppText variant="body" style={{ color: activeTab === 'past' ? colors.action.primary : colors.text.secondary, fontWeight: activeTab === 'past' ? '600' : '400' }}>Past</AppText>
+          </TouchableOpacity>
+        </View>
       </View>
 
+      {activeTab === 'upcoming' && (
+        <View style={[styles.sectionLabel, { paddingHorizontal: spacing.lg }]}>
+          <AppText variant="label" style={{ color: colors.text.tertiary, textTransform: 'uppercase' }}>Upcoming Consultations</AppText>
+        </View>
+      )}
+      {activeTab === 'past' && (
+        <View style={[styles.sectionLabel, { paddingHorizontal: spacing.lg }]}>
+          <AppText variant="label" style={{ color: colors.text.tertiary, textTransform: 'uppercase' }}>Past Consultations</AppText>
+        </View>
+      )}
+
       <FlatList
-        data={bookings}
+        data={displayedBookings}
         renderItem={renderBooking}
         keyExtractor={(item) => item.id}
-        ListEmptyComponent={renderEmpty}
-        contentContainerStyle={[styles.listContent, { padding: spacing.lg, paddingTop: spacing.sm }]}
+        ListEmptyComponent={
+          <AppEmptyState
+            title={activeTab === 'upcoming' ? 'No upcoming consultations' : 'No past consultations'}
+            message={activeTab === 'upcoming' ? 'Book a consultation to get started' : 'Completed consultations will appear here'}
+          />
+        }
+        contentContainerStyle={{ padding: spacing.lg, paddingTop: spacing.sm }}
         showsVerticalScrollIndicator={false}
       />
     </View>
   );
 }
 
-interface UpcomingConsultationsScreenProps {
-  onConsultationPress: (bookingId: string) => void;
-}
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  container: { flex: 1 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: {},
-  listContent: {},
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  backBtn: { padding: 4 },
+  tabRow: { flexDirection: 'row' },
+  tab: { flex: 1, paddingVertical: 12, alignItems: 'center' },
+  sectionLabel: { paddingTop: 8, paddingBottom: 4 },
   card: {},
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  doctorInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  photo: {
-    width: 48,
-    height: 48,
-    borderRadius: 10,
-    backgroundColor: '#E8F3EC',
-    marginRight: 12,
-  },
-  info: {
-    marginLeft: 12,
-  },
-  statusBadge: {},
-  cardFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderTopWidth: 1,
-  },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  doctorInfo: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  photo: { width: 48, height: 48, backgroundColor: '#E8F3EC' },
+  cardBody: {},
 });

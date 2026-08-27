@@ -1,9 +1,8 @@
-// AppEmptyState - Standardized empty state
+// AppEmptyState - Standardized empty state with icon
 
 import React from 'react';
-import { View, StyleSheet, ViewStyle } from 'react-native';
+import { View, Text, StyleSheet, ViewStyle } from 'react-native';
 import { Button } from './Button';
-import { AppText } from './AppText';
 import { useThemeColors, useThemeSpacing } from './ThemeProvider';
 
 interface AppEmptyStateProps {
@@ -11,6 +10,8 @@ interface AppEmptyStateProps {
   message?: string;
   actionLabel?: string;
   onAction?: () => void;
+  icon?: React.ReactNode;
+  iconBgColor?: string;
   style?: ViewStyle;
 }
 
@@ -19,6 +20,8 @@ export function AppEmptyState({
   message,
   actionLabel,
   onAction,
+  icon,
+  iconBgColor,
   style,
 }: AppEmptyStateProps): React.JSX.Element {
   const colors = useThemeColors();
@@ -26,16 +29,26 @@ export function AppEmptyState({
 
   return (
     <View style={[styles.container, { padding: spacing.xxl }, style]}>
-      <AppText variant="h3" style={[styles.title, { color: colors.text.primary, marginBottom: spacing.sm }]}>
+      {icon !== undefined && (
+        <View
+          style={[
+            styles.iconCircle,
+            { backgroundColor: iconBgColor ?? colors.action.primarySoft, marginBottom: spacing.lg },
+          ]}
+        >
+          {icon}
+        </View>
+      )}
+      <Text style={[styles.title, { color: colors.text.primary, marginBottom: spacing.sm }]}>
         {title}
-      </AppText>
+      </Text>
       {message !== undefined && (
-        <AppText variant="body" style={[styles.message, { color: colors.text.secondary, marginBottom: spacing.lg }]}>
+        <Text style={[styles.message, { color: colors.text.secondary, marginBottom: spacing.lg }]}>
           {message}
-        </AppText>
+        </Text>
       )}
       {actionLabel !== undefined && onAction !== undefined && (
-        <Button title={actionLabel} onPress={onAction} />
+        <Button title={actionLabel} onPress={onAction} variant="outline" size="medium" />
       )}
     </View>
   );
@@ -46,8 +59,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  title: {},
+  iconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
   message: {
+    fontSize: 14,
+    lineHeight: 20,
     textAlign: 'center',
   },
 });

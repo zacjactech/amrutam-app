@@ -29,6 +29,9 @@ Thumbs.db
 coverage/
 *.log
 
+# Mock API
+api/db.json
+
 # TypeScript
 *.tsbuildinfo
 

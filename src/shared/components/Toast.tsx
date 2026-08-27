@@ -1,4 +1,4 @@
-// Toast System - XSS-safe notifications
+// Toast System - Notifications with colored icon circles
 
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { View, Text, StyleSheet, Animated, TouchableOpacity } from 'react-native';
@@ -18,11 +18,11 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue | undefined>(undefined);
 
-const TOAST_COLORS: Record<ToastVariant, { bg: string; text: string; border: string }> = {
-  success: { bg: '#E8F5E9', text: '#1B5E20', border: '#4CAF50' },
-  error: { bg: '#FFEBEE', text: '#B71C1C', border: '#F44336' },
-  warning: { bg: '#FFF8E1', text: '#F57F17', border: '#FFC107' },
-  info: { bg: '#E3F2FD', text: '#0D47A1', border: '#2196F3' },
+const TOAST_CONFIG: Record<ToastVariant, { bg: string; text: string; iconCircle: string; icon: string }> = {
+  success: { bg: '#D1FAE5', text: '#2D6A4F', iconCircle: '#2D6A4F', icon: '✓' },
+  error: { bg: '#FEE2E2', text: '#DC2626', iconCircle: '#DC2626', icon: '✕' },
+  warning: { bg: '#FEF3C7', text: '#F59E0B', iconCircle: '#F59E0B', icon: '!' },
+  info: { bg: '#DBEAFE', text: '#3B82F6', iconCircle: '#3B82F6', icon: 'i' },
 };
 
 const DEFAULT_DURATION = 3000;
@@ -34,9 +34,7 @@ export function ToastProvider({ children }: { children: ReactNode }): React.JSX.
     (message: string, variant: ToastVariant = 'info', duration = DEFAULT_DURATION) => {
       const id = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
       const newToast: ToastItem = { id, message, variant, duration };
-
       setToasts((prev) => [...prev, newToast]);
-
       setTimeout(() => {
         setToasts((prev) => prev.filter((t) => t.id !== id));
       }, duration);
@@ -67,23 +65,38 @@ function ToastMessage({
   toast: ToastItem;
   onDismiss: (id: string) => void;
 }): React.JSX.Element {
-  const colors = TOAST_COLORS[toast.variant];
+  const config = TOAST_CONFIG[toast.variant];
   const opacity = React.useRef(new Animated.Value(0)).current;
+  const translateY = React.useRef(new Animated.Value(-20)).current;
 
   React.useEffect(() => {
-    Animated.timing(opacity, {
-      toValue: 1,
-      duration: 200,
-      useNativeDriver: true,
-    }).start();
-  }, [opacity]);
+    Animated.parallel([
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [opacity, translateY]);
 
   const handleDismiss = (): void => {
-    Animated.timing(opacity, {
-      toValue: 0,
-      duration: 150,
-      useNativeDriver: true,
-    }).start(() => {
+    Animated.parallel([
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: -20,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
       onDismiss(toast.id);
     });
   };
@@ -92,18 +105,17 @@ function ToastMessage({
     <Animated.View
       style={[
         styles.toast,
-        {
-          backgroundColor: colors.bg,
-          borderLeftColor: colors.border,
-          opacity,
-        },
+        { backgroundColor: config.bg, opacity, transform: [{ translateY }] },
       ]}
     >
-      <Text style={[styles.message, { color: colors.text }]} numberOfLines={2}>
+      <View style={[styles.iconCircle, { backgroundColor: config.iconCircle }]}>
+        <Text style={styles.iconText}>{config.icon}</Text>
+      </View>
+      <Text style={[styles.message, { color: config.text }]} numberOfLines={2}>
         {toast.message}
       </Text>
       <TouchableOpacity onPress={handleDismiss} style={styles.dismiss}>
-        <Text style={[styles.dismissText, { color: colors.text }]}>×</Text>
+        <Text style={[styles.dismissText, { color: config.text }]}>×</Text>
       </TouchableOpacity>
     </Animated.View>
   );
@@ -129,14 +141,26 @@ const styles = StyleSheet.create({
   toast: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 8,
-    borderLeftWidth: 4,
+    padding: 14,
+    borderRadius: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  iconCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  iconText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
   },
   message: {
     flex: 1,

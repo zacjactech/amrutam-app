@@ -1,61 +1,90 @@
-// Shop Module - Cart Screen
+// Shop Module - Cart Screen (S08)
 
-import React from 'react';
-import { View, StyleSheet, FlatList } from 'react-native';
+import React, { useCallback, useMemo } from 'react';
+import { View, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { Image } from 'expo-image';
 import { useCart } from '../hooks';
 import { CartItemComponent } from '../components/CartItem';
+import { ProductCard } from '../components/ProductCard';
 import { Button } from '../../../shared/components/Button';
 import { AppText } from '../../../shared/components/AppText';
 import { AppEmptyState } from '../../../shared/components/AppEmptyState';
+import { AppSkeleton } from '../../../shared/components/AppSkeleton';
 import { getProductCache } from '../generator';
-import { CartItem } from '../types';
+import { CartItem, Product } from '../types';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
 
 interface CartScreenProps {
   navigation: {
-    navigate: (screen: string) => void;
     goBack: () => void;
+    navigate: (screen: string, params?: Record<string, unknown>) => void;
   };
 }
 
 export function CartScreen({ navigation }: CartScreenProps) {
   const colors = useThemeColors();
   const spacing = useThemeSpacing();
-  const { data: cartItems = [], isLoading, updateCartQuantity, removeFromCart, clearCart } = useCart();
+  const { data: cartItems = [], isLoading, updateCartQuantity, removeFromCart } = useCart();
   const productCache = getProductCache();
 
-  const subtotal = cartItems.reduce(
-    (sum, item) => sum + item.quantity * item.unitPrice,
-    0,
+  const getProduct = useCallback(
+    (productId: string): Product | undefined => productCache.find((p) => p.id === productId),
+    [productCache],
+  );
+
+  const subtotal = useMemo(
+    () => cartItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0),
+    [cartItems],
   );
   const shipping = subtotal > 500 ? 0 : 49;
   const total = subtotal + shipping;
 
-  const getProduct = (productId: string) => productCache.find((p) => p.id === productId);
+  const frequentlyBought = useMemo(() => {
+    return productCache.slice(20, 22);
+  }, [productCache]);
 
-  const renderItem = ({ item }: { item: CartItem }) => {
-    const product = getProduct(item.productId);
-    if (!product) return null;
-    return (
-      <CartItemComponent
-        cartItem={item}
-        product={product}
-        onUpdateQuantity={(productId, quantity) => {
-          void updateCartQuantity.mutate({ productId, quantity });
-        }}
-        onRemove={(productId) => {
-          void removeFromCart.mutate(productId);
-        }}
-      />
-    );
-  };
+  const renderItem = useCallback(
+    ({ item }: { item: CartItem }) => {
+      const product = getProduct(item.productId);
+      if (!product) return null;
+      return (
+        <CartItemComponent
+          cartItem={item}
+          product={product}
+          onUpdateQuantity={(productId, quantity) => {
+            void updateCartQuantity.mutate({ productId, quantity });
+          }}
+          onRemove={(productId) => {
+            void removeFromCart.mutate(productId);
+          }}
+        />
+      );
+    },
+    [getProduct, updateCartQuantity, removeFromCart],
+  );
+
+  const handleProductPress = useCallback(
+    (productId: string) => {
+      navigation.navigate('ProductDetails', { productId });
+    },
+    [navigation],
+  );
 
   if (isLoading) {
     return (
       <View style={[styles.centerContainer, { backgroundColor: colors.background.primary }]}>
-        <AppText variant="body" style={{ color: colors.text.secondary }}>
-          Loading cart...
-        </AppText>
+        <View style={{ padding: spacing.lg, gap: spacing.md, width: '100%' }}>
+          {[1, 2, 3].map((i) => (
+            <View key={i} style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'center' }}>
+              <AppSkeleton width={80} height={80} borderRadius={8} />
+              <View style={{ flex: 1, gap: spacing.xs }}>
+                <AppSkeleton width="80%" height={16} />
+                <AppSkeleton width="40%" height={12} />
+                <AppSkeleton width="30%" height={14} />
+              </View>
+            </View>
+          ))}
+        </View>
       </View>
     );
   }
@@ -63,81 +92,72 @@ export function CartScreen({ navigation }: CartScreenProps) {
   return (
     <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
       {cartItems.length === 0 ? (
-        <AppEmptyState
-          title="Your cart is empty"
-          message="Browse products and add them to your cart"
-          actionLabel="Start Shopping"
-          onAction={() => navigation.goBack()}
-        />
+        <View style={styles.emptyContainer}>
+          <View style={[styles.emptyIcon, { backgroundColor: colors.action.primarySoft }]}>
+            <AppText variant="display" style={{ color: colors.action.primary }}>🛒</AppText>
+          </View>
+          <AppText variant="h3" style={{ color: colors.text.primary, marginBottom: spacing.sm }}>
+            Your cart is empty
+          </AppText>
+          <AppText variant="body" style={{ color: colors.text.secondary, marginBottom: spacing.xl, textAlign: 'center' }}>
+            Looks like you haven't added anything to your cart yet.
+          </AppText>
+          <Button
+            title="Start Shopping"
+            variant="primary"
+            size="large"
+            onPress={() => navigation.goBack()}
+          />
+        </View>
       ) : (
         <>
+          <View style={[styles.header, { paddingHorizontal: spacing.lg, paddingTop: spacing.xl, paddingBottom: spacing.md }]}>
+            <View style={styles.titleRow}>
+              <TouchableOpacity onPress={navigation.goBack} hitSlop={8}>
+                <AppText variant="h1">←</AppText>
+              </TouchableOpacity>
+              <AppText variant="h1">Cart ({cartItems.length})</AppText>
+              <View style={{ width: 24 }} />
+            </View>
+          </View>
+
           <FlatList
             data={cartItems}
             renderItem={renderItem}
             keyExtractor={(item) => item.productId}
             contentContainerStyle={[styles.listContent, { paddingBottom: spacing.xxl }]}
+            ListFooterComponent={
+              frequentlyBought.length > 0 ? (
+                <View style={[styles.frequentlyBought, { paddingHorizontal: spacing.lg, marginTop: spacing.lg }]}>
+                  <AppText variant="h4" style={{ color: colors.text.primary, marginBottom: spacing.md }}>
+                    Frequently bought together
+                  </AppText>
+                  <View style={styles.frequentlyGrid}>
+                    {frequentlyBought.map((product) => (
+                      <View key={product.id} style={styles.frequentlyCard}>
+                        <ProductCard product={product} onPress={handleProductPress} />
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              ) : null
+            }
           />
-          <View
-            style={[
-              styles.summary,
-              {
-                backgroundColor: colors.surface.default,
-                borderTopColor: colors.border.default,
-                padding: spacing.lg,
-                paddingBottom: spacing.xxl,
-              },
-            ]}
-          >
-            <View style={[styles.summaryRow, { marginBottom: spacing.md }]}>
-              <AppText variant="body" style={{ color: colors.text.secondary }}>
-                Subtotal
-              </AppText>
-              <AppText variant="body" style={{ color: colors.text.primary }}>
-                ₹{subtotal.toLocaleString('en-IN')}
-              </AppText>
-            </View>
-            <View style={[styles.summaryRow, { marginBottom: spacing.md }]}>
-              <AppText variant="body" style={{ color: colors.text.secondary }}>
-                Shipping
-              </AppText>
-              <AppText variant="body" style={{ color: colors.text.primary }}>
-                {shipping === 0 ? 'FREE' : `₹${shipping}`}
-              </AppText>
-            </View>
-            <View
-              style={[
-                styles.summaryRow,
-                styles.totalRow,
-                {
-                  marginTop: spacing.sm,
-                  paddingTop: spacing.md,
-                  borderTopColor: colors.border.default,
-                  marginBottom: spacing.lg,
-                },
-              ]}
-            >
-              <AppText variant="h3" style={{ color: colors.text.primary }}>
-                Total
-              </AppText>
-              <AppText variant="h3" style={{ color: colors.action.primary }}>
+
+          <View style={[styles.stickyBottom, { backgroundColor: colors.surface.default, borderTopColor: colors.border.default, padding: spacing.lg }]}>
+            <View style={styles.summaryRow}>
+              <AppText variant="body" style={{ color: colors.text.secondary }}>Subtotal</AppText>
+              <AppText variant="h3" style={{ color: colors.action.primary, fontWeight: '700' }}>
                 ₹{total.toLocaleString('en-IN')}
               </AppText>
             </View>
-            <View style={{ gap: spacing.md }}>
-              <Button
-                title="Proceed to Checkout"
-                variant="primary"
-                size="large"
-                onPress={() => navigation.navigate('Checkout')}
-                style={styles.checkoutButton}
-              />
-              <Button
-                title="Clear Cart"
-                variant="ghost"
-                size="medium"
-                onPress={() => clearCart.mutate()}
-              />
-            </View>
+            <Button
+              title="Checkout"
+              variant="primary"
+              size="large"
+              onPress={() => navigation.navigate('Checkout')}
+              style={{ width: '100%' }}
+            />
           </View>
         </>
       )}
@@ -154,18 +174,42 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  emptyIcon: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  header: {},
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   listContent: {},
-  summary: {
+  stickyBottom: {
     borderTopWidth: 1,
+    gap: 12,
   },
   summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  totalRow: {
-    borderTopWidth: 1,
+  frequentlyBought: {},
+  frequentlyGrid: {
+    flexDirection: 'row',
+    gap: 12,
   },
-  checkoutButton: {
-    width: '100%',
+  frequentlyCard: {
+    flex: 1,
   },
 });

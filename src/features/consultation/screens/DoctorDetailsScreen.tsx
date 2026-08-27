@@ -1,204 +1,178 @@
-// Consultation Module - Doctor Details Screen
+// Consultation Module - Doctor Details Screen (C05)
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   StyleSheet,
   ScrollView,
-  ActivityIndicator,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { useDoctor, useDoctorSlots, useBookConsultation } from '../hooks';
-import { SlotPicker } from '../components/SlotPicker';
-import { ConsultationSlot, ConsultationType } from '../types';
+import { useDoctor, useDoctorSlots } from '../hooks';
+import { Badge } from '../../../shared/components/Badge';
 import { Button } from '../../../shared/components/Button';
 import { AppText } from '../../../shared/components/AppText';
-import { useToast } from '../../../shared/components/Toast';
+import { AppErrorState } from '../../../shared/components';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
 
 interface DoctorDetailsScreenProps {
   doctorId: string;
   onBack: () => void;
-  onBookingSuccess: (bookingId: string) => void;
+  onProceedToSlotSelection: (doctorId: string) => void;
+}
+
+function formatShortDate(date: Date): { label: string; dayName: string } {
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  return { label: `${date.getDate()}`, dayName: dayNames[date.getDay()] ?? '' };
 }
 
 export function DoctorDetailsScreen({
   doctorId,
   onBack,
-  onBookingSuccess,
+  onProceedToSlotSelection,
 }: DoctorDetailsScreenProps): React.JSX.Element {
   const colors = useThemeColors();
   const spacing = useThemeSpacing();
-  const { data: doctor, isLoading: doctorLoading, isError: doctorError } = useDoctor(doctorId);
-  const { data: slots = [], isLoading: slotsLoading } = useDoctorSlots(doctorId);
-  const [selectedSlot, setSelectedSlot] = useState<ConsultationSlot | null>(null);
-  const [consultationType, setConsultationType] = useState<ConsultationType>('video');
-  const { showToast } = useToast();
-  const bookMutation = useBookConsultation();
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
-  const handleSelectSlot = useCallback((slot: ConsultationSlot) => {
-    setSelectedSlot(slot);
+  const { data: doctor, isLoading: doctorLoading, isError: doctorError } = useDoctor(doctorId);
+  const { data: slots = [] } = useDoctorSlots(doctorId);
+
+  const weekDates = useMemo(() => {
+    const dates: Date[] = [];
+    const now = new Date();
+    for (let i = 0; i < 6; i++) {
+      const d = new Date(now);
+      d.setDate(now.getDate() + i);
+      dates.push(d);
+    }
+    return dates;
   }, []);
 
-  const handleBookConsultation = useCallback(async () => {
-    if (selectedSlot === null || doctor === null || doctor === undefined) {
-      showToast('Please select a time slot', 'warning');
-      return;
-    }
+  const dateKey = (d: Date) => d.toISOString().split('T')[0] ?? '';
 
-    try {
-      const booking = await bookMutation.mutateAsync({
-        doctorId: doctor.id,
-        patientId: 'patient_001',
-        slotId: selectedSlot.id,
-        consultationType,
-      });
-      showToast('Booking confirmed!', 'success');
-      onBookingSuccess(booking.id);
-    } catch (error) {
-      showToast(
-        error instanceof Error ? error.message : 'Booking failed',
-        'error',
-      );
-    }
-  }, [selectedSlot, doctor, consultationType, bookMutation, showToast, onBookingSuccess]);
+  const slotsForSelectedDate = useMemo(() => {
+    if (selectedDate === null) return slots;
+    return slots.filter((s) => s.startTime.startsWith(selectedDate));
+  }, [slots, selectedDate]);
 
   if (doctorLoading) {
     return (
-      <View style={[styles.centerContainer, { backgroundColor: colors.background.primary }]}>
+      <View style={[styles.center, { backgroundColor: colors.background.primary }]}>
         <ActivityIndicator size="large" color={colors.action.primary} />
-        <AppText variant="body" style={{ marginTop: spacing.md, color: colors.text.secondary }}>
-          Loading doctor details...
-        </AppText>
       </View>
     );
   }
 
   if (doctorError || doctor === null || doctor === undefined) {
     return (
-      <View style={[styles.centerContainer, { backgroundColor: colors.background.primary }]}>
-        <AppText variant="body" style={{ color: colors.status.error, marginBottom: spacing.md }}>
-          Failed to load doctor details
-        </AppText>
-        <Button title="Go Back" variant="primary" size="medium" onPress={onBack} />
-      </View>
+      <AppErrorState
+        title="Failed to load doctor"
+        message="Please try again."
+        type="retryable"
+        onRetry={onBack}
+      />
     );
   }
 
+  const consultFee = doctor.consultationFee;
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
-      <View style={[styles.header, { paddingHorizontal: spacing.lg, paddingTop: spacing.lg, paddingBottom: spacing.sm }]}>
-        <TouchableOpacity onPress={onBack} style={styles.backButton}>
+      <View style={[styles.header, { paddingHorizontal: spacing.lg, paddingTop: spacing.xxl, paddingBottom: spacing.sm }]}>
+        <TouchableOpacity onPress={onBack} style={styles.backBtn}>
           <AppText variant="body" style={{ color: colors.action.primary }}>← Back</AppText>
         </TouchableOpacity>
+        <AppText variant="h1">Doctor Profile</AppText>
       </View>
 
-      <ScrollView style={styles.scrollView} contentContainerStyle={[styles.scrollContent, { paddingBottom: 100 }]}>
-        <View style={[styles.doctorHeader, { backgroundColor: colors.surface.default, marginHorizontal: spacing.lg, marginTop: spacing.sm, borderRadius: spacing.md, padding: spacing.lg }]}>
-          <Image source={{ uri: doctor.photoUrl }} style={styles.photo} contentFit="cover" />
-          <View style={styles.doctorInfo}>
-            <AppText variant="h3" style={{ marginBottom: spacing.xs }}>{doctor.name}</AppText>
-            <AppText variant="bodySmall" style={{ color: colors.text.secondary, marginBottom: spacing.xs }}>
-              {doctor.specialization}
-            </AppText>
-            <View style={styles.ratingRow}>
-              <AppText variant="body" style={{ color: colors.action.secondary }}>
-                ★ {doctor.rating.toFixed(1)}
-              </AppText>
-              <AppText variant="bodySmall" style={{ color: colors.text.secondary }}>
-                ({doctor.reviewCount} reviews)
-              </AppText>
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <View style={[styles.avatarSection, { alignItems: 'center', paddingVertical: spacing.xl }]}>
+          <View style={[styles.avatarRing, { borderColor: colors.action.primary }]}>
+            <Image source={{ uri: doctor.photoUrl }} style={[styles.avatar, { borderRadius: 48 }]} contentFit="cover" />
+          </View>
+          <AppText variant="h2" style={{ marginTop: spacing.md }}>{doctor.name}</AppText>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: spacing.xs }}>
+            <Badge variant="confirmed" label="✓ Verified" />
+          </View>
+          <AppText variant="body" style={{ color: colors.text.secondary, marginTop: spacing.sm }}>{doctor.specialization}</AppText>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: spacing.xs }}>
+            <AppText variant="body" style={{ color: colors.rating, fontWeight: '600' }}>★ {doctor.rating.toFixed(1)}</AppText>
+            <AppText variant="bodySmall" style={{ color: colors.text.tertiary, marginLeft: spacing.xs }}>({doctor.reviewCount} reviews)</AppText>
+          </View>
+        </View>
+
+        <View style={[styles.statsRow, { paddingHorizontal: spacing.lg }]}>
+          <View style={[styles.statBox, { backgroundColor: colors.surface.default, borderRadius: spacing.md, padding: spacing.md, flex: 1, alignItems: 'center' }]}>
+            <AppText variant="h3" style={{ color: colors.action.primary }}>{doctor.experience} yrs</AppText>
+            <AppText variant="caption" style={{ color: colors.text.secondary, marginTop: 4 }}>Experience</AppText>
+          </View>
+          <View style={[styles.statBox, { backgroundColor: colors.surface.default, borderRadius: spacing.md, padding: spacing.md, flex: 1, alignItems: 'center', marginHorizontal: spacing.sm }]}>
+            <AppText variant="h3" style={{ color: colors.action.primary }}>Video</AppText>
+            <AppText variant="caption" style={{ color: colors.text.secondary, marginTop: 4 }}>Consult Mode</AppText>
+          </View>
+          <View style={[styles.statBox, { backgroundColor: colors.surface.default, borderRadius: spacing.md, padding: spacing.md, flex: 1, alignItems: 'center' }]}>
+            <AppText variant="h3" style={{ color: colors.action.primary }}>₹{consultFee}</AppText>
+            <AppText variant="caption" style={{ color: colors.text.secondary, marginTop: 4 }}>Fee</AppText>
+          </View>
+        </View>
+
+        <View style={[styles.section, { marginHorizontal: spacing.lg, marginTop: spacing.lg, backgroundColor: colors.surface.default, borderRadius: spacing.md, padding: spacing.lg }]}>
+          <AppText variant="h3" style={{ marginBottom: spacing.sm }}>About Doctor</AppText>
+          <AppText variant="body" style={{ color: colors.text.secondary, lineHeight: 22 }}>{doctor.bio}</AppText>
+        </View>
+
+        <View style={[styles.section, { marginHorizontal: spacing.lg, marginTop: spacing.md, backgroundColor: colors.surface.default, borderRadius: spacing.md, padding: spacing.lg }]}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <View style={{ flex: 1 }}>
+              <AppText variant="h3">30-min Video Consultation</AppText>
+              <AppText variant="bodySmall" style={{ color: colors.text.secondary, marginTop: 2 }}>Online consultation via video call</AppText>
             </View>
+            <AppText variant="bodyLarge" style={{ color: colors.action.primary, fontWeight: '700' }}>₹{consultFee}</AppText>
           </View>
         </View>
 
-        <View style={[styles.statsRow, { backgroundColor: colors.surface.default, marginHorizontal: spacing.lg, marginTop: spacing.md, borderRadius: spacing.md, padding: spacing.lg }]}>
-          <View style={styles.stat}>
-            <AppText variant="h3" style={{ color: colors.action.primary }}>{doctor.experience}</AppText>
-            <AppText variant="bodySmall" style={{ color: colors.text.secondary, marginTop: spacing.xs }}>Years Exp</AppText>
-          </View>
-          <View style={styles.stat}>
-            <AppText variant="h3" style={{ color: colors.action.primary }}>₹{doctor.consultationFee}</AppText>
-            <AppText variant="bodySmall" style={{ color: colors.text.secondary, marginTop: spacing.xs }}>Fee</AppText>
-          </View>
-          <View style={styles.stat}>
-            <AppText variant="h3" style={{ color: colors.action.primary }}>{doctor.availability.slotDuration}</AppText>
-            <AppText variant="bodySmall" style={{ color: colors.text.secondary, marginTop: spacing.xs }}>Min Session</AppText>
-          </View>
-        </View>
-
-        <View style={[styles.section, { backgroundColor: colors.surface.default, padding: spacing.lg, marginHorizontal: spacing.lg, marginTop: spacing.md, borderRadius: spacing.md }]}>
-          <AppText variant="h3" style={{ marginBottom: spacing.md }}>About</AppText>
-          <AppText variant="body" style={{ color: colors.text.secondary }}>{doctor.bio}</AppText>
-        </View>
-
-        <View style={[styles.section, { backgroundColor: colors.surface.default, padding: spacing.lg, marginHorizontal: spacing.lg, marginTop: spacing.md, borderRadius: spacing.md }]}>
-          <AppText variant="h3" style={{ marginBottom: spacing.md }}>Languages</AppText>
-          <View style={styles.chipRow}>
-            {doctor.languages.map((lang) => (
-              <View key={lang} style={[styles.chip, { backgroundColor: colors.background.secondary, borderColor: colors.border.default, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, borderRadius: 6 }]}>
-                <AppText variant="caption" style={{ color: colors.text.secondary }}>{lang}</AppText>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        <View style={[styles.section, { backgroundColor: colors.surface.default, padding: spacing.lg, marginHorizontal: spacing.lg, marginTop: spacing.md, borderRadius: spacing.md }]}>
-          <AppText variant="h3" style={{ marginBottom: spacing.md }}>Clinic</AppText>
-          <AppText variant="body" style={{ color: colors.text.primary, marginBottom: spacing.xs }}>{doctor.clinicName}</AppText>
-          <AppText variant="bodySmall" style={{ color: colors.text.secondary }}>{doctor.clinicAddress}</AppText>
-        </View>
-
-        <View style={[styles.section, { backgroundColor: colors.surface.default, padding: spacing.lg, marginHorizontal: spacing.lg, marginTop: spacing.md, borderRadius: spacing.md }]}>
-          <AppText variant="h3" style={{ marginBottom: spacing.md }}>Consultation Type</AppText>
-          <View style={styles.chipRow}>
-            {(['video', 'audio', 'chat', 'in-person'] as const).map((type) => (
-              <TouchableOpacity
-                key={type}
-                style={[
-                  styles.chip,
-                  { paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, borderRadius: 6 },
-                  consultationType === type && { backgroundColor: colors.action.primary, borderColor: colors.action.primary },
-                ]}
-                onPress={() => setConsultationType(type)}
-              >
-                <AppText
-                  variant="caption"
-                  style={{
-                    color: consultationType === type ? colors.surface.default : colors.text.secondary,
-                  }}
+        <View style={[styles.section, { marginHorizontal: spacing.lg, marginTop: spacing.md, backgroundColor: colors.surface.default, borderRadius: spacing.md, padding: spacing.lg }]}>
+          <AppText variant="h3" style={{ marginBottom: spacing.md }}>Select Date</AppText>
+          <View style={styles.dateRow}>
+            {weekDates.map((d) => {
+              const key = dateKey(d);
+              const isSelected = selectedDate === key;
+              const formatted = formatShortDate(d);
+              return (
+                <TouchableOpacity
+                  key={key}
+                  style={[styles.dateChip, {
+                    backgroundColor: isSelected ? colors.action.primary : 'transparent',
+                    borderColor: isSelected ? colors.action.primary : colors.border.default,
+                    borderRadius: spacing.sm,
+                  }]}
+                  onPress={() => setSelectedDate(isSelected ? null : key)}
                 >
-                  {type.charAt(0).toUpperCase() + type.slice(1)}
-                </AppText>
-              </TouchableOpacity>
-            ))}
+                  <AppText variant="caption" style={{ color: isSelected ? colors.surface.default : colors.text.secondary }}>{formatted.dayName}</AppText>
+                  <AppText variant="h3" style={{ color: isSelected ? colors.surface.default : colors.text.primary, marginTop: 4 }}>{formatted.label}</AppText>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
 
-        <View style={[styles.section, { backgroundColor: colors.surface.default, padding: spacing.lg, marginHorizontal: spacing.lg, marginTop: spacing.md, borderRadius: spacing.md }]}>
-          <AppText variant="h3" style={{ marginBottom: spacing.md }}>Available Slots</AppText>
-          {slotsLoading ? (
-            <ActivityIndicator size="small" color={colors.action.primary} />
-          ) : (
-            <SlotPicker
-              slots={slots}
-              selectedSlotId={selectedSlot?.id ?? null}
-              onSelectSlot={handleSelectSlot}
-            />
-          )}
-        </View>
+        {selectedDate !== null && slotsForSelectedDate.length === 0 && (
+          <View style={[styles.emptySlots, { marginHorizontal: spacing.lg, marginTop: spacing.md, padding: spacing.lg, backgroundColor: colors.surface.default, borderRadius: spacing.md, alignItems: 'center' }]}>
+            <AppText variant="body" style={{ color: colors.text.secondary }}>No slots available on this date.</AppText>
+          </View>
+        )}
       </ScrollView>
 
-      <View style={[styles.footer, { backgroundColor: colors.surface.default, borderTopColor: colors.border.default, padding: spacing.lg }]}>
+      <View style={[styles.stickyFooter, { backgroundColor: colors.surface.default, borderTopColor: colors.border.default, padding: spacing.lg }]}>
         <Button
-          title={selectedSlot !== null ? 'Book Consultation' : 'Select a Slot'}
+          title="Select Time"
           variant="primary"
           size="large"
-          onPress={handleBookConsultation}
-          disabled={selectedSlot === null}
-          loading={bookMutation.isPending}
-          style={styles.bookButton}
+          onPress={() => onProceedToSlotSelection(doctorId)}
+          disabled={selectedDate === null || slotsForSelectedDate.length === 0}
+          style={styles.selectTimeBtn}
         />
       </View>
     </View>
@@ -206,65 +180,20 @@ export function DoctorDetailsScreen({
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  header: {},
-  backButton: {
-    padding: 8,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {},
-  doctorHeader: {
-    flexDirection: 'row',
-  },
-  photo: {
-    width: 90,
-    height: 90,
-    borderRadius: 12,
-    backgroundColor: '#E8F3EC',
-    marginRight: 16,
-  },
-  doctorInfo: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  stat: {
-    alignItems: 'center',
-  },
+  container: { flex: 1 },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  backBtn: { padding: 4 },
+  scroll: { paddingBottom: 120 },
+  avatarSection: {},
+  avatarRing: { width: 96, height: 96, borderRadius: 48, borderWidth: 3, padding: 3 },
+  avatar: { width: '100%', height: '100%', backgroundColor: '#E8F3EC' },
+  statsRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  statBox: {},
   section: {},
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  chip: {
-    borderWidth: 1,
-  },
-  footer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    borderTopWidth: 1,
-  },
-  bookButton: {
-    width: '100%',
-  },
+  dateRow: { flexDirection: 'row', gap: 8 },
+  dateChip: { alignItems: 'center', paddingVertical: 10, paddingHorizontal: 14, borderWidth: 1, minWidth: 52 },
+  emptySlots: {},
+  stickyFooter: { position: 'absolute', bottom: 0, left: 0, right: 0, borderTopWidth: 1 },
+  selectTimeBtn: { width: '100%' },
 });

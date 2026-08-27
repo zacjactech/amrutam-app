@@ -4,7 +4,7 @@ import React from 'react';
 import { Text, TextProps, StyleSheet } from 'react-native';
 import { useThemeTypography, useThemeColors } from './ThemeProvider';
 
-type AppTextVariant = 'display' | 'h1' | 'h2' | 'h3' | 'bodyLarge' | 'body' | 'bodySmall' | 'caption' | 'button' | 'label';
+type AppTextVariant = 'display' | 'h1' | 'h2' | 'h3' | 'h4' | 'bodyLarge' | 'body' | 'bodySmall' | 'caption' | 'button' | 'label' | 'price';
 
 interface AppTextProps extends TextProps {
   variant?: AppTextVariant;

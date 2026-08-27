@@ -1,11 +1,12 @@
 // Navigation Types and Route Definitions
 
 export type RootStackParamList = {
+  Splash: undefined;
+  Onboarding: undefined;
+  SignIn: undefined;
+  SignUp: undefined;
+  OTPVerification: undefined;
   MainTabs: undefined;
-  DoctorDetails: { doctorId: string };
-  ProductDetails: { productId: string };
-  BookingConfirmation: { bookingId: string };
-  ConsultationDetails: { bookingId: string };
 };
 
 export type MainTabParamList = {
@@ -13,27 +14,52 @@ export type MainTabParamList = {
   Consultations: undefined;
   Shop: undefined;
   HealthRecords: undefined;
+  Profile: undefined;
 };
 
 export type ConsultationStackParamList = {
+  ConsultationHome: undefined;
   DoctorList: undefined;
+  DoctorSearch: undefined;
   DoctorDetails: { doctorId: string };
-  SlotPicker: { doctorId: string };
-  BookingConfirmation: { bookingId: string };
+  SlotSelection: { doctorId: string };
+  BookingConfirmation: { doctorId: string; slotId: string };
+  BookingSuccess: { bookingId: string; doctorId: string };
   UpcomingConsultations: undefined;
   ConsultationDetails: { bookingId: string };
+  CancellationSuccess: undefined;
 };
 
 export type ShopStackParamList = {
+  ShopHome: undefined;
   ProductList: undefined;
+  ProductSearch: undefined;
   ProductDetails: { productId: string };
+  Wishlist: undefined;
   Cart: undefined;
   Checkout: undefined;
-  Wishlist: undefined;
+  OrderSuccess: undefined;
+  OrderFailed: undefined;
 };
 
 export type HealthRecordsStackParamList = {
   Timeline: undefined;
-  RecordDetails: { recordId: string };
-  AttachmentPreview: { attachment: { id: string; name: string; mimeType: 'image/jpeg' | 'image/png' | 'application/pdf'; thumbnailUrl: string | undefined; uri: string | undefined; sizeBytes: number | undefined } };
+  RecordDetail: { recordId: string };
+  AttachmentPreview: {
+    attachment: {
+      id: string;
+      name: string;
+      mimeType: 'image/jpeg' | 'image/png' | 'application/pdf';
+      thumbnailUrl: string | undefined;
+      uri: string | undefined;
+      sizeBytes: number | undefined;
+    };
+  };
+  RecordSearch: undefined;
+};
+
+export type ProfileStackParamList = {
+  ProfileMain: undefined;
+  Settings: undefined;
+  Notifications: undefined;
 };

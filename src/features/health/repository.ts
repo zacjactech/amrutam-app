@@ -1,8 +1,10 @@
 // Health Records Module - Repository
 
-import { HealthRecord, RecordFilter, PaginatedResult } from './types';
-import { getHealthRecordCache, applyRecordFilter } from './generator';
+import { z } from 'zod';
+import { HealthRecord, RecordFilter, PaginatedResult, Attachment } from './types';
 import { shouldFail, createFailureError } from '../../infrastructure/testing/failureInjector';
+import { apiRequest } from '../../infrastructure/api/apiClient';
+import { healthRecordSchema } from '../../domain/schemas';
 
 export interface HealthRecordRepository {
   getRecords(
@@ -11,6 +13,21 @@ export interface HealthRecordRepository {
   ): Promise<PaginatedResult<HealthRecord>>;
   getRecordById(recordId: string): Promise<HealthRecord | null>;
   searchRecords(query: string): Promise<HealthRecord[]>;
+}
+
+function normalizeRecord(record: z.infer<typeof healthRecordSchema>): HealthRecord {
+  return {
+    ...record,
+    description: record.description ?? '',
+    attachments: record.attachments.map((a): Attachment => ({
+      id: a.id,
+      name: a.name,
+      mimeType: a.mimeType,
+      thumbnailUrl: a.thumbnailUrl ?? undefined,
+      uri: a.uri ?? undefined,
+      sizeBytes: a.sizeBytes ?? undefined,
+    })),
+  };
 }
 
 export class MockHealthRecordRepository implements HealthRecordRepository {
@@ -23,17 +40,45 @@ export class MockHealthRecordRepository implements HealthRecordRepository {
       throw createFailureError(failure);
     }
 
-    const all = getHealthRecordCache();
-    const filtered = applyRecordFilter(all, filter);
-    const start = pagination.page * pagination.pageSize;
-    const end = start + pagination.pageSize;
-    const page = filtered.slice(start, end);
+    const params = new URLSearchParams({
+      _page: String(pagination.page + 1),
+      _limit: String(pagination.pageSize),
+    });
+
+    if (filter.searchQuery) {
+      params.set('q', filter.searchQuery);
+    }
+
+    const records = await apiRequest(
+      { method: 'GET', endpoint: `/healthRecords?${params.toString()}` },
+      z.array(healthRecordSchema),
+    );
+
+    const filtered = records.filter((record) => {
+      if (filter.types.length > 0 && !filter.types.includes(record.type)) {
+        return false;
+      }
+      if (filter.tags.length > 0 && !filter.tags.some((tag) => record.tags.includes(tag))) {
+        return false;
+      }
+      if (filter.fromDate !== null && record.occurredAt < filter.fromDate) {
+        return false;
+      }
+      if (filter.toDate !== null && record.occurredAt > filter.toDate) {
+        return false;
+      }
+      return true;
+    });
+
+    const total = filtered.length;
+    const hasMore = total > pagination.pageSize;
+
     return {
-      data: page,
+      data: filtered.map(normalizeRecord),
       page: pagination.page,
       pageSize: pagination.pageSize,
-      total: filtered.length,
-      hasMore: end < filtered.length,
+      total,
+      hasMore,
     };
   }
 
@@ -43,8 +88,18 @@ export class MockHealthRecordRepository implements HealthRecordRepository {
       throw createFailureError(failure);
     }
 
-    const all = getHealthRecordCache();
-    return all.find((record) => record.id === recordId) ?? null;
+    try {
+      const record = await apiRequest(
+        { method: 'GET', endpoint: `/healthRecords/${recordId}` },
+        healthRecordSchema,
+      );
+      return normalizeRecord(record);
+    } catch (error) {
+      if (error instanceof Error && error.name === 'ApiError') {
+        return null;
+      }
+      throw error;
+    }
   }
 
   async searchRecords(query: string): Promise<HealthRecord[]> {
@@ -53,14 +108,12 @@ export class MockHealthRecordRepository implements HealthRecordRepository {
       throw createFailureError(failure);
     }
 
-    const all = getHealthRecordCache();
-    const lower = query.toLowerCase();
-    return all.filter((record) => {
-      const titleMatch = record.title.toLowerCase().includes(lower);
-      const descMatch = record.description?.toLowerCase().includes(lower) ?? false;
-      const tagMatch = record.tags.some((tag) => tag.toLowerCase().includes(lower));
-      return titleMatch || descMatch || tagMatch;
-    });
+    const records = await apiRequest(
+      { method: 'GET', endpoint: `/healthRecords?q=${encodeURIComponent(query)}` },
+      z.array(healthRecordSchema),
+    );
+
+    return records.map(normalizeRecord);
   }
 }
 
