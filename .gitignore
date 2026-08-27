@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+.pnpm-home/
+
+# Build outputs
+dist/
+.expo/
+web-build/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.development
+.env.staging
+.env.production
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage/
+*.log
+
+# TypeScript
+*.tsbuildinfo
+
+# Debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
