@@ -51,16 +51,28 @@ export function Button({
       borderColor: colors.action.primary,
     },
     variant === 'ghost' && { backgroundColor: 'transparent' },
-    size === 'small' && { paddingVertical: spacing.sm, paddingHorizontal: spacing.md },
-    size === 'medium' && { paddingVertical: spacing.md, paddingHorizontal: spacing.lg },
-    size === 'large' && { paddingVertical: spacing.lg, paddingHorizontal: spacing.xl },
+    size === 'small' && {
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.md,
+      minHeight: 36,
+    },
+    size === 'medium' && {
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.lg,
+      minHeight: 48,
+    },
+    size === 'large' && {
+      paddingVertical: spacing.lg,
+      paddingHorizontal: spacing.xl,
+      minHeight: 52,
+    },
     disabled && styles.disabled,
     style,
   ].filter((s): s is ViewStyle => s !== null && s !== undefined && s !== false);
 
   const textStyles: TextStyle[] = [
     styles.text,
-    variant === 'primary' && { color: colors.surface.default },
+    variant === 'primary' && { color: colors.text.inverse },
     variant === 'secondary' && { color: colors.action.primary },
     variant === 'outline' && { color: colors.action.primary },
     variant === 'ghost' && { color: colors.action.primary },
@@ -81,7 +93,7 @@ export function Button({
     >
       {loading ? (
         <ActivityIndicator
-          color={variant === 'primary' ? colors.surface.default : colors.action.primary}
+          color={variant === 'primary' ? colors.text.inverse : colors.action.primary}
           size="small"
         />
       ) : (
@@ -95,6 +107,7 @@ const styles = StyleSheet.create({
   base: {
     alignItems: 'center',
     justifyContent: 'center',
+    flexDirection: 'row',
   },
   disabled: {
     opacity: 0.5,

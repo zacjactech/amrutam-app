@@ -5,7 +5,7 @@ import { View, StyleSheet } from 'react-native';
 import { AppText } from '../../../shared/components/AppText';
 import { Button } from '../../../shared/components/Button';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
-import { ErrorIllustration } from '../../../shared/components/Illustrations';
+import { AlertCircle } from '../../../shared/assets/icons';
 
 interface OrderFailedScreenProps {
   navigation: {
@@ -21,7 +21,9 @@ export function OrderFailedScreen({ navigation }: OrderFailedScreenProps) {
   return (
     <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
       <View style={styles.content}>
-        <ErrorIllustration size={180} />
+        <View style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: '#FEE2E2', justifyContent: 'center', alignItems: 'center' }}>
+          <AlertCircle width={56} height={56} color="#DC2626" />
+        </View>
 
         <AppText variant="h2" style={{ textAlign: 'center', marginTop: spacing.xl, color: colors.text.primary }}>
           Couldn't place order

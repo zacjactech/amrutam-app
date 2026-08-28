@@ -39,6 +39,7 @@ export { default as IconCheckContainer } from '../../../../assets/icons/icon-che
 export { default as IconDownload } from '../../../../assets/icons/icon-download.svg';
 export { default as IconEdit } from '../../../../assets/icons/icon-edit-3.svg';
 export { default as IconEye } from '../../../../assets/icons/icon-eye.svg';
+export { default as IconEyeOff } from '../../../../assets/icons/icon-eye-off.svg';
 export { default as IconFilter } from '../../../../assets/icons/icon-filter.svg';
 export { default as IconInfo } from '../../../../assets/icons/icon-info.svg';
 export { default as IconPrinter } from '../../../../assets/icons/icon-printer.svg';

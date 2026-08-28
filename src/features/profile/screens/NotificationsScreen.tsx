@@ -186,7 +186,7 @@ export function NotificationsScreen({ navigation }: NotificationsScreenProps) {
                         <View style={[styles.unreadDot, { backgroundColor: colors.action.primary }]} />
                       )}
                     </View>
-                    <AppText variant="bodySmall" style={{ color: colors.text.secondary, marginTop: 2 }} numberOfLines={2}>
+                    <AppText variant="bodySmall" style={{ color: colors.text.secondary, marginTop: spacing.xs }} numberOfLines={2}>
                       {notification.message}
                     </AppText>
                     <AppText variant="caption" style={{ color: colors.text.tertiary, marginTop: spacing.xs }}>

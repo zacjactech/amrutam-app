@@ -1,11 +1,12 @@
 // Auth Module - Splash Screen
 
 import React, { useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Animated } from 'react-native';
 import { AppText } from '../../../shared/components/AppText';
 import { useThemeColors } from '../../../shared/components/ThemeProvider';
-import { SplashIllustration } from '../../../shared/components/Illustrations';
 import { useAuthContext } from '../../../infrastructure/auth/AuthContext';
+import { useIconEntrance, useTextEntrance } from '../../../shared/hooks/useEntranceAnimation';
+import LogoIconBg from '../../../../assets/icons/logo-icon-bg.svg';
 
 interface SplashScreenProps {
   navigation: {
@@ -29,7 +30,7 @@ export function SplashScreen({ navigation }: SplashScreenProps) {
       } else {
         navigation.reset({
           index: 0,
-          routes: [{ name: 'Onboarding' }],
+          routes: [{ name: 'SignIn' }],
         });
       }
     }, 1500);
@@ -37,15 +38,25 @@ export function SplashScreen({ navigation }: SplashScreenProps) {
     return () => clearTimeout(timer);
   }, [isLoading, isAuthenticated, navigation]);
 
+  const iconStyle = useIconEntrance({ delay: 100, duration: 600 });
+  const titleStyle = useTextEntrance({ delay: 350, duration: 500 });
+  const taglineStyle = useTextEntrance({ delay: 500, duration: 500 });
+
   return (
     <View style={[styles.container, { backgroundColor: colors.action.primary }]}>
-      <SplashIllustration size={160} />
-      <AppText variant="display" style={styles.logo}>
-        Amrutam
-      </AppText>
-      <AppText variant="caption" style={styles.tagline}>
-        Ayurvedic Wellness
-      </AppText>
+      <Animated.View style={[styles.logoWrapper, iconStyle]}>
+        <LogoIconBg width={80} height={80} />
+      </Animated.View>
+      <Animated.View style={titleStyle}>
+        <AppText variant="h1" style={styles.logo}>
+          Amrutam
+        </AppText>
+      </Animated.View>
+      <Animated.View style={taglineStyle}>
+        <AppText variant="bodySmall" style={styles.tagline}>
+          Ayurvedic Wellness
+        </AppText>
+      </Animated.View>
     </View>
   );
 }
@@ -56,10 +67,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  logoWrapper: {
+    width: 80,
+    height: 80,
+  },
   logo: {
     color: '#FFFFFF',
-    fontSize: 36,
-    fontWeight: '700',
     marginTop: 24,
   },
   tagline: {

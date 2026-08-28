@@ -5,7 +5,7 @@ import { View, StyleSheet, ScrollView } from 'react-native';
 import { Button } from '../../../shared/components/Button';
 import { AppText } from '../../../shared/components/AppText';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
-import { CancelledIllustration } from '../../../shared/components/Illustrations';
+import { AlertCircle } from '../../../shared/assets/icons';
 
 interface CancellationSuccessScreenProps {
   onBackToConsultations: () => void;
@@ -21,7 +21,9 @@ export function CancellationSuccessScreen({
     <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={{ marginTop: 100, alignItems: 'center' }}>
-          <CancelledIllustration size={180} />
+          <View style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: '#FEF3C7', justifyContent: 'center', alignItems: 'center' }}>
+            <AlertCircle width={56} height={56} color="#F59E0B" />
+          </View>
         </View>
 
         <AppText variant="h1" style={{ textAlign: 'center', marginTop: spacing.xl }}>Consultation cancelled</AppText>

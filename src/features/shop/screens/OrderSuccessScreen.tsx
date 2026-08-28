@@ -6,7 +6,7 @@ import { AppText } from '../../../shared/components/AppText';
 import { Button } from '../../../shared/components/Button';
 import { Card } from '../../../shared/components/Card';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
-import { SuccessIllustration } from '../../../shared/components/Illustrations';
+import { SuccessCheckCircle } from '../../../shared/assets/icons';
 import { Truck } from '../../../shared/assets/icons';
 
 interface OrderSuccessScreenProps {
@@ -36,7 +36,9 @@ export function OrderSuccessScreen({ navigation }: OrderSuccessScreenProps) {
   return (
     <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
       <View style={styles.content}>
-        <SuccessIllustration size={180} />
+        <View style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: '#D1FAE5', justifyContent: 'center', alignItems: 'center' }}>
+          <SuccessCheckCircle width={56} height={56} color="#2D6A4F" />
+        </View>
 
         <AppText variant="h2" style={{ color: colors.action.primary, textAlign: 'center', marginTop: spacing.xl }}>
           Order confirmed!

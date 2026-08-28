@@ -11,7 +11,7 @@ import { AppSkeleton } from '../../../shared/components/AppSkeleton';
 import { getProductCache } from '../generator';
 import { Product } from '../types';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
-import { EmptyCartIllustration } from '../../../shared/components/Illustrations';
+import { ShoppingBag } from '../../../shared/assets/icons';
 
 interface WishlistScreenProps {
   navigation: {
@@ -114,7 +114,9 @@ export function WishlistScreen({ navigation }: WishlistScreenProps) {
 
       {wishlistProducts.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <EmptyCartIllustration size={160} />
+          <View style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: '#D1FAE5', justifyContent: 'center', alignItems: 'center' }}>
+            <ShoppingBag width={56} height={56} color="#2D6A4F" />
+          </View>
           <AppText variant="h3" style={{ color: colors.text.primary, marginTop: spacing.lg, marginBottom: spacing.sm }}>
             Your wishlist is empty
           </AppText>

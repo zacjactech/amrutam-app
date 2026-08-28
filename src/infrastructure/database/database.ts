@@ -66,23 +66,54 @@ const MIGRATIONS: string[] = [
 ];
 
 let dbInstance: SQLite.SQLiteDatabase | null = null;
+let dbInitPromise: Promise<SQLite.SQLiteDatabase> | null = null;
 
 export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
   if (dbInstance) {
     return dbInstance;
   }
 
-  try {
-    dbInstance = await SQLite.openDatabaseAsync(DATABASE_NAME);
-    await runMigrations(dbInstance);
-    logger.info('Database initialized', { name: DATABASE_NAME, version: DATABASE_VERSION });
-    return dbInstance;
-  } catch (error) {
-    logger.error('Database initialization failed', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-    throw error;
+  // Serialize concurrent callers so only one openDatabaseAsync runs at a time
+  if (dbInitPromise) {
+    return dbInitPromise;
   }
+
+  dbInitPromise = (async () => {
+    const t0 = Date.now();
+    try {
+      logger.debug('Database: opening', { name: DATABASE_NAME });
+      const db = await SQLite.openDatabaseAsync(DATABASE_NAME);
+      const tOpen = Date.now();
+      logger.info('Database: openDatabaseAsync completed', {
+        name: DATABASE_NAME,
+        elapsedMs: tOpen - t0,
+      });
+
+      await runMigrations(db);
+      const tMigrated = Date.now();
+      logger.info('Database: migrations completed', {
+        count: MIGRATIONS.length,
+        elapsedMs: tMigrated - tOpen,
+      });
+
+      dbInstance = db;
+      logger.info('Database initialized', {
+        name: DATABASE_NAME,
+        version: DATABASE_VERSION,
+        totalMs: tMigrated - t0,
+      });
+      return db;
+    } catch (error) {
+      dbInitPromise = null;
+      logger.error('Database initialization failed', {
+        elapsedMs: Date.now() - t0,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      throw error;
+    }
+  })();
+
+  return dbInitPromise;
 }
 
 async function runMigrations(db: SQLite.SQLiteDatabase): Promise<void> {
@@ -103,6 +134,7 @@ export async function closeDatabase(): Promise<void> {
   if (dbInstance) {
     await dbInstance.closeAsync();
     dbInstance = null;
+    dbInitPromise = null;
     logger.info('Database closed');
   }
 }

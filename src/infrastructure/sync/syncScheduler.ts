@@ -40,6 +40,7 @@ async function triggerSync(source: string): Promise<void> {
   }
 
   debounceTimer = setTimeout(async () => {
+    const t0 = Date.now();
     const pendingCount = await getPendingSyncCount();
     if (pendingCount === 0) {
       return;
@@ -49,16 +50,21 @@ async function triggerSync(source: string): Promise<void> {
     logger.info('Sync scheduler: triggered', { source, pendingCount });
 
     try {
+      const tSync = Date.now();
       const result = await processSyncQueue();
+      const elapsedMs = Date.now() - tSync;
       logger.info('Sync scheduler: completed', {
         source,
         processed: result.processed,
         succeeded: result.succeeded,
         failed: result.failed,
+        elapsedMs,
+        avgPerOperationMs: result.processed > 0 ? Math.round(elapsedMs / result.processed) : 0,
       });
     } catch (error) {
       logger.error('Sync scheduler: unexpected error', {
         source,
+        elapsedMs: Date.now() - t0,
         error: error instanceof Error ? error.message : 'Unknown error',
       });
     } finally {
@@ -165,7 +171,16 @@ export async function manualSync(): Promise<{ processed: number; succeeded: numb
   }
 
   logger.info('Sync scheduler: manual sync triggered');
-  return processSyncQueue();
+  const t0 = Date.now();
+  const result = await processSyncQueue();
+  logger.info('Sync scheduler: manual sync completed', {
+    processed: result.processed,
+    succeeded: result.succeeded,
+    failed: result.failed,
+    conflicts: result.conflicts,
+    elapsedMs: Date.now() - t0,
+  });
+  return result;
 }
 
 /**

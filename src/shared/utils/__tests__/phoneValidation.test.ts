@@ -1,6 +1,6 @@
 // Phone Validation Tests
 
-import { isValidE164Phone, validatePhone, formatPhoneForDisplay } from '../phoneValidation';
+import { isValidE164Phone, validatePhone, formatPhoneForDisplay, formatPhoneInput, toE164Phone } from '../phoneValidation';
 
 describe('isValidE164Phone', () => {
   it('accepts valid E.164 numbers', () => {
@@ -82,6 +82,58 @@ describe('validatePhone', () => {
   it('returns error for too-long numbers', () => {
     const error = validatePhone('+1234567890123456');
     expect(error).toContain('too long');
+  });
+});
+
+describe('formatPhoneInput', () => {
+  it('returns prefix when empty', () => {
+    expect(formatPhoneInput('')).toBe('+91 ');
+  });
+
+  it('auto-prefixes +91 when user types digits starting with 9', () => {
+    expect(formatPhoneInput('9')).toBe('+91 9');
+    expect(formatPhoneInput('98')).toBe('+91 98');
+    expect(formatPhoneInput('98765')).toBe('+91 98765');
+  });
+
+  it('formats full 10-digit Indian number', () => {
+    expect(formatPhoneInput('9876543210')).toBe('+91 98765 43210');
+  });
+
+  it('handles user typing +91 prefix manually', () => {
+    // +91 → digits = "91" → starts with 91 → withoutCode = ""
+    expect(formatPhoneInput('+91')).toBe('+91 ');
+    // +9198 → digits = "9198" → starts with 91 → withoutCode = "98"
+    expect(formatPhoneInput('+9198')).toBe('+91 98');
+    // +919876543210 → digits = "919876543210" → starts with 91 → withoutCode = "9876543210"
+    expect(formatPhoneInput('+919876543210')).toBe('+91 98765 43210');
+  });
+
+  it('formats non-Indian numbers after +91 prefix', () => {
+    // User types "44" → not starting with 9 → no auto-prefix
+    expect(formatPhoneInput('44')).toBe('+91 44');
+    expect(formatPhoneInput('44791112345')).toBe('+91 44791 11234');
+  });
+
+  it('strips non-digit characters', () => {
+    expect(formatPhoneInput('987-654-3210')).toBe('+91 98765 43210');
+    expect(formatPhoneInput('(987) 654-3210')).toBe('+91 98765 43210');
+  });
+
+  it('truncates at 10 digits after country code', () => {
+    expect(formatPhoneInput('98765432101234')).toBe('+91 98765 43210');
+  });
+});
+
+describe('toE164Phone', () => {
+  it('converts formatted phone to E.164', () => {
+    expect(toE164Phone('+91 98765 43210')).toBe('+919876543210');
+    expect(toE164Phone('+91 9')).toBe('+919');
+    expect(toE164Phone('+91 44791 11234')).toBe('+914479111234');
+  });
+
+  it('strips all non-digit characters', () => {
+    expect(toE164Phone('+91 (987) 654-3210')).toBe('+919876543210');
   });
 });
 

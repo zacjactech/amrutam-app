@@ -458,7 +458,7 @@ const styles = StyleSheet.create({
   },
   themeOption: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 16,
     alignItems: 'center',
     justifyContent: 'center',

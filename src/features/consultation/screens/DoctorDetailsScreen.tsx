@@ -106,15 +106,15 @@ export function DoctorDetailsScreen({
         <View style={[styles.statsRow, { paddingHorizontal: spacing.lg }]}>
           <View style={[styles.statBox, { backgroundColor: colors.surface.default, borderRadius: spacing.md, padding: spacing.md, flex: 1, alignItems: 'center' }]}>
             <AppText variant="h3" style={{ color: colors.action.primary }}>{doctor.experience} yrs</AppText>
-            <AppText variant="caption" style={{ color: colors.text.secondary, marginTop: 4 }}>Experience</AppText>
+            <AppText variant="caption" style={{ color: colors.text.secondary, marginTop: spacing.xs }}>Experience</AppText>
           </View>
           <View style={[styles.statBox, { backgroundColor: colors.surface.default, borderRadius: spacing.md, padding: spacing.md, flex: 1, alignItems: 'center', marginHorizontal: spacing.sm }]}>
             <AppText variant="h3" style={{ color: colors.action.primary }}>Video</AppText>
-            <AppText variant="caption" style={{ color: colors.text.secondary, marginTop: 4 }}>Consult Mode</AppText>
+            <AppText variant="caption" style={{ color: colors.text.secondary, marginTop: spacing.xs }}>Consult Mode</AppText>
           </View>
           <View style={[styles.statBox, { backgroundColor: colors.surface.default, borderRadius: spacing.md, padding: spacing.md, flex: 1, alignItems: 'center' }]}>
             <AppText variant="h3" style={{ color: colors.action.primary }}>₹{consultFee}</AppText>
-            <AppText variant="caption" style={{ color: colors.text.secondary, marginTop: 4 }}>Fee</AppText>
+            <AppText variant="caption" style={{ color: colors.text.secondary, marginTop: spacing.xs }}>Fee</AppText>
           </View>
         </View>
 
@@ -127,7 +127,7 @@ export function DoctorDetailsScreen({
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <View style={{ flex: 1 }}>
               <AppText variant="h3">30-min Video Consultation</AppText>
-              <AppText variant="bodySmall" style={{ color: colors.text.secondary, marginTop: 2 }}>Online consultation via video call</AppText>
+              <AppText variant="bodySmall" style={{ color: colors.text.secondary, marginTop: spacing.xs }}>Online consultation via video call</AppText>
             </View>
             <AppText variant="bodyLarge" style={{ color: colors.action.primary, fontWeight: '700' }}>₹{consultFee}</AppText>
           </View>
@@ -151,7 +151,7 @@ export function DoctorDetailsScreen({
                   onPress={() => setSelectedDate(isSelected ? null : key)}
                 >
                   <AppText variant="caption" style={{ color: isSelected ? colors.surface.default : colors.text.secondary }}>{formatted.dayName}</AppText>
-                  <AppText variant="h3" style={{ color: isSelected ? colors.surface.default : colors.text.primary, marginTop: 4 }}>{formatted.label}</AppText>
+                  <AppText variant="h3" style={{ color: isSelected ? colors.surface.default : colors.text.primary, marginTop: spacing.xs }}>{formatted.label}</AppText>
                 </TouchableOpacity>
               );
             })}
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
   statBox: {},
   section: {},
   dateRow: { flexDirection: 'row', gap: 8 },
-  dateChip: { alignItems: 'center', paddingVertical: 10, paddingHorizontal: 14, borderWidth: 1, minWidth: 52 },
+  dateChip: { alignItems: 'center', paddingVertical: 12, paddingHorizontal: 16, borderWidth: 1, minWidth: 52 },
   emptySlots: {},
   stickyFooter: { position: 'absolute', bottom: 0, left: 0, right: 0, borderTopWidth: 1 },
   selectTimeBtn: { width: '100%' },

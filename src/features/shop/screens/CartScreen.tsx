@@ -11,7 +11,7 @@ import { AppSkeleton } from '../../../shared/components/AppSkeleton';
 import { getProductCache } from '../generator';
 import { CartItem, Product } from '../types';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
-import { EmptyCartIllustration } from '../../../shared/components/Illustrations';
+import { ShoppingBag } from '../../../shared/assets/icons';
 
 interface CartScreenProps {
   navigation: {
@@ -92,7 +92,9 @@ export function CartScreen({ navigation }: CartScreenProps) {
     <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
       {cartItems.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <EmptyCartIllustration size={160} />
+          <View style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: '#D1FAE5', justifyContent: 'center', alignItems: 'center' }}>
+            <ShoppingBag width={56} height={56} color="#2D6A4F" />
+          </View>
           <AppText variant="h3" style={{ color: colors.text.primary, marginBottom: spacing.sm, marginTop: spacing.lg }}>
             Your cart is empty
           </AppText>

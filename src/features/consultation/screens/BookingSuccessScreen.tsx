@@ -6,7 +6,7 @@ import { Image } from 'expo-image';
 import { Button } from '../../../shared/components/Button';
 import { AppText } from '../../../shared/components/AppText';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
-import { BookingConfirmedIllustration } from '../../../shared/components/Illustrations';
+import { CheckCircleFilled } from '../../../shared/assets/icons';
 
 interface BookingSuccessScreenProps {
   doctorName: string;
@@ -36,7 +36,9 @@ export function BookingSuccessScreen({
     <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={{ marginTop: 60, alignItems: 'center' }}>
-          <BookingConfirmedIllustration size={180} />
+          <View style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: '#D1FAE5', justifyContent: 'center', alignItems: 'center' }}>
+            <CheckCircleFilled width={56} height={56} color="#2D6A4F" />
+          </View>
         </View>
 
         <AppText variant="h1" style={{ textAlign: 'center', marginTop: spacing.lg }}>Consultation booked!</AppText>

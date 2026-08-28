@@ -53,6 +53,52 @@ export function validatePhone(phone: string): string | null {
 }
 
 /**
+ * Formats phone input as the user types.
+ * Auto-prefixes +91 (India) and formats as +91 XXXXX XXXXX.
+ * Returns the formatted string for display.
+ *
+ * Examples:
+ *   "9" → "+91 9"
+ *   "9876543210" → "+91 98765 43210"
+ *   "+919876543210" → "+91 98765 43210"
+ *   "44" → "+91 44"
+ */
+export function formatPhoneInput(raw: string): string {
+  // Strip everything except digits
+  const digits = raw.replace(/\D/g, '');
+
+  // If empty, show just the prefix
+  if (digits.length === 0) {
+    return '+91 ';
+  }
+
+  // Auto-prefix: if first digit is 9, assume Indian mobile and prepend country code
+  let digitsToFormat = digits;
+  if (digits[0] === '9' && !digits.startsWith('91')) {
+    digitsToFormat = '91' + digits;
+  } else if (digits.startsWith('91') && digits.length > 2) {
+    // Already has country code
+    digitsToFormat = digits;
+  }
+
+  const withoutCode = digitsToFormat.replace(/^91/, '');
+
+  if (withoutCode.length <= 5) {
+    return `+91 ${withoutCode}`;
+  }
+  return `+91 ${withoutCode.slice(0, 5)} ${withoutCode.slice(5, 10)}`;
+}
+
+/**
+ * Extracts the raw E.164 phone number from a formatted display string.
+ * Strips all non-digit characters and prepends +.
+ */
+export function toE164Phone(formatted: string): string {
+  const digits = formatted.replace(/\D/g, '');
+  return `+${digits}`;
+}
+
+/**
  * Formats a phone number for display, masking the middle digits.
  * Example: +919876543210 → +91****43210
  */

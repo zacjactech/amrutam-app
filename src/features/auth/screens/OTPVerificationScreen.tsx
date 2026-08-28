@@ -1,12 +1,21 @@
 // Auth Module - OTP Verification Screen
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, StyleSheet, Alert } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Animated,
+} from 'react-native';
 import { AppText } from '../../../shared/components/AppText';
 import { Button } from '../../../shared/components/Button';
 import { Input } from '../../../shared/components/Input';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
-import { DoctorIllustration } from '../../../shared/components/Illustrations';
+import { useIconEntrance, useTextEntrance, useButtonEntrance } from '../../../shared/hooks/useEntranceAnimation';
+import Leaf from '../../../../assets/icons/leaf.svg';
 import { useAuthContext } from '../../../infrastructure/auth/AuthContext';
 
 interface OTPVerificationScreenProps {
@@ -123,18 +132,35 @@ export function OTPVerificationScreen({ route, navigation }: OTPVerificationScre
       ? 'Sending...'
       : 'Resend OTP';
 
+  const iconStyle = useIconEntrance({ delay: 100, duration: 500 });
+  const titleStyle = useTextEntrance({ delay: 300, duration: 450 });
+  const bodyStyle = useTextEntrance({ delay: 400, duration: 450 });
+  const buttonStyle = useButtonEntrance({ delay: 500, duration: 400 });
+
   return (
-    <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
-      <View style={styles.content}>
-        <View style={styles.illustrationWrapper}>
-          <DoctorIllustration size={100} />
-        </View>
-        <AppText variant="h1" style={{ color: colors.text.primary, textAlign: 'center' }}>
-          Verify your phone
-        </AppText>
-        <AppText variant="body" style={{ color: colors.text.secondary, marginTop: spacing.sm, textAlign: 'center' }}>
-          Enter the 6-digit code sent to{'\n'}{phone || 'your phone'}
-        </AppText>
+    <KeyboardAvoidingView
+      style={[styles.container, { backgroundColor: colors.background.primary }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={0}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        bounces={false}
+      >
+        <Animated.View style={[styles.iconCircle, iconStyle]}>
+          <Leaf width={56} height={56} color="#2D6A4F" />
+        </Animated.View>
+        <Animated.View style={titleStyle}>
+          <AppText variant="h1" style={{ color: colors.text.primary, textAlign: 'center' }}>
+            Verify your phone
+          </AppText>
+        </Animated.View>
+        <Animated.View style={bodyStyle}>
+          <AppText variant="body" style={{ color: colors.text.secondary, marginTop: spacing.sm, textAlign: 'center' }}>
+            Enter the 6-digit code sent to{'\n'}{phone || 'your phone'}
+          </AppText>
+        </Animated.View>
         <View style={{ marginTop: spacing.lg }}>
           <Input
             value={otp}
@@ -144,8 +170,8 @@ export function OTPVerificationScreen({ route, navigation }: OTPVerificationScre
             maxLength={6}
           />
         </View>
-      </View>
-      <View style={styles.buttons}>
+      </ScrollView>
+      <Animated.View style={[styles.buttons, buttonStyle]}>
         <Button
           title={isVerifying ? 'Verifying...' : 'Verify'}
           onPress={handleVerify}
@@ -158,28 +184,36 @@ export function OTPVerificationScreen({ route, navigation }: OTPVerificationScre
           variant="secondary"
           disabled={isResending || cooldown > 0}
         />
-      </View>
-    </View>
+      </Animated.View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'space-between',
-    padding: 24,
-    paddingTop: 80,
-    paddingBottom: 60,
   },
-  content: {
-    flex: 1,
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 80,
+    paddingBottom: 24,
   },
-  illustrationWrapper: {
+  iconCircle: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: '#D1FAE5',
+    justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
   },
   buttons: {
+    paddingHorizontal: 24,
+    paddingBottom: 60,
+    paddingTop: 12,
     gap: 12,
   },
 });

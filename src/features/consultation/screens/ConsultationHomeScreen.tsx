@@ -171,7 +171,7 @@ export function ConsultationHomeScreen({
                 <Image source={{ uri: upcomingDoctor.photoUrl }} style={[styles.upcomingAvatar, { borderRadius: spacing.md }]} contentFit="cover" />
                 <View style={{ marginLeft: 14, flex: 1 }}>
                   <AppText variant="body" style={{ color: '#FFFFFF', fontWeight: '600' }}>{upcomingDoctor.name}</AppText>
-                  <AppText variant="bodySmall" style={{ color: '#A7C4B8', marginTop: 2 }}>{upcomingDoctor.specialization}</AppText>
+                  <AppText variant="bodySmall" style={{ color: '#A7C4B8', marginTop: spacing.xs }}>{upcomingDoctor.specialization}</AppText>
                 </View>
               </View>
               <View style={{ marginTop: spacing.md }}>
@@ -222,13 +222,13 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   scroll: { paddingBottom: 40 },
-  searchBar: { paddingVertical: 14, paddingHorizontal: 16, borderWidth: 1 },
+  searchBar: { paddingVertical: 16, paddingHorizontal: 16, borderWidth: 1 },
   chip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 999, borderWidth: 1 },
   sectionRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   upcomingCard: {},
   upcomingRow: { flexDirection: 'row', alignItems: 'center' },
   upcomingAvatar: { width: 56, height: 56, backgroundColor: '#2D6A4F' },
-  joinCallBtn: { marginTop: 14, paddingVertical: 12, borderWidth: 1.5, alignItems: 'center' },
+  joinCallBtn: { marginTop: 12, paddingVertical: 12, borderWidth: 1.5, alignItems: 'center' },
   emptyBox: {},
 });
 
@@ -237,5 +237,5 @@ const hCardStyles = StyleSheet.create({
   avatar: { width: '100%', height: 120, backgroundColor: '#E8F3EC' },
   ratingRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
   footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
-  viewBtn: { borderWidth: 1, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6 },
+  viewBtn: { borderWidth: 1, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 8 },
 });

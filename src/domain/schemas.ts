@@ -8,7 +8,6 @@ import { z } from 'zod';
 
 export const envSchema = z.object({
   APP_ENV: z.enum(['development', 'staging', 'production']),
-  API_BASE_URL: z.string().url(),
   API_TIMEOUT_MS: z.coerce.number().int().positive().max(30000),
   ENABLE_MOCK_FAILURES: z.coerce.boolean(),
   ENABLE_PERFORMANCE_LOGGING: z.coerce.boolean(),

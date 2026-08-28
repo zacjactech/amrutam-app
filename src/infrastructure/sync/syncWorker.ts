@@ -139,22 +139,41 @@ async function markOperationConflict(operationId: string, error: string): Promis
 }
 
 async function processOperation(operation: SyncOperation): Promise<SyncResult> {
+  const t0 = Date.now();
   logger.info('Processing sync operation', { operationId: operation.id, type: operation.type });
 
   try {
     const payload = JSON.parse(operation.payload);
+    let result: SyncResult;
 
     switch (operation.type) {
       case 'booking':
-        return await processBookingSync(payload);
+        result = await processBookingSync(payload);
+        break;
       case 'cart_update':
-        return await processCartSync(payload);
+        result = await processCartSync(payload);
+        break;
       case 'wishlist_update':
-        return await processWishlistSync(payload);
+        result = await processWishlistSync(payload);
+        break;
       default:
-        return { success: false, operationId: operation.id, error: `Unknown operation type: ${operation.type}` };
+        result = { success: false, operationId: operation.id, error: `Unknown operation type: ${operation.type}` };
     }
+
+    logger.debug('Sync operation processed', {
+      operationId: operation.id,
+      type: operation.type,
+      success: result.success,
+      conflict: result.conflict,
+      elapsedMs: Date.now() - t0,
+    });
+    return result;
   } catch (error) {
+    logger.debug('Sync operation failed with exception', {
+      operationId: operation.id,
+      type: operation.type,
+      elapsedMs: Date.now() - t0,
+    });
     return {
       success: false,
       operationId: operation.id,
@@ -300,6 +319,7 @@ export async function enqueueWishlistSync(wishlistData: WishlistSyncPayload): Pr
 
 export async function processSyncQueue(): Promise<{ processed: number; succeeded: number; failed: number; conflicts: number }> {
   const result = { processed: 0, succeeded: 0, failed: 0, conflicts: 0 };
+  const t0 = Date.now();
 
   logger.info('Starting sync queue processing');
 
@@ -330,7 +350,12 @@ export async function processSyncQueue(): Promise<{ processed: number; succeeded
     }
   }
 
-  logger.info('Sync queue processing completed', result);
+  const elapsedMs = Date.now() - t0;
+  logger.info('Sync queue processing completed', {
+    ...result,
+    elapsedMs,
+    avgPerOperationMs: result.processed > 0 ? Math.round(elapsedMs / result.processed) : 0,
+  });
   return result;
 }
 

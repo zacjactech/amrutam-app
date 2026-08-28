@@ -11,7 +11,7 @@ import { AppSkeleton } from '../../../shared/components/AppSkeleton';
 import { AppErrorState } from '../../../shared/components/AppErrorState';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
 import { Product } from '../types';
-import { ShoppingIllustration } from '../../../shared/components/Illustrations';
+import { ShoppingBag } from '../../../shared/assets/icons';
 
 import { Shield, Activities, Star, Heart, ClockCircle, Leaf, AlertTriangle, Flask } from '../../../shared/assets/icons';
 
@@ -147,7 +147,7 @@ export function ShopHomeScreen({ navigation }: ShopHomeScreenProps) {
               Authentic Ayurvedic products for everyday wellness and holistic vitality.
             </AppText>
           </View>
-          <ShoppingIllustration size={120} />
+          <ShoppingBag width={80} height={80} color="#D1FAE5" />
         </View>
       </View>
 

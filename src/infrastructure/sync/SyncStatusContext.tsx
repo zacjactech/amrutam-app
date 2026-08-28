@@ -78,9 +78,13 @@ export function SyncStatusProvider({ children }: { children: React.ReactNode }) 
         setStatus('idle');
       }
     } catch (error) {
-      logger.error('SyncStatus: failed to refresh', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
+      // Database may not be ready yet on first render — stay idle and retry next interval
+      const msg = error instanceof Error ? error.message : 'Unknown error';
+      if (msg.includes('database') || msg.includes('Database') || msg.includes('NullPointer')) {
+        logger.debug('SyncStatus: DB not ready yet, will retry', { error: msg });
+      } else {
+        logger.error('SyncStatus: failed to refresh', { error: msg });
+      }
     }
   }, []);
 
