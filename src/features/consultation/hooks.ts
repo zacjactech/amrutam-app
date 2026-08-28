@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { consultationRepository, BookingRequest } from './repository';
-import { DoctorFilter, DEFAULT_DOCTOR_FILTER } from './types';
+import { DoctorFilter, DEFAULT_DOCTOR_FILTER, Booking } from './types';
 import { enqueueBookingSync } from '../../infrastructure/sync/syncWorker';
 import { useConnectionStatus } from '../../infrastructure/connectivity/connectionManager';
 import { classifyApiError } from '../../shared/errors/errorClasses';
@@ -65,6 +65,21 @@ export function useBookings(patientId?: string) {
   });
 }
 
+function createPendingBooking(request: BookingRequest): Booking {
+  const now = new Date().toISOString();
+  return {
+    id: `bk_offline_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+    doctorId: request.doctorId,
+    patientId: request.patientId,
+    slotId: request.slotId,
+    consultationType: request.consultationType,
+    status: 'pending_sync',
+    createdAt: now,
+    updatedAt: now,
+    idempotencyKey: `${request.patientId}:${request.slotId}`,
+  };
+}
+
 export function useBookConsultation() {
   const queryClient = useQueryClient();
   const { isConnected } = useConnectionStatus();
@@ -85,7 +100,7 @@ export function useBookConsultation() {
           slotId: authenticatedRequest.slotId,
           patientId: authenticatedRequest.patientId,
         });
-        return consultationRepository.createBooking(authenticatedRequest);
+        return createPendingBooking(authenticatedRequest);
       }
 
       try {
@@ -98,7 +113,7 @@ export function useBookConsultation() {
             slotId: authenticatedRequest.slotId,
             patientId: authenticatedRequest.patientId,
           });
-          return consultationRepository.createBooking(authenticatedRequest);
+          return createPendingBooking(authenticatedRequest);
         }
         throw error;
       }

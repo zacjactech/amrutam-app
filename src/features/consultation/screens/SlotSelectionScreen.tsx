@@ -31,7 +31,7 @@ function formatShortDate(d: Date): { label: string; dayName: string } {
 }
 
 function isSlotExpired(slot: ConsultationSlot): boolean {
-  return new Date(slot.startTime) < new Date();
+  return new Date(slot.endTime) < new Date();
 }
 
 export function SlotSelectionScreen({
@@ -122,7 +122,7 @@ export function SlotSelectionScreen({
                     onPress={() => setSelectedDate(isSelected ? null : key)}
                   >
                     <AppText variant="caption" style={{ color: isSelected ? colors.surface.default : colors.text.secondary }}>{fmt.dayName}</AppText>
-                    <AppText variant="h3" style={{ color: isSelected ? colors.surface.default : colors.text.primary, marginTop: 4 }}>{fmt.label}</AppText>
+                    <AppText variant="h3" style={{ color: isSelected ? colors.surface.default : colors.text.primary, marginTop: spacing.xs }}>{fmt.label}</AppText>
                   </TouchableOpacity>
                 );
               })}
@@ -241,12 +241,12 @@ const styles = StyleSheet.create({
   backBtn: { padding: 4 },
   scroll: { paddingBottom: 120 },
   dateSection: {},
-  dateChip: { alignItems: 'center', paddingVertical: 10, paddingHorizontal: 14, borderWidth: 1, minWidth: 52 },
+  dateChip: { alignItems: 'center', paddingVertical: 12, paddingHorizontal: 16, borderWidth: 1, minWidth: 52 },
   slotsSection: {},
   slotGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  slotChip: { borderWidth: 1, paddingVertical: 10, paddingHorizontal: 16, minWidth: 80, alignItems: 'center' },
+  slotChip: { borderWidth: 1, paddingVertical: 12, paddingHorizontal: 16, minWidth: 80, alignItems: 'center' },
   legend: {},
-  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   legendDot: { width: 8, height: 8, borderRadius: 4 },
   summaryCard: {},
   stickyFooter: { position: 'absolute', bottom: 0, left: 0, right: 0, borderTopWidth: 1 },

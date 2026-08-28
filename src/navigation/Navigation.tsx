@@ -39,7 +39,7 @@ import { CancellationSuccessScreen } from '../features/consultation/screens/Canc
 import { BookingConflictModal } from '../features/consultation/screens/BookingConflictModal';
 import { SlotExpiredModal } from '../features/consultation/screens/SlotExpiredModal';
 import { CancelConsultationSheet } from '../features/consultation/screens/CancelConsultationSheet';
-import { useDoctor } from '../features/consultation/hooks';
+import { useDoctor, useBookings } from '../features/consultation/hooks';
 
 import { ShopHomeScreen } from '../features/shop/screens/ShopHomeScreen';
 import { ProductListScreen } from '../features/shop/screens/ProductListScreen';
@@ -122,7 +122,7 @@ function SlotSelectionNavigator({ route, navigation }: { route: RouteProp<Consul
       <SlotSelectionScreen
         doctorId={doctorId}
         onBack={() => navigation.goBack()}
-        onContinue={(slot) => navigation.navigate('BookingConfirmation', { doctorId, slotId: slot.id })}
+        onContinue={(slot) => navigation.navigate('BookingConfirmation', { doctorId, slot })}
       />
       <BookingConflictModal
         visible={conflictVisible}
@@ -139,23 +139,16 @@ function SlotSelectionNavigator({ route, navigation }: { route: RouteProp<Consul
 }
 
 function BookingConfirmationNavigator({ route, navigation }: { route: RouteProp<ConsultationStackParamList, 'BookingConfirmation'>; navigation: NavigationProp<ConsultationStackParamList> }): React.JSX.Element {
-  const { doctorId, slotId } = route.params;
+  const { doctorId, slot } = route.params;
   const [conflictVisible, setConflictVisible] = React.useState(false);
 
   return (
     <View style={{ flex: 1 }}>
       <BookingConfirmationScreen
         doctorId={doctorId}
-        slot={{
-          id: slotId,
-          doctorId,
-          startTime: new Date().toISOString(),
-          endTime: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
-          isBooked: false,
-          consultationType: 'video',
-        }}
+        slot={slot}
         onBack={() => navigation.goBack()}
-        onBookingSuccess={(bookingId) => navigation.navigate('BookingSuccess', { bookingId, doctorId })}
+        onBookingSuccess={(bookingId) => navigation.navigate('BookingSuccess', { bookingId, doctorId, slot })}
         onConflict={() => setConflictVisible(true)}
       />
       <BookingConflictModal
@@ -168,17 +161,20 @@ function BookingConfirmationNavigator({ route, navigation }: { route: RouteProp<
 }
 
 function BookingSuccessNavigator({ route, navigation }: { route: RouteProp<ConsultationStackParamList, 'BookingSuccess'>; navigation: NavigationProp<ConsultationStackParamList> }): React.JSX.Element {
-  const { bookingId, doctorId } = route.params;
+  const { bookingId, doctorId, slot } = route.params;
   const { data: doctor } = useDoctor(doctorId);
-  const date = new Date();
+  const slotDate = new Date(slot.startTime);
+
+  const durationMs = new Date(slot.endTime).getTime() - slotDate.getTime();
+  const durationMinutes = Math.round(durationMs / (60 * 1000));
 
   return (
     <BookingSuccessScreen
       doctorName={doctor?.name ?? 'Doctor'}
       doctorPhoto={doctor?.photoUrl ?? ''}
-      date={date.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-      time={date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}
-      duration="30 minutes"
+      date={slotDate.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+      time={slotDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}
+      duration={`${durationMinutes} minutes`}
       bookingId={bookingId.slice(0, 16)}
       onViewConsultation={() => navigation.navigate('ConsultationDetails', { bookingId })}
       onBackToHome={() => navigation.goBack()}
@@ -198,6 +194,14 @@ function UpcomingConsultationsNavigator({ navigation }: { navigation: Navigation
 function ConsultationDetailsNavigator({ route, navigation }: { route: RouteProp<ConsultationStackParamList, 'ConsultationDetails'>; navigation: NavigationProp<ConsultationStackParamList> }): React.JSX.Element {
   const { bookingId } = route.params;
   const [cancelVisible, setCancelVisible] = React.useState(false);
+  const { data: bookings = [] } = useBookings();
+  const booking = bookings.find((b) => b.id === bookingId);
+  const { data: doctor } = useDoctor(booking?.doctorId ?? '');
+
+  const cancelDoctorName = doctor?.name ?? 'this doctor';
+  const cancelDate = booking !== undefined
+    ? new Date(booking.updatedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long' })
+    : new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long' });
 
   return (
     <View style={{ flex: 1 }}>
@@ -213,8 +217,8 @@ function ConsultationDetailsNavigator({ route, navigation }: { route: RouteProp<
           setCancelVisible(false);
           navigation.navigate('CancellationSuccess');
         }}
-        doctorName="Doctor"
-        consultationDate={new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long' })}
+        doctorName={cancelDoctorName}
+        consultationDate={cancelDate}
       />
     </View>
   );

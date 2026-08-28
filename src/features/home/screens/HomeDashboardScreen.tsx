@@ -105,7 +105,7 @@ function GreetingSkeleton() {
       style={[styles.greeting, { paddingHorizontal: spacing.lg, paddingTop: spacing.xl }]}
       accessibilityLabel="Loading greeting"
     >
-      <View style={{ gap: 6 }}>
+      <View style={{ gap: spacing.xs }}>
         <Skeleton width={100} height={14} />
         <Skeleton width={180} height={22} />
       </View>
@@ -122,7 +122,7 @@ function BannerSkeleton() {
       variant="elevated"
       style={{ marginHorizontal: spacing.lg, marginTop: spacing.lg, backgroundColor: colors.action.primaryPressed, borderRadius: spacing.md, padding: spacing.xl }}
     >
-      <View style={{ gap: 8 }}>
+      <View style={{ gap: spacing.sm }}>
         <Skeleton width={160} height={12} />
         <Skeleton width={200} height={18} />
         <Skeleton width={140} height={12} />
@@ -141,7 +141,7 @@ function ProductsSkeleton() {
         {[1, 2, 3].map((i) => (
           <View key={i} style={{ width: 160 }}>
             <Skeleton width={160} height={100} borderRadius={8} />
-            <View style={{ padding: spacing.sm, gap: 4 }}>
+            <View style={{ padding: spacing.sm, gap: spacing.xs }}>
               <Skeleton width={60} height={10} />
               <Skeleton width={120} height={12} />
               <Skeleton width={50} height={14} />
@@ -172,7 +172,7 @@ function RecordsSkeleton() {
           ]}
         >
           <Skeleton width={40} height={40} borderRadius={20} />
-          <View style={{ flex: 1, marginLeft: 12, gap: 4 }}>
+          <View style={{ flex: 1, marginLeft: spacing.md, gap: spacing.xs }}>
             <Skeleton width={140} height={14} />
             <Skeleton width={100} height={12} />
           </View>
@@ -209,13 +209,11 @@ export function HomeDashboardScreen({ navigation }: HomeDashboardScreenProps) {
   // Derived data
   const upcomingBooking = useMemo(() => {
     if (!bookingsQuery.data) return null;
-    const now = new Date();
+    // Pick the most recently updated active booking (updatedAt reflects status changes
+    // like confirmation, which is a better proxy for relevance than createdAt)
     return bookingsQuery.data
-      .filter((b) => b.status === 'confirmed' || b.status === 'pending_confirmation')
-      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-      .find((b) => new Date(b.createdAt) >= now) ?? bookingsQuery.data
-      .filter((b) => b.status === 'confirmed' || b.status === 'pending_confirmation')
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0] ?? null;
+      .filter((b) => b.status === 'confirmed' || b.status === 'pending_confirmation' || b.status === 'pending_sync')
+      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())[0] ?? null;
   }, [bookingsQuery.data]);
 
   const recommendedProducts = useMemo(() => {
@@ -293,7 +291,7 @@ export function HomeDashboardScreen({ navigation }: HomeDashboardScreenProps) {
           <AppText variant="body" style={{ color: colors.text.secondary }}>
             {getGreeting()}
           </AppText>
-          <AppText variant="h2" style={{ color: colors.text.primary, marginTop: 4 }}>
+          <AppText variant="h2" style={{ color: colors.text.primary,            marginTop: spacing.xs }}>
             Welcome back, {userName}!
           </AppText>
         </View>
@@ -314,14 +312,14 @@ export function HomeDashboardScreen({ navigation }: HomeDashboardScreenProps) {
         >
           <View style={styles.bannerContent}>
             <View style={{ flex: 1 }}>
-              <AppText variant="body" style={{ color: colors.text.inverse, marginBottom: 4 }}>
+              <AppText variant="body" style={{            color: colors.text.inverse, marginBottom: spacing.xs }}>
                 Upcoming Consultation
               </AppText>
               <AppText variant="h4" style={{ color: colors.text.inverse, fontWeight: '700' }}>
                 {upcomingBooking.consultationType === 'video' ? 'Video' : upcomingBooking.consultationType === 'audio' ? 'Audio' : upcomingBooking.consultationType === 'chat' ? 'Chat' : 'In-person'} Consultation
               </AppText>
-              <AppText variant="bodySmall" style={{ color: colors.text.inverse, marginTop: 4, opacity: 0.8 }}>
-                {formatBookingTime(upcomingBooking.createdAt)} · {upcomingBooking.status === 'confirmed' ? 'Confirmed' : 'Pending'}
+              <AppText variant="bodySmall" style={{            color: colors.text.inverse, marginTop: spacing.xs, opacity: 0.8 }}>
+                {formatBookingTime(upcomingBooking.updatedAt)} · {upcomingBooking.status === 'confirmed' ? 'Confirmed' : upcomingBooking.status === 'pending_sync' ? 'Syncing' : 'Pending'}
               </AppText>
             </View>
             <Stethoscope width={48} height={48} color={colors.text.inverse} />
@@ -346,7 +344,7 @@ export function HomeDashboardScreen({ navigation }: HomeDashboardScreenProps) {
             style={{ borderRadius: spacing.md, padding: spacing.xl, alignItems: 'center' }}
           >
             <Stethoscope width={40} height={40} color={colors.action.primary} />
-            <AppText variant="h4" style={{ color: colors.text.primary, marginTop: spacing.md, marginBottom: 4 }}>
+            <AppText variant="h4" style={{            color: colors.text.primary, marginTop: spacing.md, marginBottom: spacing.xs }}>
               No upcoming consultations
             </AppText>
             <AppText variant="bodySmall" style={{ color: colors.text.secondary, marginBottom: spacing.lg, textAlign: 'center' }}>
@@ -474,14 +472,14 @@ export function HomeDashboardScreen({ navigation }: HomeDashboardScreenProps) {
                   </AppText>
                   <AppText
                     variant="bodySmall"
-                    style={{ color: colors.text.primary, marginTop: 2 }}
+                    style={{ color: colors.text.primary, marginTop: spacing.xs }}
                     numberOfLines={1}
                   >
                     {product.name}
                   </AppText>
                   <AppText
                     variant="body"
-                    style={{ color: colors.action.primary, fontWeight: '700', marginTop: 4 }}
+                    style={{ color: colors.action.primary, fontWeight: '700', marginTop: spacing.xs }}
                   >
                     {formatCurrency(product.price)}
                   </AppText>
@@ -550,7 +548,7 @@ export function HomeDashboardScreen({ navigation }: HomeDashboardScreenProps) {
                 </AppText>
                 <AppText
                   variant="bodySmall"
-                  style={{ color: colors.text.secondary, marginTop: 2 }}
+                  style={{ color: colors.text.secondary, marginTop: spacing.xs }}
                 >
                   {RECORD_TYPE_LABELS[record.type]}
                 </AppText>
@@ -582,7 +580,7 @@ const styles = StyleSheet.create({
   },
   joinButton: {
     marginTop: 16,
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
     alignItems: 'center',

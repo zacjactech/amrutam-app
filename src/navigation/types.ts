@@ -23,8 +23,29 @@ export type ConsultationStackParamList = {
   DoctorSearch: undefined;
   DoctorDetails: { doctorId: string };
   SlotSelection: { doctorId: string };
-  BookingConfirmation: { doctorId: string; slotId: string };
-  BookingSuccess: { bookingId: string; doctorId: string };
+  BookingConfirmation: {
+    doctorId: string;
+    slot: {
+      id: string;
+      doctorId: string;
+      startTime: string;
+      endTime: string;
+      isBooked: boolean;
+      consultationType: 'video' | 'audio' | 'chat' | 'in-person';
+    };
+  };
+  BookingSuccess: {
+    bookingId: string;
+    doctorId: string;
+    slot: {
+      id: string;
+      doctorId: string;
+      startTime: string;
+      endTime: string;
+      isBooked: boolean;
+      consultationType: 'video' | 'audio' | 'chat' | 'in-person';
+    };
+  };
   UpcomingConsultations: undefined;
   ConsultationDetails: { bookingId: string };
   CancellationSuccess: undefined;
