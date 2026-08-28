@@ -151,12 +151,30 @@ export function generateProducts(count: number): Product[] {
 }
 
 let productCache: Product[] | null = null;
+let cachePromise: Promise<Product[]> | null = null;
+
+export async function getProductCacheAsync(): Promise<Product[]> {
+  if (productCache !== null) {
+    return productCache;
+  }
+
+  if (cachePromise === null) {
+    cachePromise = new Promise((resolve) => {
+      setTimeout(() => {
+        productCache = generateProducts(20000);
+        resolve(productCache);
+      }, 0);
+    });
+  }
+
+  return cachePromise;
+}
 
 export function getProductCache(): Product[] {
-  if (productCache === null) {
-    productCache = generateProducts(20000);
+  if (productCache !== null) {
+    return productCache;
   }
-  return productCache;
+  throw new Error('Product cache not ready. Use getProductCacheAsync() first.');
 }
 
 export function applyProductFilter(
@@ -174,7 +192,7 @@ export function applyProductFilter(
       }
     }
 
-    if (filter.categories.length > 0 && !filter.categories.includes(product.category)) {
+    if (filter.categories.length > 0 && !filter.categories.includes(product.category as ProductCategory)) {
       return false;
     }
 

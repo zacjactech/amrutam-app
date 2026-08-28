@@ -77,10 +77,6 @@ export function BottomSheet({
     });
   };
 
-  if (!visible) {
-    return <View />;
-  }
-
   return (
     <Modal transparent visible={visible} onRequestClose={handleClose} animationType="none">
       <View style={styles.wrapper}>

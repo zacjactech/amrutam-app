@@ -1,11 +1,14 @@
 // Shop Module - Hooks
 
+import { useState, useEffect } from 'react';
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { productRepository } from './repository';
 import { cartRepository } from './cartRepository';
 import { wishlistRepository } from './wishlistRepository';
 import { ProductFilter, DEFAULT_PRODUCT_FILTER, SortOption } from './types';
 import { useAuthContext } from '../../infrastructure/auth/AuthContext';
+import type { Product } from './types';
+import { getProductCacheAsync } from './generator';
 
 export const shopKeys = {
   all: ['shop'] as const,
@@ -147,4 +150,22 @@ export function useWishlist() {
     toggleWishlist,
     isInWishlist,
   };
+}
+
+export function useProductCache(): Product[] {
+  const [cache, setCache] = useState<Product[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    getProductCacheAsync().then((products) => {
+      if (!cancelled) {
+        setCache(products);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return cache;
 }

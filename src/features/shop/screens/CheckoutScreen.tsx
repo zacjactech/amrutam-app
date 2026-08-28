@@ -3,6 +3,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useCart } from '../hooks';
+import { ShopNavigation } from '../types';
 import { Button } from '../../../shared/components/Button';
 import { AppText } from '../../../shared/components/AppText';
 import { Card } from '../../../shared/components/Card';
@@ -13,10 +14,7 @@ import { useThemeColors, useThemeSpacing } from '../../../shared/components/Them
 type PaymentMethod = 'upi' | 'card';
 
 interface CheckoutScreenProps {
-  navigation: {
-    goBack: () => void;
-    navigate: (screen: string) => void;
-  };
+  navigation: ShopNavigation;
 }
 
 export function CheckoutScreen({ navigation }: CheckoutScreenProps) {
@@ -39,10 +37,20 @@ export function CheckoutScreen({ navigation }: CheckoutScreenProps) {
   const discount = Math.round(subtotal * 0.05);
   const total = subtotal - discount + deliveryFee;
 
-  const handlePlaceOrder = useCallback(() => {
-    void clearCart.mutate();
-    navigation.navigate('OrderSuccess');
-  }, [clearCart, navigation]);
+  const [isPlacing, setIsPlacing] = useState(false);
+
+  const handlePlaceOrder = useCallback(async () => {
+    if (isPlacing) return;
+    setIsPlacing(true);
+    try {
+      await clearCart.mutateAsync();
+      navigation.navigate('OrderSuccess');
+    } catch {
+      navigation.navigate('OrderFailed');
+    } finally {
+      setIsPlacing(false);
+    }
+  }, [clearCart, navigation, isPlacing]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
@@ -88,10 +96,7 @@ export function CheckoutScreen({ navigation }: CheckoutScreenProps) {
             </TouchableOpacity>
           </View>
           <AppText variant="body" style={{ color: colors.text.secondary, lineHeight: 22 }}>
-            Priya Sharma{'\n'}
-            42, MG Road, Indiranagar{'\n'}
-            Bangalore, Karnataka - 560038{'\n'}
-            Phone: +91 98765 43210
+            Please add your delivery address to continue.
           </AppText>
         </Card>
 
@@ -149,10 +154,12 @@ export function CheckoutScreen({ navigation }: CheckoutScreenProps) {
           </AppText>
         </View>
         <Button
-          title={`Place Order · ₹${total.toLocaleString('en-IN')}`}
+          title={isPlacing ? 'Placing order...' : `Place Order · ₹${total.toLocaleString('en-IN')}`}
           variant="primary"
           size="large"
           onPress={handlePlaceOrder}
+          disabled={isPlacing || cartItems.length === 0}
+          loading={isPlacing}
           style={{ width: '100%' }}
         />
       </View>

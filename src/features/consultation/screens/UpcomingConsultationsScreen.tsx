@@ -5,9 +5,9 @@ import {
   View,
   StyleSheet,
   TouchableOpacity,
-  FlatList,
   ActivityIndicator,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 import { useBookings, useDoctor, useHasReviewedBooking } from '../hooks';
 import { Booking, BookingStatus } from '../types';
@@ -175,7 +175,7 @@ export function UpcomingConsultationsScreen({
         </View>
       )}
 
-      <FlatList
+      <FlashList
         data={displayedBookings}
         renderItem={renderBooking}
         keyExtractor={(item) => item.id}

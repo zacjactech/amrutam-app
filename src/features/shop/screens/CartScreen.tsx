@@ -1,30 +1,27 @@
 // Shop Module - Cart Screen (S08)
 
 import React, { useCallback, useMemo } from 'react';
-import { View, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import { useCart } from '../hooks';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
+import { useCart, useProductCache } from '../hooks';
 import { CartItemComponent } from '../components/CartItem';
 import { ProductCard } from '../components/ProductCard';
 import { Button } from '../../../shared/components/Button';
 import { AppText } from '../../../shared/components/AppText';
 import { AppSkeleton } from '../../../shared/components/AppSkeleton';
-import { getProductCache } from '../generator';
-import { CartItem, Product } from '../types';
+import { CartItem, Product, ShopNavigation } from '../types';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
 import { ShoppingBag } from '../../../shared/assets/icons';
 
 interface CartScreenProps {
-  navigation: {
-    goBack: () => void;
-    navigate: (screen: string, params?: Record<string, unknown>) => void;
-  };
+  navigation: ShopNavigation;
 }
 
 export function CartScreen({ navigation }: CartScreenProps) {
   const colors = useThemeColors();
   const spacing = useThemeSpacing();
   const { data: cartItems = [], isLoading, updateCartQuantity, removeFromCart } = useCart();
-  const productCache = getProductCache();
+  const productCache = useProductCache();
 
   const getProduct = useCallback(
     (productId: string): Product | undefined => productCache.find((p) => p.id === productId),
@@ -120,7 +117,7 @@ export function CartScreen({ navigation }: CartScreenProps) {
             </View>
           </View>
 
-          <FlatList
+          <FlashList
             data={cartItems}
             renderItem={renderItem}
             keyExtractor={(item) => item.productId}

@@ -1,7 +1,6 @@
 // Consultation Module - Repository (Supabase)
 
 import { Doctor, ConsultationSlot, Booking, DoctorFilter } from './types';
-import { generateIdempotencyKey } from '../../domain/businessLogic';
 import { supabase } from '../../infrastructure/supabase/client';
 import { Database } from '../../infrastructure/supabase/database.types';
 
@@ -183,7 +182,7 @@ export const consultationRepository = {
   },
 
   async createBooking(request: BookingRequest): Promise<Booking> {
-    const idempotencyKey = generateIdempotencyKey(request.patientId, request.slotId);
+    const idempotencyKey = `booking:${request.patientId}:${request.slotId}`;
     const bookingId = `bk_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 
     const { data, error } = await supabase

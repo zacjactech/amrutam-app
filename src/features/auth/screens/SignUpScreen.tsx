@@ -1,23 +1,16 @@
 // Auth Module - Sign Up Screen
 
 import React, { useState } from 'react';
-import {
-  View,
-  StyleSheet,
-  ScrollView,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  Animated,
-} from 'react-native';
-import { AppText } from '../../../shared/components/AppText';
+import { View, Text, StyleSheet, Alert, Keyboard, TouchableOpacity } from 'react-native';
 import { Button } from '../../../shared/components/Button';
 import { Input } from '../../../shared/components/Input';
-import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
-import { useIconEntrance, useTextEntrance, useButtonEntrance } from '../../../shared/hooks/useEntranceAnimation';
-import Leaf from '../../../../assets/icons/leaf.svg';
+import { CountryCodePicker } from '../../../shared/components/CountryCodePicker';
+import { useThemeColors } from '../../../shared/components/ThemeProvider';
 import { useAuthContext } from '../../../infrastructure/auth/AuthContext';
-import { validatePhone, formatPhoneInput, toE164Phone } from '../../../shared/utils/phoneValidation';
+import { validatePhone, formatLocalPhoneInput, toE164Phone } from '../../../shared/utils/phoneValidation';
+import { usePersistedCountryCode } from '../../../shared/hooks/usePersistedCountryCode';
+import { AuthLayout } from '../components/AuthLayout';
+import { AuthHeader } from '../components/AuthHeader';
 
 interface SignUpScreenProps {
   navigation: {
@@ -28,18 +21,28 @@ interface SignUpScreenProps {
 
 export function SignUpScreen({ navigation }: SignUpScreenProps) {
   const colors = useThemeColors();
-  const spacing = useThemeSpacing();
   const { signInWithPhone } = useAuthContext();
   const [name, setName] = useState('');
-  const [phone, setPhone] = useState('+91 ');
+  const [phone, setPhone] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const { selectedCountry, setSelectedCountry, recentCountries } = usePersistedCountryCode();
+  const [showCountryPicker, setShowCountryPicker] = useState(false);
 
   const handleContinue = async () => {
+    Keyboard.dismiss();
     const trimmedName = name.trim();
-    const raw = toE164Phone(phone);
+    
+    // Build full phone number with country code
+    const fullPhone = `${selectedCountry.dialCode}${phone}`;
+    const raw = toE164Phone(fullPhone);
 
     if (!trimmedName) {
       Alert.alert('Name required', 'Please enter your full name.');
+      return;
+    }
+
+    if (trimmedName.length < 2) {
+      Alert.alert('Name too short', 'Please enter your full name (at least 2 characters).');
       return;
     }
 
@@ -61,92 +64,116 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
     navigation.navigate('OTPVerification', { phone: raw, name: trimmedName });
   };
 
-  const iconStyle = useIconEntrance({ delay: 100, duration: 500 });
-  const titleStyle = useTextEntrance({ delay: 300, duration: 450 });
-  const bodyStyle = useTextEntrance({ delay: 400, duration: 450 });
-  const buttonStyle = useButtonEntrance({ delay: 500, duration: 400 });
-
   return (
-    <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: colors.background.primary }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={0}
+    <AuthLayout
+      footer={
+        <>
+          <Button
+            title={isSending ? 'Sending OTP...' : 'Continue'}
+            onPress={handleContinue}
+            variant="primary"
+            size="large"
+            disabled={isSending}
+            loading={isSending}
+          />
+          <Button
+            title="Already have an account? Sign In"
+            onPress={() => navigation.goBack()}
+            variant="secondary"
+            size="large"
+          />
+        </>
+      }
     >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-        bounces={false}
-      >
-        <Animated.View style={[styles.iconCircle, iconStyle]}>
-          <Leaf width={56} height={56} color="#2D6A4F" />
-        </Animated.View>
-        <Animated.View style={titleStyle}>
-          <AppText variant="h1" style={{ color: colors.text.primary, textAlign: 'center' }}>
-            Create your account
-          </AppText>
-        </Animated.View>
-        <Animated.View style={bodyStyle}>
-          <AppText variant="body" style={{ color: colors.text.secondary, marginTop: spacing.sm, textAlign: 'center' }}>
-            Fill in your details to get started
-          </AppText>
-        </Animated.View>
-        <View style={{ marginTop: spacing.lg, gap: spacing.md }}>
-          <Input
-            value={name}
-            onChangeText={setName}
-            placeholder="Full name"
-          />
-          <Input
-            value={phone}
-            onChangeText={(text) => setPhone(formatPhoneInput(text))}
-            placeholder="Phone number"
-            keyboardType="phone-pad"
-            maxLength={15}
-          />
+      <AuthHeader
+        title="Create your account"
+        description="Fill in your details to get started"
+      />
+      <View style={styles.form}>
+        <Input
+          value={name}
+          onChangeText={setName}
+          placeholder="Full name"
+          returnKeyType="next"
+          textContentType="name"
+          autoCapitalize="words"
+        />
+        <View style={styles.phoneContainer}>
+          <TouchableOpacity
+            style={[
+              styles.countrySelector,
+              {
+                borderColor: colors.border.default,
+                backgroundColor: colors.surface.default,
+              },
+            ]}
+            onPress={() => setShowCountryPicker(true)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.flag}>{selectedCountry.flag}</Text>
+            <Text style={[styles.dialCode, { color: colors.text.primary }]}>
+              {selectedCountry.dialCode}
+            </Text>
+            <Text style={[styles.chevron, { color: colors.text.tertiary }]}>▼</Text>
+          </TouchableOpacity>
+          <View style={styles.phoneInputContainer}>
+            <Input
+              value={phone}
+              onChangeText={(text) => setPhone(formatLocalPhoneInput(text))}
+              placeholder="Phone number"
+              keyboardType="phone-pad"
+              maxLength={15}
+              returnKeyType="done"
+              onSubmitEditing={handleContinue}
+            />
+          </View>
         </View>
-      </ScrollView>
-      <Animated.View style={[styles.buttons, buttonStyle]}>
-        <Button
-          title={isSending ? 'Sending OTP...' : 'Continue'}
-          onPress={handleContinue}
-          variant="primary"
-          disabled={isSending}
-        />
-        <Button
-          title="Already have an account? Sign In"
-          onPress={() => navigation.goBack()}
-          variant="secondary"
-        />
-      </Animated.View>
-    </KeyboardAvoidingView>
+      </View>
+
+      <CountryCodePicker
+        visible={showCountryPicker}
+        onClose={() => setShowCountryPicker(false)}
+        onSelect={setSelectedCountry}
+        selectedCountry={selectedCountry}
+        recentCountries={recentCountries}
+      />
+    </AuthLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingTop: 80,
-    paddingBottom: 24,
-  },
-  iconCircle: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: '#D1FAE5',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  buttons: {
-    paddingHorizontal: 24,
-    paddingBottom: 60,
-    paddingTop: 12,
+  form: {
+    width: '100%',
     gap: 12,
+    marginTop: 8,
+  },
+  phoneContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  countrySelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    height: 48,
+    minWidth: 100,
+  },
+  flag: {
+    fontSize: 20,
+    marginRight: 6,
+  },
+  dialCode: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  chevron: {
+    fontSize: 10,
+    marginLeft: 6,
+  },
+  phoneInputContainer: {
+    flex: 1,
   },
 });

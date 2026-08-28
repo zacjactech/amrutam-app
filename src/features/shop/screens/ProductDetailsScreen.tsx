@@ -4,6 +4,7 @@ import React, { useState, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Image } from 'expo-image';
 import { useProduct, useCart } from '../hooks';
+import { ShopNavigation } from '../types';
 import { Button } from '../../../shared/components/Button';
 import { AppText } from '../../../shared/components/AppText';
 import { WishlistButton } from '../components/WishlistButton';
@@ -21,10 +22,7 @@ interface ProductDetailsScreenProps {
   route: {
     params: { productId: string };
   };
-  navigation: {
-    goBack: () => void;
-    navigate: (screen: string, params?: Record<string, unknown>) => void;
-  };
+  navigation: ShopNavigation;
 }
 
 export function ProductDetailsScreen({ route, navigation }: ProductDetailsScreenProps) {
@@ -37,11 +35,9 @@ export function ProductDetailsScreen({ route, navigation }: ProductDetailsScreen
 
   const handleAddToCart = useCallback(() => {
     if (product) {
-      for (let i = 0; i < quantity; i++) {
-        void addToCart.mutate({ productId: product.id, unitPrice: product.price });
-      }
+      void addToCart.mutate({ productId: product.id, unitPrice: product.price });
     }
-  }, [product, quantity, addToCart]);
+  }, [product, addToCart]);
 
   const handleQuantityIncrease = useCallback(() => {
     setQuantity((q) => q + 1);

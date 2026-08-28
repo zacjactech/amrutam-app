@@ -30,15 +30,27 @@ const DEFAULT_DURATION = 3000;
 
 export function ToastProvider({ children }: { children: ReactNode }): React.JSX.Element {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const timersRef = React.useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+  React.useEffect(() => {
+    const currentTimers = timersRef.current;
+    return () => {
+      // Clean up all timers on unmount
+      currentTimers.forEach((timer) => clearTimeout(timer));
+      currentTimers.clear();
+    };
+  }, []);
 
   const showToast = useCallback(
     (message: string, variant: ToastVariant = 'info', duration = DEFAULT_DURATION) => {
       const id = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
       const newToast: ToastItem = { id, message, variant, duration };
       setToasts((prev) => [...prev, newToast]);
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         setToasts((prev) => prev.filter((t) => t.id !== id));
+        timersRef.current.delete(id);
       }, duration);
+      timersRef.current.set(id, timer);
     },
     [],
   );

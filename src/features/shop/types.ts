@@ -1,4 +1,8 @@
-// Shop Module - Product Types
+// Shop Module - Types
+
+import type { Product, CartItem, WishlistItem } from '../../shared/types';
+
+export type { Product, CartItem, WishlistItem };
 
 export type ProductCategory =
   | 'Herbal Supplements'
@@ -55,28 +59,19 @@ export const PRODUCT_CATEGORIES: readonly ProductCategory[] = [
   'Home Remedies',
 ] as const;
 
-export interface Product {
-  id: string;
-  name: string;
-  description: string;
-  category: ProductCategory;
-  price: number;
-  currency: string;
-  imageUrl: string;
-  rating: number;
-  reviewCount: number;
-  stock: number;
-  tags: string[];
-}
+export type ShopNavigation = {
+  navigate: (screen: string, params?: Record<string, unknown>) => void;
+  goBack: () => void;
+};
 
-export interface CartItem {
-  productId: string;
-  quantity: number;
-  unitPrice: number;
-  updatedAt: string;
-}
-
-export interface WishlistItem {
-  productId: string;
-  addedAt: string;
-}
+export type ShopStackParamList = {
+  ShopHome: undefined;
+  ProductList: undefined;
+  ProductSearch: undefined;
+  ProductDetails: { productId: string };
+  Wishlist: undefined;
+  Cart: undefined;
+  Checkout: undefined;
+  OrderSuccess: undefined;
+  OrderFailed: undefined;
+};

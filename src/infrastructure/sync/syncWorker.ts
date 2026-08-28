@@ -143,18 +143,23 @@ async function processOperation(operation: SyncOperation): Promise<SyncResult> {
   logger.info('Processing sync operation', { operationId: operation.id, type: operation.type });
 
   try {
-    const payload = JSON.parse(operation.payload);
+    let payload: unknown;
+    try {
+      payload = JSON.parse(operation.payload);
+    } catch {
+      return { success: false, operationId: operation.id, error: 'Invalid sync operation payload' };
+    }
     let result: SyncResult;
 
     switch (operation.type) {
       case 'booking':
-        result = await processBookingSync(payload);
+        result = await processBookingSync(payload as BookingPayload);
         break;
       case 'cart_update':
-        result = await processCartSync(payload);
+        result = await processCartSync(payload as CartSyncPayload);
         break;
       case 'wishlist_update':
-        result = await processWishlistSync(payload);
+        result = await processWishlistSync(payload as WishlistSyncPayload);
         break;
       default:
         result = { success: false, operationId: operation.id, error: `Unknown operation type: ${operation.type}` };
@@ -190,6 +195,7 @@ interface BookingPayload {
   patientId: string;
   consultationType?: string;
   notes?: string;
+  localBookingId?: string;
 }
 
 async function processBookingSync(payload: BookingPayload): Promise<SyncResult> {
@@ -204,7 +210,7 @@ async function processBookingSync(payload: BookingPayload): Promise<SyncResult> 
       patient_id: payload.patientId,
       slot_id: payload.slotId,
       consultation_type: payload.consultationType ?? 'video',
-      status: 'pending_sync',
+      status: 'confirmed',
       idempotency_key: idempotencyKey,
       notes: payload.notes ?? null,
     })
@@ -212,14 +218,12 @@ async function processBookingSync(payload: BookingPayload): Promise<SyncResult> 
     .single();
 
   if (error) {
-    // Check for conflict (slot already booked)
     if (error.code === '23505' || error.message?.includes('unique')) {
       return { success: false, operationId: '', error: 'Slot already booked', conflict: true };
     }
     return { success: false, operationId: '', error: error.message };
   }
 
-  // Also mark the slot as booked
   const { error: slotError } = await supabase
     .from('slots')
     .update({ is_booked: true })
@@ -230,6 +234,17 @@ async function processBookingSync(payload: BookingPayload): Promise<SyncResult> 
   }
 
   logger.info('Booking synced to Supabase', { bookingId: data.id });
+  
+  if (payload.localBookingId) {
+    const db = await getDatabase();
+    const now = new Date().toISOString();
+    await db.runAsync(
+      `UPDATE bookings SET status = 'confirmed', updated_at = ?, sync_operation_id = ? WHERE id = ?`,
+      [now, data.id, payload.localBookingId],
+    );
+    logger.debug('Local booking status updated after sync', { localBookingId: payload.localBookingId, remoteBookingId: data.id });
+  }
+  
   return { success: true, operationId: data.id };
 }
 
@@ -301,7 +316,7 @@ async function processWishlistSync(payload: WishlistSyncPayload): Promise<SyncRe
 // ─── Public API ─────────────────────────────────────────────────────────────
 
 export async function enqueueBookingSync(
-  bookingData: { doctorId: string; slotId: string; patientId: string },
+  bookingData: { doctorId: string; slotId: string; patientId: string; localBookingId?: string },
 ): Promise<string> {
   const idempotencyKey = generateIdempotencyKey('booking', bookingData.patientId, bookingData.slotId);
   return enqueueOperation('booking', bookingData, idempotencyKey);
@@ -317,8 +332,8 @@ export async function enqueueWishlistSync(wishlistData: WishlistSyncPayload): Pr
   return enqueueOperation('wishlist_update', wishlistData, idempotencyKey);
 }
 
-export async function processSyncQueue(): Promise<{ processed: number; succeeded: number; failed: number; conflicts: number }> {
-  const result = { processed: 0, succeeded: 0, failed: 0, conflicts: 0 };
+export async function processSyncQueue(): Promise<{ processed: number; succeeded: number; failed: number; conflicts: number; permanentlyFailed: number }> {
+  const result = { processed: 0, succeeded: 0, failed: 0, conflicts: 0, permanentlyFailed: 0 };
   const t0 = Date.now();
 
   logger.info('Starting sync queue processing');
@@ -344,6 +359,7 @@ export async function processSyncQueue(): Promise<{ processed: number; succeeded
     } else if (operation.attemptCount + 1 >= MAX_RETRIES) {
       await markOperationFailed(operation.id, syncResult.error ?? 'Max retries exceeded', false);
       result.failed++;
+      result.permanentlyFailed++;
     } else {
       await markOperationFailed(operation.id, syncResult.error ?? 'Unknown error', true);
       result.failed++;

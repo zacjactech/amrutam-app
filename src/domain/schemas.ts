@@ -1,21 +1,9 @@
 // Zod Validation Schemas for Amrutam App
 
 import { z } from 'zod';
+import { env } from '../infrastructure/env';
 
-// ============================================================================
-// Environment Schema
-// ============================================================================
-
-export const envSchema = z.object({
-  APP_ENV: z.enum(['development', 'staging', 'production']),
-  API_TIMEOUT_MS: z.coerce.number().int().positive().max(30000),
-  ENABLE_MOCK_FAILURES: z.coerce.boolean(),
-  ENABLE_PERFORMANCE_LOGGING: z.coerce.boolean(),
-  MOCK_DATASET_SIZE: z.enum(['small', 'full']),
-  ENCRYPTION_KEY: z.string().min(16),
-});
-
-export type Env = z.infer<typeof envSchema>;
+export type Env = typeof env;
 
 // ============================================================================
 // Consultation Schemas
@@ -193,3 +181,4 @@ export type Product = z.infer<typeof productSchema>;
 export type CartItem = z.infer<typeof cartItemSchema>;
 export type HealthRecord = z.infer<typeof healthRecordSchema>;
 export type SyncOperation = z.infer<typeof syncOperationSchema>;
+

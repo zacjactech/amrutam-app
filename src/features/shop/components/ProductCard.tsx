@@ -35,6 +35,7 @@ export const ProductCard = memo(function ProductCard({ product, onPress }: Produ
         style={styles.image}
         contentFit="cover"
         placeholder={{ blurhash: 'LGF5?xYk^6%M%%2e2~qoJ^Rj@AjZ' }}
+        transition={300}
       />
       <View style={styles.info}>
         <AppText variant="body" style={{ color: colors.text.primary, marginBottom: spacing.xs }} numberOfLines={2}>

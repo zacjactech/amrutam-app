@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppText } from '../../../shared/components/AppText';
 import { Avatar } from '../../../shared/components/Avatar';
 import { Button } from '../../../shared/components/Button';
@@ -45,8 +46,8 @@ export function ProfileMainScreen({ navigation }: ProfileMainScreenProps) {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
-      <ScrollView contentContainerStyle={styles.content}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
+      <ScrollView contentContainerStyle={styles.content} keyboardDismissMode="interactive">
         <View style={styles.header}>
           <Avatar size="xl" initials={displayName.charAt(0).toUpperCase()} />
           <AppText variant="h1" style={{ color: colors.text.primary, marginTop: spacing.md }}>
@@ -80,7 +81,7 @@ export function ProfileMainScreen({ navigation }: ProfileMainScreenProps) {
           />
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -90,7 +91,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
-    paddingTop: 60,
+    paddingTop: 16,
   },
   header: {
     alignItems: 'center',

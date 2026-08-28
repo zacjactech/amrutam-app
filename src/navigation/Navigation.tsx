@@ -5,6 +5,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   RootStackParamList,
   MainTabParamList,
@@ -175,7 +176,7 @@ function BookingSuccessNavigator({ route, navigation }: { route: RouteProp<Consu
       date={slotDate.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
       time={slotDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}
       duration={`${durationMinutes} minutes`}
-      bookingId={bookingId.slice(0, 16)}
+      bookingId={bookingId}
       onViewConsultation={() => navigation.navigate('ConsultationDetails', { bookingId })}
       onBackToHome={() => navigation.goBack()}
     />
@@ -257,25 +258,22 @@ function ShopHomeNavigator({ navigation }: { navigation: NavigationProp<ShopStac
   return (
     <ShopHomeScreen
       navigation={{
-        navigate: (screen: string, params?: Record<string, unknown>) =>
-          navigation.navigate(screen as keyof ShopStackParamList, params as never),
-      } as React.ComponentProps<typeof ShopHomeScreen>['navigation']}
+        navigate: (screen, params) => navigation.navigate(screen as keyof ShopStackParamList, params as never),
+        goBack: () => navigation.goBack(),
+      }}
     />
   );
 }
 
 function ProductListNavigator({ route, navigation }: { route: RouteProp<ShopStackParamList, 'ProductList'>; navigation: NavigationProp<ShopStackParamList> }): React.JSX.Element {
   const category = (route.params as { category?: string } | undefined)?.category;
-  const screenProps = category !== undefined
-    ? { params: { category } }
-    : undefined;
   return (
     <ProductListScreen
-      {...{ route: screenProps, navigation: {
+      route={{ params: { category } } as { params: { category?: string } } | undefined}
+      navigation={{
         goBack: () => navigation.goBack(),
-        navigate: (screen: string, params?: { productId: string }) =>
-          navigation.navigate(screen as keyof ShopStackParamList, params as never),
-      }} as React.ComponentProps<typeof ProductListScreen>}
+        navigate: (screen, params) => navigation.navigate(screen as keyof ShopStackParamList, params as never),
+      }}
     />
   );
 }
@@ -285,9 +283,8 @@ function ProductSearchNavigator({ navigation }: { navigation: NavigationProp<Sho
     <ProductSearchScreen
       navigation={{
         goBack: () => navigation.goBack(),
-        navigate: (screen: string, params?: { productId: string }) =>
-          navigation.navigate(screen as keyof ShopStackParamList, params as never),
-      } as React.ComponentProps<typeof ProductSearchScreen>['navigation']}
+        navigate: (screen, params) => navigation.navigate(screen as keyof ShopStackParamList, params as never),
+      }}
     />
   );
 }
@@ -298,9 +295,8 @@ function ProductDetailsNavigator({ route, navigation }: { route: RouteProp<ShopS
       route={{ params: { productId: route.params.productId } }}
       navigation={{
         goBack: () => navigation.goBack(),
-        navigate: (screen: string) =>
-          navigation.navigate(screen as never),
-      } as React.ComponentProps<typeof ProductDetailsScreen>['navigation']}
+        navigate: (screen, params) => navigation.navigate(screen as keyof ShopStackParamList, params as never),
+      }}
     />
   );
 }
@@ -310,9 +306,8 @@ function WishlistNavigator({ navigation }: { navigation: NavigationProp<ShopStac
     <WishlistScreen
       navigation={{
         goBack: () => navigation.goBack(),
-        navigate: (screen: string, params?: { productId: string }) =>
-          navigation.navigate(screen as keyof ShopStackParamList, params as never),
-      } as React.ComponentProps<typeof WishlistScreen>['navigation']}
+        navigate: (screen, params) => navigation.navigate(screen as keyof ShopStackParamList, params as never),
+      }}
     />
   );
 }
@@ -322,9 +317,8 @@ function CartNavigator({ navigation }: { navigation: NavigationProp<ShopStackPar
     <CartScreen
       navigation={{
         goBack: () => navigation.goBack(),
-        navigate: (screen: string) =>
-          navigation.navigate(screen as never),
-      } as React.ComponentProps<typeof CartScreen>['navigation']}
+        navigate: (screen, params) => navigation.navigate(screen as keyof ShopStackParamList, params as never),
+      }}
     />
   );
 }
@@ -393,12 +387,21 @@ function ShopNavigator(): React.JSX.Element {
 
 // ─── Health Records Navigator ─────────────────────────────────────────────────
 
+function AttachmentPreviewNavigator({ route, navigation }: { route: RouteProp<HealthRecordsStackParamList, 'AttachmentPreview'>; navigation: NavigationProp<HealthRecordsStackParamList> }): React.JSX.Element {
+  return (
+    <AttachmentPreviewScreen
+      route={{ params: route.params }}
+      navigation={{ goBack: () => navigation.goBack() }}
+    />
+  );
+}
+
 function HealthRecordsNavigator(): React.JSX.Element {
   return (
     <HealthRecordsStack.Navigator screenOptions={{ headerShown: false }}>
       <HealthRecordsStack.Screen name="Timeline" component={TimelineScreen} />
       <HealthRecordsStack.Screen name="RecordDetail" component={RecordDetailScreen} />
-      <HealthRecordsStack.Screen name="AttachmentPreview" component={AttachmentPreviewScreen} />
+      <HealthRecordsStack.Screen name="AttachmentPreview" component={AttachmentPreviewNavigator} />
       <HealthRecordsStack.Screen name="RecordSearch" component={RecordSearchScreen} />
     </HealthRecordsStack.Navigator>
   );
@@ -420,10 +423,10 @@ function ProfileNavigator(): React.JSX.Element {
 
 function MainTabsWithSyncBar(): React.JSX.Element {
   return (
-    <View style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1 }} edges={['top']}>
       <SyncStatusBar />
       <MainTabsContent />
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -433,9 +436,9 @@ function MainTabsContent(): React.JSX.Element {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#2D6A4F',
+        tabBarActiveTintColor: colors.action.primary,
         tabBarInactiveTintColor: colors.text.tertiary,
-        tabBarStyle: styles.tabBar,
+        tabBarStyle: [styles.tabBar, { backgroundColor: colors.surface.default, borderTopColor: colors.border.default }],
         tabBarLabelStyle: styles.tabLabel,
       }}
     >
@@ -499,9 +502,21 @@ export function Navigation(): React.JSX.Element {
           component={OnboardingScreen}
           options={{ animation: 'fade' }}
         />
-        <RootStack.Screen name="SignIn" component={SignInScreen} />
-        <RootStack.Screen name="SignUp" component={SignUpScreen} />
-        <RootStack.Screen name="OTPVerification" component={OTPVerificationScreen} />
+        <RootStack.Screen
+          name="SignIn"
+          component={SignInScreen}
+          options={{ animation: 'slide_from_right' }}
+        />
+        <RootStack.Screen
+          name="SignUp"
+          component={SignUpScreen}
+          options={{ animation: 'slide_from_right' }}
+        />
+        <RootStack.Screen
+          name="OTPVerification"
+          component={OTPVerificationScreen}
+          options={{ animation: 'slide_from_right' }}
+        />
         <RootStack.Screen name="MainTabs" component={MainTabsWithSyncBar} />
       </RootStack.Navigator>
     </NavigationContainer>

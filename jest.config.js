@@ -3,7 +3,7 @@
 module.exports = {
   testEnvironment: 'node',
   transform: {
-    '^.+\\.(ts|tsx)$': ['ts-jest', { tsconfig: 'tsconfig.json' }],
+    '^.+\\.(ts|tsx)$': ['ts-jest', { tsconfig: 'tsconfig.test.json' }],
   },
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',

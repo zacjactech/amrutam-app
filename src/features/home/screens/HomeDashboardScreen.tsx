@@ -197,7 +197,6 @@ export function HomeDashboardScreen({ navigation }: HomeDashboardScreenProps) {
   const recordsQuery = useHealthRecords({ searchQuery: '', types: [], tags: [], fromDate: null, toDate: null });
 
   const isLoading = bookingsQuery.isLoading || productsQuery.isLoading || recordsQuery.isLoading;
-  const hasError = bookingsQuery.isError || productsQuery.isError || recordsQuery.isError;
   const isRefreshing = bookingsQuery.isRefetching || productsQuery.isRefetching || recordsQuery.isRefetching;
 
   const onRefresh = useCallback(() => {
@@ -234,13 +233,16 @@ export function HomeDashboardScreen({ navigation }: HomeDashboardScreenProps) {
 
   // ─── Error State ──────────────────────────────────────────────────────────
 
+  const error = bookingsQuery.error ?? productsQuery.error ?? recordsQuery.error;
+  const hasError = bookingsQuery.isError || productsQuery.isError || recordsQuery.isError;
+
   if (hasError && !isLoading) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
         <AppErrorState
-          error={bookingsQuery.error ?? productsQuery.error ?? recordsQuery.error}
+          error={error}
           title="Unable to load dashboard"
-          message="Something went wrong while loading your data. Please try again."
+          message="Some content couldn't load. Pull to retry or try again later."
           onRetry={onRefresh}
           actionLabel="Try again"
         />
