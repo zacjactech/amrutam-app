@@ -13,7 +13,6 @@ import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 import { useDoctors } from '../hooks';
 import { Doctor, DoctorFilter, DEFAULT_DOCTOR_FILTER } from '../types';
-import { Badge } from '../../../shared/components/Badge';
 import { Button } from '../../../shared/components/Button';
 import { AppText } from '../../../shared/components/AppText';
 import { AppEmptyState, AppErrorState } from '../../../shared/components';

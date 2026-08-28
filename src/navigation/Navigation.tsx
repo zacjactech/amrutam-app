@@ -4,7 +4,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Text, View, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import {
   RootStackParamList,
   MainTabParamList,
@@ -15,6 +15,9 @@ import {
 } from './types';
 import type { RouteProp, NavigationProp } from '@react-navigation/native';
 import { useThemeColors } from '../shared/components/ThemeProvider';
+
+// SVG Icons
+import { TabHome, TabConsults, TabShop, TabRecords, TabProfile } from '../shared/assets/icons';
 
 import { SplashScreen } from '../features/auth/screens/SplashScreen';
 import { OnboardingScreen } from '../features/auth/screens/OnboardingScreen';
@@ -58,6 +61,7 @@ import { SettingsScreen } from '../features/profile/screens/SettingsScreen';
 import { NotificationsScreen } from '../features/profile/screens/NotificationsScreen';
 
 import { ConnectionIndicator } from '../shared/components/ConnectionIndicator';
+import { SyncStatusBar } from '../shared/components/SyncStatusBar';
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -410,7 +414,16 @@ function ProfileNavigator(): React.JSX.Element {
 
 // ─── Main Tabs ────────────────────────────────────────────────────────────────
 
-function MainTabs(): React.JSX.Element {
+function MainTabsWithSyncBar(): React.JSX.Element {
+  return (
+    <View style={{ flex: 1 }}>
+      <SyncStatusBar />
+      <MainTabsContent />
+    </View>
+  );
+}
+
+function MainTabsContent(): React.JSX.Element {
   const colors = useThemeColors();
   return (
     <Tab.Navigator
@@ -427,7 +440,7 @@ function MainTabs(): React.JSX.Element {
         component={HomeDashboardScreen}
         options={{
           tabBarLabel: 'Home',
-          tabBarIcon: ({ color }) => <Text style={[styles.tabIcon, { color }]}>{'\u2302'}</Text>,
+          tabBarIcon: ({ color }) => <TabHome width={24} height={24} color={color} />,
         }}
       />
       <Tab.Screen
@@ -435,7 +448,7 @@ function MainTabs(): React.JSX.Element {
         component={ConsultationNavigator}
         options={{
           tabBarLabel: 'Consult',
-          tabBarIcon: ({ color }) => <Text style={[styles.tabIcon, { color }]}>{'\u2695'}</Text>,
+          tabBarIcon: ({ color }) => <TabConsults width={24} height={24} color={color} />,
         }}
       />
       <Tab.Screen
@@ -443,7 +456,7 @@ function MainTabs(): React.JSX.Element {
         component={ShopNavigator}
         options={{
           tabBarLabel: 'Shop',
-          tabBarIcon: ({ color }) => <Text style={[styles.tabIcon, { color }]}>{'\uD83D\uDECD'}</Text>,
+          tabBarIcon: ({ color }) => <TabShop width={24} height={24} color={color} />,
         }}
       />
       <Tab.Screen
@@ -451,7 +464,7 @@ function MainTabs(): React.JSX.Element {
         component={HealthRecordsNavigator}
         options={{
           tabBarLabel: 'Records',
-          tabBarIcon: ({ color }) => <Text style={[styles.tabIcon, { color }]}>{'\uD83D\uDCCB'}</Text>,
+          tabBarIcon: ({ color }) => <TabRecords width={24} height={24} color={color} />,
         }}
       />
       <Tab.Screen
@@ -459,7 +472,7 @@ function MainTabs(): React.JSX.Element {
         component={ProfileNavigator}
         options={{
           tabBarLabel: 'Profile',
-          tabBarIcon: ({ color }) => <Text style={[styles.tabIcon, { color }]}>{'\uD83D\uDC64'}</Text>,
+          tabBarIcon: ({ color }) => <TabProfile width={24} height={24} color={color} />,
         }}
       />
     </Tab.Navigator>
@@ -485,7 +498,7 @@ export function Navigation(): React.JSX.Element {
         <RootStack.Screen name="SignIn" component={SignInScreen} />
         <RootStack.Screen name="SignUp" component={SignUpScreen} />
         <RootStack.Screen name="OTPVerification" component={OTPVerificationScreen} />
-        <RootStack.Screen name="MainTabs" component={MainTabs} />
+        <RootStack.Screen name="MainTabs" component={MainTabsWithSyncBar} />
       </RootStack.Navigator>
     </NavigationContainer>
   );
@@ -501,9 +514,6 @@ const styles = StyleSheet.create({
     height: 60,
     paddingBottom: 8,
     paddingTop: 8,
-  },
-  tabIcon: {
-    fontSize: 20,
   },
   tabLabel: {
     fontSize: 11,

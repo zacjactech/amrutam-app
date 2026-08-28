@@ -3,13 +3,14 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
 import { useThemeColors, useThemeSpacing } from './ThemeProvider';
+import { TabHome, TabConsults, TabShop, TabRecords, TabProfile } from '../assets/icons';
 
 type TabKey = 'home' | 'consults' | 'shop' | 'records' | 'profile';
 
 interface TabItem {
   key: TabKey;
   label: string;
-  icon: string;
+  icon: React.ComponentType<{ width: number; height: number; color?: string }>;
 }
 
 interface TabBarProps {
@@ -19,11 +20,11 @@ interface TabBarProps {
 }
 
 const TABS: TabItem[] = [
-  { key: 'home', label: 'Home', icon: '🏠' },
-  { key: 'consults', label: 'Consults', icon: '🩺' },
-  { key: 'shop', label: 'Shop', icon: '🛒' },
-  { key: 'records', label: 'Records', icon: '📋' },
-  { key: 'profile', label: 'Profile', icon: '👤' },
+  { key: 'home', label: 'Home', icon: TabHome },
+  { key: 'consults', label: 'Consults', icon: TabConsults },
+  { key: 'shop', label: 'Shop', icon: TabShop },
+  { key: 'records', label: 'Records', icon: TabRecords },
+  { key: 'profile', label: 'Profile', icon: TabProfile },
 ];
 
 export function TabBar({ activeTab, onTabPress, style }: TabBarProps): React.JSX.Element {
@@ -45,6 +46,7 @@ export function TabBar({ activeTab, onTabPress, style }: TabBarProps): React.JSX
     >
       {TABS.map((tab) => {
         const isActive = tab.key === activeTab;
+        const IconComponent = tab.icon;
         return (
           <TouchableOpacity
             key={tab.key}
@@ -52,9 +54,11 @@ export function TabBar({ activeTab, onTabPress, style }: TabBarProps): React.JSX
             onPress={() => onTabPress(tab.key)}
             activeOpacity={0.7}
           >
-            <Text style={[styles.icon, { fontSize: 20, opacity: isActive ? 1 : 0.5 }]}>
-              {tab.icon}
-            </Text>
+            <IconComponent
+              width={24}
+              height={24}
+              color={isActive ? colors.action.primary : colors.text.tertiary}
+            />
             <Text
               style={[
                 styles.label,
@@ -85,9 +89,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  icon: {
-    lineHeight: 24,
   },
   label: {
     fontSize: 11,

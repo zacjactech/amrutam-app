@@ -4,8 +4,8 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Modal } from '../../../shared/components/Modal';
 import { Button } from '../../../shared/components/Button';
-import { AppText } from '../../../shared/components/AppText';
-import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
+import { AlertTriangle } from '../../../shared/assets/icons';
+import { useThemeColors } from '../../../shared/components/ThemeProvider';
 
 interface BookingConflictModalProps {
   visible: boolean;
@@ -19,11 +19,10 @@ export function BookingConflictModal({
   onChooseAnother,
 }: BookingConflictModalProps): React.JSX.Element {
   const colors = useThemeColors();
-  const spacing = useThemeSpacing();
 
   const warningIcon = (
     <View style={[styles.iconContainer, { backgroundColor: colors.status.warningSoft }]}>
-      <AppText variant="h1" style={{ color: colors.status.warning }}>⚠</AppText>
+      <AlertTriangle width={32} height={32} color={colors.status.warning} />
     </View>
   );
 

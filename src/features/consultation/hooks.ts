@@ -6,6 +6,7 @@ import { DoctorFilter, DEFAULT_DOCTOR_FILTER } from './types';
 import { enqueueBookingSync } from '../../infrastructure/sync/syncWorker';
 import { useConnectionStatus } from '../../infrastructure/connectivity/connectionManager';
 import { classifyApiError } from '../../shared/errors/errorClasses';
+import { useAuthContext } from '../../infrastructure/auth/AuthContext';
 
 export const consultationKeys = {
   all: ['consultations'] as const,
@@ -53,40 +54,51 @@ export function useDoctorSlots(doctorId: string) {
   });
 }
 
-export function useBookings(patientId: string) {
+export function useBookings(patientId?: string) {
+  const { patientId: authPatientId, isAuthenticated } = useAuthContext();
+  const effectivePatientId = patientId ?? authPatientId;
+
   return useQuery({
     queryKey: consultationKeys.bookings(),
-    queryFn: () => consultationRepository.getBookings(patientId),
-    enabled: patientId.length > 0,
+    queryFn: () => consultationRepository.getBookings(effectivePatientId!),
+    enabled: isAuthenticated && effectivePatientId !== null && effectivePatientId.length > 0,
   });
 }
 
 export function useBookConsultation() {
   const queryClient = useQueryClient();
   const { isConnected } = useConnectionStatus();
+  const { patientId } = useAuthContext();
 
   return useMutation({
     mutationFn: async (request: BookingRequest) => {
+      const effectivePatientId = request.patientId || patientId;
+      if (!effectivePatientId) {
+        throw new Error('Patient ID not available. Please sign in.');
+      }
+
+      const authenticatedRequest = { ...request, patientId: effectivePatientId };
+
       if (!isConnected) {
         await enqueueBookingSync({
-          doctorId: request.doctorId,
-          slotId: request.slotId,
-          patientId: request.patientId,
+          doctorId: authenticatedRequest.doctorId,
+          slotId: authenticatedRequest.slotId,
+          patientId: authenticatedRequest.patientId,
         });
-        return consultationRepository.createBooking(request);
+        return consultationRepository.createBooking(authenticatedRequest);
       }
 
       try {
-        return await consultationRepository.createBooking(request);
+        return await consultationRepository.createBooking(authenticatedRequest);
       } catch (error) {
         const classified = classifyApiError(error);
         if (classified.category === 'offline' || classified.category === 'retryable') {
           await enqueueBookingSync({
-            doctorId: request.doctorId,
-            slotId: request.slotId,
-            patientId: request.patientId,
+            doctorId: authenticatedRequest.doctorId,
+            slotId: authenticatedRequest.slotId,
+            patientId: authenticatedRequest.patientId,
           });
-          return consultationRepository.createBooking(request);
+          return consultationRepository.createBooking(authenticatedRequest);
         }
         throw error;
       }
@@ -107,6 +119,68 @@ export function useCancelConsultation() {
     mutationFn: (bookingId: string) =>
       consultationRepository.cancelBooking(bookingId),
     onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: consultationKeys.bookings() });
+    },
+  });
+}
+
+// ─── Review Hooks ──────────────────────────────────────────────────────────
+
+import { reviewRepository, SubmitReviewRequest } from './reviewRepository';
+
+export const reviewKeys = {
+  all: ['reviews'] as const,
+  doctorReviews: (doctorId: string) => [...reviewKeys.all, 'doctor', doctorId] as const,
+  bookingReview: (bookingId: string) => [...reviewKeys.all, 'booking', bookingId] as const,
+  hasReviewed: (patientId: string, bookingId: string) => [...reviewKeys.all, 'hasReviewed', patientId, bookingId] as const,
+};
+
+export function useDoctorReviews(doctorId: string) {
+  return useQuery({
+    queryKey: reviewKeys.doctorReviews(doctorId),
+    queryFn: () => reviewRepository.getReviewsByDoctor(doctorId),
+    enabled: doctorId.length > 0,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useBookingReview(bookingId: string) {
+  return useQuery({
+    queryKey: reviewKeys.bookingReview(bookingId),
+    queryFn: () => reviewRepository.getReviewByBooking(bookingId),
+    enabled: bookingId.length > 0,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useHasReviewedBooking(patientId: string | null, bookingId: string) {
+  return useQuery({
+    queryKey: reviewKeys.hasReviewed(patientId ?? '', bookingId),
+    queryFn: () => reviewRepository.hasPatientReviewedBooking(patientId!, bookingId),
+    enabled: patientId !== null && bookingId.length > 0,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useSubmitReview() {
+  const queryClient = useQueryClient();
+  const { patientId } = useAuthContext();
+
+  return useMutation({
+    mutationFn: async (request: Omit<SubmitReviewRequest, 'patientId'>) => {
+      if (!patientId) {
+        throw new Error('Patient ID not available. Please sign in.');
+      }
+
+      return reviewRepository.submitReview({
+        ...request,
+        patientId,
+      });
+    },
+    onSuccess: (_review, variables) => {
+      void queryClient.invalidateQueries({ queryKey: reviewKeys.doctorReviews(variables.doctorId) });
+      void queryClient.invalidateQueries({ queryKey: reviewKeys.bookingReview(variables.bookingId) });
+      void queryClient.invalidateQueries({ queryKey: consultationKeys.doctor(variables.doctorId) });
       void queryClient.invalidateQueries({ queryKey: consultationKeys.bookings() });
     },
   });

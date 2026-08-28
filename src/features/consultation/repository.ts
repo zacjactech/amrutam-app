@@ -1,11 +1,13 @@
-// Consultation Module - Repository
+// Consultation Module - Repository (Supabase)
 
-import { z } from 'zod';
 import { Doctor, ConsultationSlot, Booking, DoctorFilter } from './types';
 import { generateIdempotencyKey } from '../../domain/businessLogic';
-import { doctorSchema, consultationSlotSchema, bookingSchema } from './schemas';
-import { shouldFail, createFailureError } from '../../infrastructure/testing/failureInjector';
-import { apiRequest } from '../../infrastructure/api/apiClient';
+import { supabase } from '../../infrastructure/supabase/client';
+import { Database } from '../../infrastructure/supabase/database.types';
+
+type DoctorRow = Database['public']['Tables']['doctors']['Row'];
+type SlotRow = Database['public']['Tables']['slots']['Row'];
+type BookingRow = Database['public']['Tables']['bookings']['Row'];
 
 export interface PaginationParams {
   page: number;
@@ -28,44 +30,53 @@ export interface BookingRequest {
   notes?: string;
 }
 
-function applyFilter(doctors: Doctor[], filter: DoctorFilter): Doctor[] {
-  return doctors.filter((doctor) => {
-    if (filter.searchQuery.length > 0) {
-      const query = filter.searchQuery.toLowerCase();
-      const nameMatch = doctor.name.toLowerCase().includes(query);
-      const specMatch = doctor.specialization.toLowerCase().includes(query);
-      const clinicMatch = doctor.clinicName.toLowerCase().includes(query);
-      if (!nameMatch && !specMatch && !clinicMatch) {
-        return false;
-      }
-    }
+function mapDoctorRowToDoctor(row: DoctorRow): Doctor {
+  const availability = row.availability as { isAvailable: boolean; nextAvailableSlot: string | null; slotDuration: number };
+  return {
+    id: row.id,
+    name: row.name,
+    photoUrl: row.photo_url,
+    specialization: row.specialization,
+    experience: row.experience,
+    rating: row.rating,
+    reviewCount: row.review_count,
+    consultationFee: row.consultation_fee,
+    languages: row.languages,
+    availability: {
+      isAvailable: availability.isAvailable,
+      nextAvailableSlot: availability.nextAvailableSlot,
+      slotDuration: availability.slotDuration,
+    },
+    bio: row.bio,
+    clinicName: row.clinic_name,
+    clinicAddress: row.clinic_address,
+  };
+}
 
-    if (filter.specialization !== null && doctor.specialization !== filter.specialization) {
-      return false;
-    }
+function mapSlotRowToSlot(row: SlotRow): ConsultationSlot {
+  return {
+    id: row.id,
+    doctorId: row.doctor_id,
+    startTime: row.start_time,
+    endTime: row.end_time,
+    isBooked: row.is_booked,
+    consultationType: row.consultation_type as ConsultationSlot['consultationType'],
+  };
+}
 
-    if (filter.minExperience !== null && doctor.experience < filter.minExperience) {
-      return false;
-    }
-
-    if (filter.maxFee !== null && doctor.consultationFee > filter.maxFee) {
-      return false;
-    }
-
-    if (filter.minRating !== null && doctor.rating < filter.minRating) {
-      return false;
-    }
-
-    if (filter.language !== null && !doctor.languages.includes(filter.language)) {
-      return false;
-    }
-
-    if (filter.availableOnly && !doctor.availability.isAvailable) {
-      return false;
-    }
-
-    return true;
-  });
+function mapBookingRowToBooking(row: BookingRow): Booking {
+  return {
+    id: row.id,
+    doctorId: row.doctor_id,
+    patientId: row.patient_id,
+    slotId: row.slot_id,
+    consultationType: row.consultation_type as Booking['consultationType'],
+    status: row.status as Booking['status'],
+    idempotencyKey: row.idempotency_key,
+    notes: row.notes ?? undefined,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
 }
 
 export const consultationRepository = {
@@ -74,170 +85,167 @@ export const consultationRepository = {
     pagination: PaginationParams,
     sortBy: 'rating' | 'experience' | 'fee' | 'name' = 'rating',
   ): Promise<PaginatedResult<Doctor>> {
-    const failure = shouldFail({ endpoint: '/doctors', method: 'GET' });
-    if (failure) {
-      throw createFailureError(failure);
-    }
+    const sortColumn = sortBy === 'fee' ? 'consultation_fee' : sortBy;
 
-    const serverSortMap: Record<string, { sort: string; order: string }> = {
-      rating: { sort: 'rating', order: 'desc' },
-      experience: { sort: 'experience', order: 'desc' },
-      fee: { sort: 'consultationFee', order: 'asc' },
-      name: { sort: 'name', order: 'asc' },
-    };
-
-    const { sort, order } = serverSortMap[sortBy] ?? { sort: 'rating', order: 'desc' };
-    const params = new URLSearchParams({
-      _page: String(pagination.page + 1),
-      _limit: String(pagination.pageSize),
-      _sort: sort,
-      _order: order,
-    });
+    let query = supabase
+      .from('doctors')
+      .select('*', { count: 'exact' });
 
     if (filter.searchQuery) {
-      params.set('q', filter.searchQuery);
+      query = query.or(`name.ilike.%${filter.searchQuery}%,specialization.ilike.%${filter.searchQuery}%,clinic_name.ilike.%${filter.searchQuery}%`);
     }
 
-    const doctors = await apiRequest(
-      { method: 'GET', endpoint: `/doctors?${params.toString()}` },
-      z.array(doctorSchema),
-    );
+    if (filter.specialization) {
+      query = query.eq('specialization', filter.specialization);
+    }
 
-    const filtered = applyFilter(doctors, filter);
-    const total = filtered.length;
-    const hasMore = total > pagination.pageSize;
+    if (filter.minExperience !== null) {
+      query = query.gte('experience', filter.minExperience);
+    }
+
+    if (filter.maxFee !== null) {
+      query = query.lte('consultation_fee', filter.maxFee);
+    }
+
+    if (filter.minRating !== null) {
+      query = query.gte('rating', filter.minRating);
+    }
+
+    if (filter.language) {
+      query = query.contains('languages', [filter.language]);
+    }
+
+    if (filter.availableOnly) {
+      query = query.eq('availability->isAvailable', true);
+    }
+
+    const from = pagination.page * pagination.pageSize;
+    const to = from + pagination.pageSize - 1;
+
+    const { data, count, error } = await query
+      .order(sortColumn, { ascending: sortBy === 'name' })
+      .range(from, to);
+
+    if (error) throw error;
+
+    const doctors = (data || []).map(mapDoctorRowToDoctor);
+    const total = count || 0;
 
     return {
-      data: filtered,
+      data: doctors,
       total,
       page: pagination.page,
       pageSize: pagination.pageSize,
-      hasMore,
+      hasMore: total > (pagination.page + 1) * pagination.pageSize,
     };
   },
 
   async getDoctorById(doctorId: string): Promise<Doctor | null> {
-    const failure = shouldFail({ endpoint: `/doctors/${doctorId}`, method: 'GET' });
-    if (failure) {
-      throw createFailureError(failure);
-    }
+    const { data, error } = await supabase
+      .from('doctors')
+      .select('*')
+      .eq('id', doctorId)
+      .single();
 
-    try {
-      return await apiRequest(
-        { method: 'GET', endpoint: `/doctors/${doctorId}` },
-        doctorSchema,
-      );
-    } catch (error) {
-      if (error instanceof Error && error.name === 'ApiError') {
-        return null;
-      }
+    if (error) {
+      if (error.code === 'PGRST116') return null;
       throw error;
     }
+
+    return mapDoctorRowToDoctor(data);
   },
 
   async getDoctorSlots(doctorId: string): Promise<ConsultationSlot[]> {
-    const failure = shouldFail({ endpoint: `/doctors/${doctorId}/slots`, method: 'GET' });
-    if (failure) {
-      throw createFailureError(failure);
-    }
+    const { data, error } = await supabase
+      .from('slots')
+      .select('*')
+      .eq('doctor_id', doctorId)
+      .order('start_time', { ascending: true });
 
-    const slots = await apiRequest(
-      { method: 'GET', endpoint: `/slots?doctorId=${doctorId}` },
-      z.array(consultationSlotSchema),
-    );
+    if (error) throw error;
 
-    return slots;
+    return (data || []).map(mapSlotRowToSlot);
   },
 
   async getAvailableSlots(doctorId: string): Promise<ConsultationSlot[]> {
-    const failure = shouldFail({ endpoint: `/doctors/${doctorId}/slots/available`, method: 'GET' });
-    if (failure) {
-      throw createFailureError(failure);
-    }
+    const now = new Date().toISOString();
+    const { data, error } = await supabase
+      .from('slots')
+      .select('*')
+      .eq('doctor_id', doctorId)
+      .eq('is_booked', false)
+      .gte('start_time', now)
+      .order('start_time', { ascending: true });
 
-    const slots = await this.getDoctorSlots(doctorId);
-    const now = new Date();
-    return slots.filter(
-      (slot) => !slot.isBooked && new Date(slot.startTime) > now,
-    );
+    if (error) throw error;
+
+    return (data || []).map(mapSlotRowToSlot);
   },
 
   async createBooking(request: BookingRequest): Promise<Booking> {
-    const failure = shouldFail({ endpoint: '/bookings', method: 'POST', body: request });
-    if (failure) {
-      throw createFailureError(failure);
-    }
-
     const idempotencyKey = generateIdempotencyKey(request.patientId, request.slotId);
+    const bookingId = `bk_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 
-    const booking = await apiRequest(
-      {
-        method: 'POST',
-        endpoint: '/bookings',
-        body: {
-          doctorId: request.doctorId,
-          patientId: request.patientId,
-          slotId: request.slotId,
-          consultationType: request.consultationType,
-          idempotencyKey,
-          notes: request.notes,
-        },
-      },
-      bookingSchema,
-    );
+    const { data, error } = await supabase
+      .from('bookings')
+      .insert({
+        id: bookingId,
+        doctor_id: request.doctorId,
+        patient_id: request.patientId,
+        slot_id: request.slotId,
+        consultation_type: request.consultationType,
+        status: 'pending_sync',
+        idempotency_key: idempotencyKey,
+        notes: request.notes ?? null,
+      })
+      .select()
+      .single();
 
-    return booking;
+    if (error) throw error;
+
+    return mapBookingRowToBooking(data);
   },
 
-  async getBookings(_patientId: string): Promise<Booking[]> {
-    const failure = shouldFail({ endpoint: '/bookings', method: 'GET' });
-    if (failure) {
-      throw createFailureError(failure);
-    }
+  async getBookings(patientId: string): Promise<Booking[]> {
+    const { data, error } = await supabase
+      .from('bookings')
+      .select('*')
+      .eq('patient_id', patientId)
+      .order('created_at', { ascending: false });
 
-    const bookings = await apiRequest(
-      { method: 'GET', endpoint: '/bookings' },
-      z.array(bookingSchema),
-    );
+    if (error) throw error;
 
-    return bookings;
+    return (data || []).map(mapBookingRowToBooking);
   },
 
   async getBookingById(bookingId: string): Promise<Booking | null> {
-    const failure = shouldFail({ endpoint: `/bookings/${bookingId}`, method: 'GET' });
-    if (failure) {
-      throw createFailureError(failure);
-    }
+    const { data, error } = await supabase
+      .from('bookings')
+      .select('*')
+      .eq('id', bookingId)
+      .single();
 
-    try {
-      return await apiRequest(
-        { method: 'GET', endpoint: `/bookings/${bookingId}` },
-        bookingSchema,
-      );
-    } catch (error) {
-      if (error instanceof Error && error.name === 'ApiError') {
-        return null;
-      }
+    if (error) {
+      if (error.code === 'PGRST116') return null;
       throw error;
     }
+
+    return mapBookingRowToBooking(data);
   },
 
   async cancelBooking(bookingId: string): Promise<Booking | null> {
-    const failure = shouldFail({ endpoint: `/bookings/${bookingId}/cancel`, method: 'POST' });
-    if (failure) {
-      throw createFailureError(failure);
-    }
+    const { data, error } = await supabase
+      .from('bookings')
+      .update({ status: 'cancelled' })
+      .eq('id', bookingId)
+      .select()
+      .single();
 
-    try {
-      return await apiRequest(
-        { method: 'POST', endpoint: `/bookings/${bookingId}/cancel` },
-        bookingSchema,
-      );
-    } catch (error) {
-      if (error instanceof Error && error.name === 'ApiError') {
-        return null;
-      }
+    if (error) {
+      if (error.code === 'PGRST116') return null;
       throw error;
     }
+
+    return mapBookingRowToBooking(data);
   },
 };

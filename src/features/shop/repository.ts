@@ -1,14 +1,10 @@
-// Shop Module - Product Repository
+// Shop Module - Product Repository (Supabase)
 
-import { z } from 'zod';
-import {
-  Product,
-  ProductFilter,
-  SortOption,
-} from './types';
-import { productSchema } from './schemas';
-import { shouldFail, createFailureError } from '../../infrastructure/testing/failureInjector';
-import { apiRequest } from '../../infrastructure/api/apiClient';
+import { Product, ProductFilter, SortOption } from './types';
+import { supabase } from '../../infrastructure/supabase/client';
+import { Database } from '../../infrastructure/supabase/database.types';
+
+type ProductRow = Database['public']['Tables']['products']['Row'];
 
 export interface PaginationParams {
   page: number;
@@ -33,40 +29,35 @@ export interface ProductRepository {
   searchProducts(query: string): Promise<Product[]>;
 }
 
-function applyClientFilters(products: Product[], filter: ProductFilter): Product[] {
-  return products.filter((product) => {
-    if (filter.categories.length > 0 && !filter.categories.includes(product.category)) {
-      return false;
-    }
-    if (filter.minPrice !== null && product.price < filter.minPrice) {
-      return false;
-    }
-    if (filter.maxPrice !== null && product.price > filter.maxPrice) {
-      return false;
-    }
-    if (filter.minRating !== null && product.rating < filter.minRating) {
-      return false;
-    }
-    if (filter.inStockOnly && product.stock <= 0) {
-      return false;
-    }
-    return true;
-  });
+function mapProductRowToProduct(row: ProductRow): Product {
+  return {
+    id: row.id,
+    name: row.name,
+    description: row.description,
+    category: row.category as Product['category'],
+    price: row.price,
+    currency: row.currency,
+    imageUrl: row.image_url,
+    rating: row.rating,
+    reviewCount: row.review_count,
+    stock: row.stock,
+    tags: row.tags,
+  };
 }
 
-function getServerSortParams(sortBy: SortOption): { sort: string; order: string } {
+function getSortColumn(sortBy: SortOption): { column: string; ascending: boolean } {
   switch (sortBy) {
     case 'rating':
-      return { sort: 'rating', order: 'desc' };
+      return { column: 'rating', ascending: false };
     case 'newest':
-      return { sort: 'id', order: 'desc' };
+      return { column: 'created_at', ascending: false };
     case 'price-asc':
-      return { sort: 'price', order: 'asc' };
+      return { column: 'price', ascending: true };
     case 'price-desc':
-      return { sort: 'price', order: 'desc' };
+      return { column: 'price', ascending: false };
     case 'popularity':
     default:
-      return { sort: 'reviewCount', order: 'desc' };
+      return { column: 'review_count', ascending: false };
   }
 }
 
@@ -76,71 +67,81 @@ export const productRepository: ProductRepository = {
     pagination: PaginationParams,
     sortBy: SortOption = 'popularity',
   ): Promise<PaginatedResult<Product>> {
-    const failure = shouldFail({ endpoint: '/products', method: 'GET' });
-    if (failure) {
-      throw createFailureError(failure);
-    }
-
-    const { sort, order } = getServerSortParams(sortBy);
-    const params = new URLSearchParams({
-      _page: String(pagination.page + 1),
-      _limit: String(pagination.pageSize),
-      _sort: sort,
-      _order: order,
-    });
+    let query = supabase
+      .from('products')
+      .select('*', { count: 'exact' });
 
     if (filter.searchQuery) {
-      params.set('q', filter.searchQuery);
+      query = query.or(`name.ilike.%${filter.searchQuery}%,description.ilike.%${filter.searchQuery}%`);
     }
 
-    const products = await apiRequest(
-      { method: 'GET', endpoint: `/products?${params.toString()}` },
-      z.array(productSchema),
-    );
+    if (filter.categories.length > 0) {
+      query = query.in('category', filter.categories);
+    }
 
-    const filtered = applyClientFilters(products, filter);
-    const total = filtered.length;
-    const hasMore = total > pagination.pageSize;
+    if (filter.minPrice !== null) {
+      query = query.gte('price', filter.minPrice);
+    }
+
+    if (filter.maxPrice !== null) {
+      query = query.lte('price', filter.maxPrice);
+    }
+
+    if (filter.minRating !== null) {
+      query = query.gte('rating', filter.minRating);
+    }
+
+    if (filter.inStockOnly) {
+      query = query.gt('stock', 0);
+    }
+
+    const { column, ascending } = getSortColumn(sortBy);
+    const from = pagination.page * pagination.pageSize;
+    const to = from + pagination.pageSize - 1;
+
+    const { data, count, error } = await query
+      .order(column, { ascending })
+      .range(from, to);
+
+    if (error) throw error;
+
+    const products = (data || []).map(mapProductRowToProduct);
+    const total = count || 0;
 
     return {
-      data: filtered,
+      data: products,
       total,
       page: pagination.page,
       pageSize: pagination.pageSize,
-      hasMore,
+      hasMore: total > (pagination.page + 1) * pagination.pageSize,
     };
   },
 
   async getProductById(productId: string): Promise<Product | null> {
-    const failure = shouldFail({ endpoint: `/products/${productId}`, method: 'GET' });
-    if (failure) {
-      throw createFailureError(failure);
-    }
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('id', productId)
+      .single();
 
-    try {
-      return await apiRequest(
-        { method: 'GET', endpoint: `/products/${productId}` },
-        productSchema,
-      );
-    } catch (error) {
-      if (error instanceof Error && error.name === 'ApiError') {
-        return null;
-      }
+    if (error) {
+      if (error.code === 'PGRST116') return null;
       throw error;
     }
+
+    return mapProductRowToProduct(data);
   },
 
   async searchProducts(query: string): Promise<Product[]> {
-    const failure = shouldFail({ endpoint: '/products/search', method: 'GET' });
-    if (failure) {
-      throw createFailureError(failure);
-    }
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .or(`name.ilike.%${query}%,description.ilike.%${query}%`)
+      .order('rating', { ascending: false })
+      .limit(20);
 
-    const products = await apiRequest(
-      { method: 'GET', endpoint: `/products?q=${encodeURIComponent(query)}` },
-      z.array(productSchema),
-    );
+    if (error) throw error;
 
-    return products;
+    return (data || []).map(mapProductRowToProduct);
   },
 };

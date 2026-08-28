@@ -3,20 +3,21 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
-import { useHealthRecords, useRecordTimeline } from '../hooks';
+import { useHealthRecords } from '../hooks';
 import { AppText } from '../../../shared/components/AppText';
 import { AppEmptyState, AppErrorState } from '../../../shared/components';
 import { RecordFilter, DEFAULT_RECORD_FILTER, HealthRecordType, RECORD_TYPE_LABELS, HEALTH_RECORD_TYPES, HealthRecord } from '../types';
 import { groupRecordsByMonth, getHealthRecordCache } from '../generator';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
 import { Button } from '../../../shared/components/Button';
+import { Flask, Pill, Stethoscope, Syringe, AlertTriangle, Shield, Search, IconTag, IconFilter, Close, CheckCircleFilled } from '../../../shared/assets/icons';
 
-const RECORD_TYPE_ICONS: Record<HealthRecordType, string> = {
-  lab_report: '🔬',
-  prescription: '💊',
-  consultation: '🩺',
-  vaccination: '💉',
-  allergy: '⚠️',
+const RECORD_TYPE_ICONS: Record<HealthRecordType, React.ComponentType<{ width: number; height: number; color?: string }>> = {
+  lab_report: Flask,
+  prescription: Pill,
+  consultation: Stethoscope,
+  vaccination: Syringe,
+  allergy: AlertTriangle,
 };
 
 const RECORD_TYPE_DOT_COLORS: Record<HealthRecordType, string> = {
@@ -174,7 +175,7 @@ export function TimelineScreen({ navigation }: TimelineScreenProps) {
               >
                 <View style={styles.recordHeader}>
                   <View style={[styles.recordIconContainer, { backgroundColor: dotColor + '15', width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' }]}>
-                    <AppText variant="body">{RECORD_TYPE_ICONS[record.type]}</AppText>
+                    {(() => { const IconComp = RECORD_TYPE_ICONS[record.type]; return <IconComp width={18} height={18} color={dotColor} />; })()}
                   </View>
                   <View style={{ flex: 1, marginLeft: spacing.sm }}>
                     <AppText variant="body" style={{ color: colors.text.primary, fontWeight: '600' }} numberOfLines={1}>
@@ -208,7 +209,7 @@ export function TimelineScreen({ navigation }: TimelineScreenProps) {
             Health Records
           </AppText>
           <View style={[styles.encryptedBadge, { backgroundColor: colors.action.primarySoft, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, borderRadius: 999, flexDirection: 'row', alignItems: 'center' }]}>
-            <AppText variant="caption" style={{ color: colors.action.primary, marginRight: 4 }}>🛡️</AppText>
+            <Shield width={14} height={14} color={colors.action.primary} style={{ marginRight: 4 }} />
             <AppText variant="caption" style={{ color: colors.action.primary, fontWeight: '600' }}>
               Encrypted
             </AppText>
@@ -220,7 +221,7 @@ export function TimelineScreen({ navigation }: TimelineScreenProps) {
           activeOpacity={0.7}
           style={[styles.searchTrigger, { backgroundColor: colors.background.secondary, borderRadius: 24, paddingHorizontal: spacing.lg, paddingVertical: spacing.md, marginTop: spacing.md, flexDirection: 'row', alignItems: 'center' }]}
         >
-          <AppText variant="body" style={{ color: colors.text.tertiary, marginRight: spacing.sm }}>🔍</AppText>
+          <Search width={18} height={18} color={colors.text.tertiary} style={{ marginRight: spacing.sm }} />
           <AppText variant="body" style={{ color: colors.text.tertiary }}>
             Search your health records...
           </AppText>
@@ -297,7 +298,7 @@ export function TimelineScreen({ navigation }: TimelineScreenProps) {
             activeOpacity={0.7}
             style={[styles.actionButton, { borderColor: colors.border.default, borderWidth: 1, borderRadius: spacing.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, flexDirection: 'row', alignItems: 'center', flex: 1, justifyContent: 'center' }]}
           >
-            <AppText variant="body" style={{ color: colors.text.primary, marginRight: spacing.xs }}>⬡</AppText>
+            <IconFilter width={16} height={16} color={colors.text.primary} style={{ marginRight: spacing.xs }} />
             <AppText variant="body" style={{ color: colors.text.primary }}>
               Filter{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
             </AppText>
@@ -307,7 +308,7 @@ export function TimelineScreen({ navigation }: TimelineScreenProps) {
             activeOpacity={0.7}
             style={[styles.actionButton, { borderColor: colors.border.default, borderWidth: 1, borderRadius: spacing.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, flexDirection: 'row', alignItems: 'center', flex: 1, justifyContent: 'center' }]}
           >
-            <AppText variant="body" style={{ color: colors.text.primary, marginRight: spacing.xs }}>🏷️</AppText>
+            <IconTag width={16} height={16} color={colors.text.primary} style={{ marginRight: spacing.xs }} />
             <AppText variant="body" style={{ color: colors.text.primary }}>
               Tags{filter.tags.length > 0 ? ` (${filter.tags.length})` : ''}
             </AppText>
@@ -315,7 +316,7 @@ export function TimelineScreen({ navigation }: TimelineScreenProps) {
         </View>
       </View>
     ),
-    [colors, spacing, filter.types.length, filter.tags.length, totalRecords, recordCounts, handleFilterTypeToggle, navigation],
+    [colors, spacing, filter.tags.length, totalRecords, recordCounts, handleFilterTypeToggle, navigation, activeFilterCount, filter.types],
   );
 
   const renderFooter = useCallback(
@@ -430,7 +431,7 @@ export function TimelineScreen({ navigation }: TimelineScreenProps) {
 }
 
 function RecordFilterSheetInline({
-  visible,
+  visible: _visible,
   onClose,
   selectedTypes,
   onApply,
@@ -472,7 +473,7 @@ function RecordFilterSheetInline({
         <View style={styles.sheetHeader}>
           <AppText variant="h3" style={{ color: colors.text.primary }}>Filter Records</AppText>
           <TouchableOpacity onPress={onClose}>
-            <AppText variant="h2" style={{ color: colors.text.secondary }}>✕</AppText>
+            <Close width={20} height={20} color={colors.text.secondary} />
           </TouchableOpacity>
         </View>
 
@@ -491,8 +492,7 @@ function RecordFilterSheetInline({
               activeOpacity={0.7}
               style={[styles.filterTypeRow, { paddingVertical: spacing.md, borderBottomColor: colors.border.light }]}
             >
-              <View style={[styles.filterTypeIcon, { backgroundColor: typeColor + '20', width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' }]}>
-                <AppText variant="body">{RECORD_TYPE_ICONS[type]}</AppText>
+              <View style={[styles.filterTypeIcon, { backgroundColor: typeColor + '20', width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' }]}>                  {(() => { const IconComp = RECORD_TYPE_ICONS[type]; return <IconComp width={18} height={18} color={typeColor} />; })()}
               </View>
               <View style={{ flex: 1, marginLeft: spacing.md }}>
                 <AppText variant="body" style={{ color: colors.text.primary, fontWeight: '600' }}>
@@ -503,7 +503,7 @@ function RecordFilterSheetInline({
                 </AppText>
               </View>
               <View style={[styles.checkbox, { width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: isSelected ? typeColor : colors.border.default, backgroundColor: isSelected ? typeColor : 'transparent', justifyContent: 'center', alignItems: 'center' }]}>
-                {isSelected && <AppText variant="caption" style={{ color: '#FFF', fontWeight: '700' }}>✓</AppText>}
+                {isSelected &&                    <CheckCircleFilled width={14} height={14} color="#FFF" />}
               </View>
             </TouchableOpacity>
           );
@@ -519,7 +519,7 @@ function RecordFilterSheetInline({
 }
 
 function TagFilterSheetInline({
-  visible,
+  visible: _visible,
   onClose,
   selectedTags,
   onApply,
@@ -574,7 +574,7 @@ function TagFilterSheetInline({
                 style={[styles.tagChip, { backgroundColor: isSelected ? colors.action.primary : 'transparent', borderColor: isSelected ? colors.action.primary : colors.border.default, borderWidth: 1, borderRadius: 999, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, marginRight: spacing.sm, marginBottom: spacing.sm, flexDirection: 'row', alignItems: 'center' }]}
               >
                 {isSelected && (
-                  <AppText variant="caption" style={{ color: colors.text.inverse, marginRight: spacing.xs }}>✓</AppText>
+                  <CheckCircleFilled width={14} height={14} color={colors.text.inverse} style={{ marginRight: spacing.xs }} />
                 )}
                 <AppText variant="body" style={{ color: isSelected ? colors.text.inverse : colors.text.primary, fontWeight: isSelected ? '600' : '400' }}>
                   {tag}

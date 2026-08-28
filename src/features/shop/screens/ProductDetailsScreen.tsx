@@ -3,7 +3,7 @@
 import React, { useState, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Image } from 'expo-image';
-import { useProduct, useCart, useWishlist } from '../hooks';
+import { useProduct, useCart } from '../hooks';
 import { Button } from '../../../shared/components/Button';
 import { AppText } from '../../../shared/components/AppText';
 import { WishlistButton } from '../components/WishlistButton';
@@ -33,7 +33,6 @@ export function ProductDetailsScreen({ route, navigation }: ProductDetailsScreen
   const { productId } = route.params;
   const { data: product, isLoading, isError } = useProduct(productId);
   const { addToCart } = useCart();
-  const { isInWishlist } = useWishlist();
   const [quantity, setQuantity] = useState(1);
 
   const handleAddToCart = useCallback(() => {
@@ -78,7 +77,6 @@ export function ProductDetailsScreen({ route, navigation }: ProductDetailsScreen
     );
   }
 
-  const inWishlist = isInWishlist(product.id);
   const hasDiscount = product.price > 200;
   const originalPrice = hasDiscount ? Math.round(product.price * 1.2) : null;
   const discountPercent = hasDiscount && originalPrice ? Math.round(((originalPrice - product.price) / originalPrice) * 100) : null;

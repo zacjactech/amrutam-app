@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { View, Text, StyleSheet, Animated, TouchableOpacity } from 'react-native';
+import { SuccessCheckCircle, CheckCircleFilled } from '../assets/icons';
 
 export type ToastVariant = 'success' | 'error' | 'warning' | 'info';
 
@@ -18,11 +19,11 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue | undefined>(undefined);
 
-const TOAST_CONFIG: Record<ToastVariant, { bg: string; text: string; iconCircle: string; icon: string }> = {
-  success: { bg: '#D1FAE5', text: '#2D6A4F', iconCircle: '#2D6A4F', icon: '✓' },
-  error: { bg: '#FEE2E2', text: '#DC2626', iconCircle: '#DC2626', icon: '✕' },
-  warning: { bg: '#FEF3C7', text: '#F59E0B', iconCircle: '#F59E0B', icon: '!' },
-  info: { bg: '#DBEAFE', text: '#3B82F6', iconCircle: '#3B82F6', icon: 'i' },
+const TOAST_CONFIG: Record<ToastVariant, { bg: string; text: string; iconCircle: string }> = {
+  success: { bg: '#D1FAE5', text: '#2D6A4F', iconCircle: '#2D6A4F' },
+  error: { bg: '#FEE2E2', text: '#DC2626', iconCircle: '#DC2626' },
+  warning: { bg: '#FEF3C7', text: '#F59E0B', iconCircle: '#F59E0B' },
+  info: { bg: '#DBEAFE', text: '#3B82F6', iconCircle: '#3B82F6' },
 };
 
 const DEFAULT_DURATION = 3000;
@@ -56,6 +57,20 @@ export function ToastProvider({ children }: { children: ReactNode }): React.JSX.
       </View>
     </ToastContext.Provider>
   );
+}
+
+function ToastIcon({ variant }: { variant: ToastVariant }): React.JSX.Element {
+  switch (variant) {
+    case 'success':
+      return <SuccessCheckCircle width={18} height={18} color="#FFFFFF" />;
+    case 'error':
+      return <CheckCircleFilled width={18} height={18} color="#FFFFFF" />;
+    case 'warning':
+      return <Text style={styles.iconText}>!</Text>;
+    case 'info':
+    default:
+      return <Text style={styles.iconText}>i</Text>;
+  }
 }
 
 function ToastMessage({
@@ -109,7 +124,7 @@ function ToastMessage({
       ]}
     >
       <View style={[styles.iconCircle, { backgroundColor: config.iconCircle }]}>
-        <Text style={styles.iconText}>{config.icon}</Text>
+        <ToastIcon variant={toast.variant} />
       </View>
       <Text style={[styles.message, { color: config.text }]} numberOfLines={2}>
         {toast.message}

@@ -7,6 +7,7 @@ import { AppText } from '../../../shared/components/AppText';
 import { Button } from '../../../shared/components/Button';
 import { DoctorFilter, SPECIALIZATIONS, DEFAULT_DOCTOR_FILTER } from '../types';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
+import { IconCheckContainer } from '../../../shared/assets/icons';
 
 interface FilterSortSheetProps {
   visible: boolean;
@@ -105,7 +106,7 @@ export function FilterSortSheet({
                 onPress={() => { onSortChange(opt.value); onClose(); }}
               >
                 <AppText variant="body" style={{ color: colors.text.primary, flex: 1 }}>{opt.label}</AppText>
-                {active && <AppText variant="body" style={{ color: colors.action.primary }}>✓</AppText>}
+                {active && <IconCheckContainer width={18} height={18} color={colors.action.primary} />}
               </TouchableOpacity>
             );
           })}

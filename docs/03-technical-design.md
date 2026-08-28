@@ -11,7 +11,7 @@
 | Client state | Zustand | Small, explicit UI state |
 | Offline persistence | SQLite | Durable structured local data |
 | Connectivity | NetInfo | Reliable network state integration |
-| API | Fetch/Axios behind adapter | Keep transport replaceable |
+| API | Supabase (PostgreSQL + PostgREST) | Managed backend with real-time, auth, and RLS |
 | Validation | Zod | Validate mock/remote payloads |
 | Testing | Jest + React Native Testing Library | Business/UI tests |
 | E2E | Detox or Maestro | One critical end-to-end flow |
@@ -59,6 +59,7 @@ Screens must never call:
 ```text
 fetch(...)
 axios.get(...)
+supabase.from(...)
 ```
 
 directly.
@@ -74,7 +75,7 @@ Use Case
   ↓
 Repository
   ↓
-ApiClient
+Supabase Client
 ```
 
 ## 6. Data Validation
@@ -101,7 +102,7 @@ Use:
 
 ```text
 .env.development
-.env.test
+.env.staging
 .env.production
 ```
 
@@ -110,7 +111,8 @@ Expose only client-safe values.
 Example:
 
 ```text
-API_BASE_URL
+EXPO_PUBLIC_SUPABASE_URL
+EXPO_PUBLIC_SUPABASE_ANON_KEY
 API_TIMEOUT_MS
 ENABLE_MOCK_FAILURES
 ENABLE_PERFORMANCE_LOGGING

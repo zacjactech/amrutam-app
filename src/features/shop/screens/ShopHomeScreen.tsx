@@ -5,25 +5,25 @@ import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Image } from 'expo-image';
 import { FlashList } from '@shopify/flash-list';
 import { useProducts, useCart } from '../hooks';
-import { ProductCard } from '../components/ProductCard';
 import { AppText } from '../../../shared/components/AppText';
 import { SearchBar } from '../../../shared/components/SearchBar';
-import { Card } from '../../../shared/components/Card';
 import { AppSkeleton } from '../../../shared/components/AppSkeleton';
 import { AppErrorState } from '../../../shared/components/AppErrorState';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
 import { Product } from '../types';
 import { ShoppingIllustration } from '../../../shared/components/Illustrations';
 
+import { Shield, Activities, Star, Heart, ClockCircle, Leaf, AlertTriangle, Flask } from '../../../shared/assets/icons';
+
 const CATEGORIES = [
-  { label: 'Immunity', icon: '🌿' },
-  { label: 'Digestion', icon: '🍵' },
-  { label: 'Skin Care', icon: '✨' },
-  { label: 'Hair Care', icon: '💆' },
-  { label: 'Stress & Sleep', icon: '🧘' },
-  { label: 'Herbal Juices', icon: '🥤' },
-  { label: "Women's", icon: '🌸' },
-  { label: 'Oils', icon: '🫧' },
+  { label: 'Immunity', Icon: Shield },
+  { label: 'Digestion', Icon: Activities },
+  { label: 'Skin Care', Icon: Star },
+  { label: 'Hair Care', Icon: Heart },
+  { label: 'Stress & Sleep', Icon: ClockCircle },
+  { label: 'Herbal Juices', Icon: Leaf },
+  { label: "Women's", Icon: AlertTriangle },
+  { label: 'Oils', Icon: Flask },
 ] as const;
 
 interface ShopHomeScreenProps {
@@ -161,7 +161,7 @@ export function ShopHomeScreen({ navigation }: ShopHomeScreenProps) {
               onPress={() => handleCategoryPress(cat.label)}
               activeOpacity={0.7}
             >
-              <AppText variant="h2">{cat.icon}</AppText>
+              <cat.Icon width={28} height={28} color={colors.action.primary} />
               <AppText variant="caption" style={{ color: colors.text.primary, marginTop: spacing.xs, textAlign: 'center' }}>
                 {cat.label}
               </AppText>

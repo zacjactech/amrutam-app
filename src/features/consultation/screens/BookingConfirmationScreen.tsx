@@ -11,6 +11,7 @@ import {
 import { Image } from 'expo-image';
 import { useDoctor, useBookConsultation } from '../hooks';
 import { ConsultationSlot } from '../types';
+import { useAuthContext } from '../../../infrastructure/auth/AuthContext';
 import { Button } from '../../../shared/components/Button';
 import { AppText } from '../../../shared/components/AppText';
 import { AppErrorState } from '../../../shared/components';
@@ -37,6 +38,7 @@ export function BookingConfirmationScreen({
   const { showToast } = useToast();
   const { data: doctor, isLoading: doctorLoading } = useDoctor(doctorId);
   const bookMutation = useBookConsultation();
+  const { patientId } = useAuthContext();
 
   const slotDate = new Date(slot.startTime);
   const dateStr = slotDate.toLocaleDateString('en-IN', {
@@ -57,7 +59,7 @@ export function BookingConfirmationScreen({
     try {
       const booking = await bookMutation.mutateAsync({
         doctorId: doctor.id,
-        patientId: 'patient_001',
+        patientId: patientId ?? '',
         slotId: slot.id,
         consultationType: slot.consultationType,
       });
@@ -70,7 +72,7 @@ export function BookingConfirmationScreen({
         showToast(msg, 'error');
       }
     }
-  }, [doctor, slot, bookMutation, onBookingSuccess, onConflict, showToast]);
+  }, [doctor, slot, bookMutation, onBookingSuccess, onConflict, showToast, patientId]);
 
   if (doctorLoading) {
     return (

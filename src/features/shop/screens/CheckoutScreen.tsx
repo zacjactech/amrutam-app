@@ -40,13 +40,8 @@ export function CheckoutScreen({ navigation }: CheckoutScreenProps) {
   const total = subtotal - discount + deliveryFee;
 
   const handlePlaceOrder = useCallback(() => {
-    const isSuccess = Math.random() > 0.2;
     void clearCart.mutate();
-    if (isSuccess) {
-      navigation.navigate('OrderSuccess');
-    } else {
-      navigation.navigate('OrderFailed');
-    }
+    navigation.navigate('OrderSuccess');
   }, [clearCart, navigation]);
 
   return (

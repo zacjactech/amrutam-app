@@ -46,6 +46,17 @@ export interface Booking {
   notes?: string | undefined;
 }
 
+export interface DoctorReview {
+  id: string;
+  bookingId: string;
+  doctorId: string;
+  patientId: string;
+  rating: number; // 1-5
+  comment: string | undefined;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type BookingStatus =
   | 'pending_confirmation'
   | 'confirmed'

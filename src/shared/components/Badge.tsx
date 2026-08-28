@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { View, Text, StyleSheet, ViewStyle } from 'react-native';
-import { useThemeColors, useThemeSpacing } from './ThemeProvider';
+import { useThemeSpacing } from './ThemeProvider';
 
 type BadgeVariant = 'confirmed' | 'pending' | 'cancelled' | 'completed' | 'info';
 

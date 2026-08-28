@@ -4,7 +4,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Modal } from '../../../shared/components/Modal';
 import { Button } from '../../../shared/components/Button';
-import { AppText } from '../../../shared/components/AppText';
+import { ClockCircle } from '../../../shared/assets/icons';
 import { useThemeColors } from '../../../shared/components/ThemeProvider';
 
 interface SlotExpiredModalProps {
@@ -22,7 +22,7 @@ export function SlotExpiredModal({
 
   const clockIcon = (
     <View style={[styles.iconContainer, { backgroundColor: colors.background.secondary }]}>
-      <AppText variant="h1" style={{ color: colors.text.tertiary }}>🕐</AppText>
+      <ClockCircle width={32} height={32} color={colors.text.tertiary} />
     </View>
   );
 

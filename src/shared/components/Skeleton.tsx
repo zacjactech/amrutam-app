@@ -1,7 +1,7 @@
 // Skeleton - Animated skeleton loader with shimmer
 
 import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Animated, ViewStyle } from 'react-native';
+import { StyleSheet, Animated, ViewStyle } from 'react-native';
 import { useThemeColors } from './ThemeProvider';
 
 interface SkeletonProps {

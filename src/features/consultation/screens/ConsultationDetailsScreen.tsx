@@ -9,13 +9,12 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { useDoctor, useBookings, useCancelConsultation } from '../hooks';
-import { Badge } from '../../../shared/components/Badge';
+import { useDoctor, useBookings, useBookingReview } from '../hooks';
 import { Button } from '../../../shared/components/Button';
 import { AppText } from '../../../shared/components/AppText';
 import { AppErrorState } from '../../../shared/components';
-import { useToast } from '../../../shared/components/Toast';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
+import { ArrowLeft, IconCalendar, Clock, Clipboard, Activities, Star, Shield } from '../../../shared/assets/icons';
 
 interface ConsultationDetailsScreenProps {
   bookingId: string;
@@ -39,12 +38,11 @@ export function ConsultationDetailsScreen({
 }: ConsultationDetailsScreenProps): React.JSX.Element {
   const colors = useThemeColors();
   const spacing = useThemeSpacing();
-  const { showToast } = useToast();
-
-  const { data: bookings = [], isLoading: bookingsLoading } = useBookings('patient_001');
+  const { data: bookings = [], isLoading: bookingsLoading } = useBookings();
   const booking = bookings.find((b) => b.id === bookingId);
   const doctorId = booking?.doctorId ?? '';
   const { data: doctor, isLoading: doctorLoading } = useDoctor(doctorId);
+  const { data: existingReview } = useBookingReview(bookingId);
 
   const isLoadingData = bookingsLoading || doctorLoading;
 
@@ -63,6 +61,7 @@ export function ConsultationDetailsScreen({
     hour12: true,
   });
 
+  const isCompleted = booking !== undefined && booking.status === 'completed';
   const canCancel = booking !== undefined && (booking.status === 'confirmed' || booking.status === 'pending_confirmation');
 
   const handleCancel = useCallback(() => {
@@ -95,7 +94,7 @@ export function ConsultationDetailsScreen({
       <View style={[styles.header, { paddingHorizontal: spacing.lg, paddingTop: spacing.xxl, paddingBottom: spacing.sm }]}>
         <View style={styles.titleRow}>
           <TouchableOpacity onPress={onBack} style={styles.backBtn}>
-            <AppText variant="body" style={{ color: colors.action.primary }}>←</AppText>
+            <ArrowLeft width={20} height={20} color={colors.action.primary} />
           </TouchableOpacity>
           <AppText variant="h1">Consultation Details</AppText>
         </View>
@@ -112,17 +111,17 @@ export function ConsultationDetailsScreen({
 
         <View style={[styles.detailsCard, { marginHorizontal: spacing.lg, marginTop: spacing.md, backgroundColor: colors.surface.default, borderRadius: spacing.md, padding: spacing.lg }]}>
           {[
-            { icon: '📅', label: 'Date', value: dateStr },
-            { icon: '🕐', label: 'Time', value: timeStr },
-            { icon: '⏱', label: 'Duration', value: '30 minutes' },
-            { icon: '📹', label: 'Mode', value: booking.consultationType.charAt(0).toUpperCase() + booking.consultationType.slice(1) },
-            { icon: '💰', label: 'Fee', value: `₹${doctor.consultationFee}`, isFee: true },
-            { icon: '🔑', label: 'Booking ID', value: booking.id.slice(0, 16) },
-            { icon: '📋', label: 'Status', value: statusConfig.label },
+            { icon: <IconCalendar width={18} height={18} color={colors.text.secondary} />, label: 'Date', value: dateStr },
+            { icon: <Clock width={18} height={18} color={colors.text.secondary} />, label: 'Time', value: timeStr },
+            { icon: <Clock width={18} height={18} color={colors.text.secondary} />, label: 'Duration', value: '30 minutes' },
+            { icon: <Activities width={18} height={18} color={colors.text.secondary} />, label: 'Mode', value: booking.consultationType.charAt(0).toUpperCase() + booking.consultationType.slice(1) },
+            { icon: <Star width={18} height={18} color={colors.text.secondary} />, label: 'Fee', value: `₹${doctor.consultationFee}`, isFee: true },
+            { icon: <Shield width={18} height={18} color={colors.text.secondary} />, label: 'Booking ID', value: booking.id.slice(0, 16) },
+            { icon: <Clipboard width={18} height={18} color={colors.text.secondary} />, label: 'Status', value: statusConfig.label },
           ].map((row) => (
             <View key={row.label} style={[styles.detailRow, { borderBottomColor: colors.border.light, borderBottomWidth: 1, paddingVertical: spacing.md }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <AppText variant="body" style={{ marginRight: spacing.sm }}>{row.icon}</AppText>
+                <View style={{ marginRight: spacing.sm }}>{typeof row.icon === 'string' ? <AppText variant="body">{row.icon}</AppText> : row.icon}</View>
                 <AppText variant="body" style={{ color: colors.text.secondary }}>{row.label}</AppText>
               </View>
               <AppText
@@ -166,6 +165,33 @@ export function ConsultationDetailsScreen({
             />
           </View>
         )}
+
+        {isCompleted && existingReview && (
+          <View style={[styles.reviewCard, { marginHorizontal: spacing.lg, marginTop: spacing.lg, backgroundColor: colors.surface.default, borderRadius: spacing.md, padding: spacing.lg }]}>
+            <View style={styles.reviewHeader}>
+              <AppText variant="h3">Your Review</AppText>
+              <View style={styles.reviewStars}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <AppText
+                    key={star}
+                    variant="body"
+                    style={{ color: star <= existingReview.rating ? colors.rating : colors.text.disabled, fontSize: 18 }}
+                  >
+                    ★
+                  </AppText>
+                ))}
+              </View>
+            </View>
+            {existingReview.comment !== undefined && existingReview.comment.length > 0 && (
+              <AppText variant="body" style={{ color: colors.text.secondary, marginTop: spacing.sm, lineHeight: 22 }}>
+                {existingReview.comment}
+              </AppText>
+            )}
+            <AppText variant="caption" style={{ color: colors.text.tertiary, marginTop: spacing.sm }}>
+              Submitted on {new Date(existingReview.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+            </AppText>
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -182,4 +208,13 @@ const styles = StyleSheet.create({
   avatar: { width: 56, height: 56, backgroundColor: '#E8F3EC' },
   detailsCard: {},
   detailRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  reviewCard: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  reviewHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  reviewStars: { flexDirection: 'row', gap: 2 },
 });

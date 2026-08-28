@@ -1,15 +1,18 @@
-// Shop Module - Wishlist Repository
+// Shop Module - Wishlist Repository (SQLite + Supabase sync)
 
 import { WishlistItem } from './types';
 import { wishlistItemSchema } from './schemas';
 import { getDatabase } from '../../infrastructure/database/database';
+import { supabase } from '../../infrastructure/supabase/client';
+import { logger } from '../../infrastructure/logging/logger';
 
 export interface WishlistRepository {
   getAllItems(): Promise<WishlistItem[]>;
-  addItem(productId: string): Promise<void>;
-  removeItem(productId: string): Promise<void>;
+  addItem(productId: string, patientId?: string): Promise<void>;
+  removeItem(productId: string, patientId?: string): Promise<void>;
   isInWishlist(productId: string): Promise<boolean>;
-  clearAll(): Promise<void>;
+  clearAll(patientId?: string): Promise<void>;
+  syncToCloud(patientId: string): Promise<void>;
 }
 
 export const wishlistRepository: WishlistRepository = {
@@ -26,18 +29,43 @@ export const wishlistRepository: WishlistRepository = {
     );
   },
 
-  async addItem(productId: string): Promise<void> {
+  async addItem(productId: string, patientId?: string): Promise<void> {
     const db = await getDatabase();
     const now = new Date().toISOString();
     await db.runAsync(
       'INSERT OR IGNORE INTO wishlist_items (product_id, added_at) VALUES (?, ?)',
       [productId, now],
     );
+
+    if (patientId) {
+      // Sync to cloud
+      supabase
+        .from('wishlist_items')
+        .insert({ patient_id: patientId, product_id: productId })
+        .then(({ error }) => {
+          if (error && !error.message?.includes('unique')) {
+            logger.warn('Wishlist: failed to sync addItem to cloud', { error: error.message });
+          }
+        });
+    }
   },
 
-  async removeItem(productId: string): Promise<void> {
+  async removeItem(productId: string, patientId?: string): Promise<void> {
     const db = await getDatabase();
     await db.runAsync('DELETE FROM wishlist_items WHERE product_id = ?', [productId]);
+
+    if (patientId) {
+      supabase
+        .from('wishlist_items')
+        .delete()
+        .eq('patient_id', patientId)
+        .eq('product_id', productId)
+        .then(({ error }) => {
+          if (error) {
+            logger.warn('Wishlist: failed to sync removeItem to cloud', { error: error.message });
+          }
+        });
+    }
   },
 
   async isInWishlist(productId: string): Promise<boolean> {
@@ -49,8 +77,52 @@ export const wishlistRepository: WishlistRepository = {
     return result !== undefined;
   },
 
-  async clearAll(): Promise<void> {
+  async clearAll(patientId?: string): Promise<void> {
     const db = await getDatabase();
     await db.runAsync('DELETE FROM wishlist_items');
+
+    if (patientId) {
+      supabase
+        .from('wishlist_items')
+        .delete()
+        .eq('patient_id', patientId)
+        .then(({ error }) => {
+          if (error) {
+            logger.warn('Wishlist: failed to clear cloud wishlist', { error: error.message });
+          }
+        });
+    }
+  },
+
+  async syncToCloud(patientId: string): Promise<void> {
+    try {
+      const items = await this.getAllItems();
+
+      // Delete existing and re-insert
+      const { error: deleteError } = await supabase
+        .from('wishlist_items')
+        .delete()
+        .eq('patient_id', patientId);
+
+      if (deleteError) throw deleteError;
+
+      if (items.length > 0) {
+        const inserts = items.map((item) => ({
+          patient_id: patientId,
+          product_id: item.productId,
+        }));
+
+        const { error: insertError } = await supabase
+          .from('wishlist_items')
+          .insert(inserts);
+
+        if (insertError) throw insertError;
+      }
+
+      logger.debug('Wishlist synced to cloud', { patientId, itemCount: items.length });
+    } catch (error) {
+      logger.error('Wishlist: cloud sync failed', { error: error instanceof Error ? error.message : 'Unknown' });
+      throw error;
+    }
   },
 };

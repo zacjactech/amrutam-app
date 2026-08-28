@@ -66,7 +66,7 @@ function generateAttachment(index: number, random: () => number): Attachment {
   }) as Attachment;
 }
 
-export function generateHealthRecord(index: number): HealthRecord {
+export function generateHealthRecord(index: number, patientId: string = 'patient_001'): HealthRecord {
   const random = seededRandom(index + 1);
   const type = pickRandom(HEALTH_RECORD_TYPES, random);
   const titles = RECORD_TITLES[type];
@@ -89,10 +89,10 @@ export function generateHealthRecord(index: number): HealthRecord {
 
   return healthRecordSchema.parse({
     id: `rec_${index.toString().padStart(5, '0')}`,
-    patientId: 'patient_001',
+    patientId,
     type,
     title: `${title} - ${RECORD_TYPE_LABELS[type]}`,
-    description: `This is a ${RECORD_TYPE_LABELS[type].toLowerCase()} record for patient patient_001. Generated for testing purposes.`,
+    description: `This is a ${RECORD_TYPE_LABELS[type].toLowerCase()} record. Generated for testing purposes.`,
     occurredAt,
     tags: selectedTags,
     attachments,
@@ -104,10 +104,10 @@ export function generateHealthRecord(index: number): HealthRecord {
   }) as HealthRecord;
 }
 
-export function generateHealthRecords(count: number): HealthRecord[] {
+export function generateHealthRecords(count: number, patientId?: string): HealthRecord[] {
   const records: HealthRecord[] = [];
   for (let i = 0; i < count; i++) {
-    const record = generateHealthRecord(i);
+    const record = generateHealthRecord(i, patientId);
     records.push(record);
   }
   return records;

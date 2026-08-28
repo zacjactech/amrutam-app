@@ -10,6 +10,8 @@ const envSchema = z.object({
   ENABLE_PERFORMANCE_LOGGING: z.coerce.boolean(),
   MOCK_DATASET_SIZE: z.enum(['small', 'full']),
   ENCRYPTION_KEY: z.string().min(16),
+  EXPO_PUBLIC_SUPABASE_URL: z.string().url(),
+  EXPO_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
 });
 
 export type Env = z.infer<typeof envSchema>;

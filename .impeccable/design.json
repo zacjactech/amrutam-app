@@ -1,0 +1,167 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-27T00:00:00Z",
+  "title": "Design System: Amrutam",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Forest Green",
+        "canonical": "#2D6A4F",
+        "tonalRamp": ["#1B4332", "#2D6A4F", "#40916C", "#52A37D", "#6BBF8E", "#A8E6C3", "#D1FAE5", "#E8F8F0"]
+      },
+      "primary-deep": {
+        "role": "primary",
+        "displayName": "Deep Forest",
+        "canonical": "#1B4332",
+        "tonalRamp": ["#0D2118", "#1B4332", "#2D6A4F", "#40916C", "#52A37D", "#6BBF8E", "#A8E6C3", "#D1FAE5"]
+      },
+      "secondary": {
+        "role": "secondary",
+        "displayName": "Sage",
+        "canonical": "#40916C",
+        "tonalRamp": ["#2D6A4F", "#40916C", "#52A37D", "#6BBF8E", "#85D4A5", "#A8E6C3", "#C8F0D8", "#E8F8F0"]
+      },
+      "background-primary": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "canonical": "#F8F9FA",
+        "tonalRamp": ["#E5E7EB", "#ECEEF0", "#F1F3F5", "#F5F6F8", "#F8F9FA", "#FAFBFC", "#FCFDFD", "#FFFFFF"]
+      },
+      "background-secondary": {
+        "role": "neutral",
+        "displayName": "Mist",
+        "canonical": "#F1F3F5",
+        "tonalRamp": ["#D1D5DB", "#E5E7EB", "#ECEEF0", "#F1F3F5", "#F5F6F8", "#F8F9FA", "#FAFBFC", "#FCFDFD"]
+      },
+      "text-primary": {
+        "role": "neutral",
+        "displayName": "Charcoal",
+        "canonical": "#1A1A1A",
+        "tonalRamp": ["#000000", "#1A1A1A", "#333333", "#4D4D4D", "#666666", "#808080", "#999999", "#B3B3B3"]
+      },
+      "text-secondary": {
+        "role": "neutral",
+        "displayName": "Pebble",
+        "canonical": "#6B7280",
+        "tonalRamp": ["#374151", "#4B5563", "#6B7280", "#9CA3AF", "#D1D5DB", "#E5E7EB", "#F3F4F6", "#F9FAFB"]
+      },
+      "destructive": {
+        "role": "destructive",
+        "displayName": "Error Red",
+        "canonical": "#DC2626",
+        "tonalRamp": ["#7F1D1D", "#991B1B", "#B91C1C", "#DC2626", "#EF4444", "#F87171", "#FCA5A5", "#FEE2E2"]
+      },
+      "warning": {
+        "role": "warning",
+        "displayName": "Warning Amber",
+        "canonical": "#F59E0B",
+        "tonalRamp": ["#78350F", "#92400E", "#B45309", "#D97706", "#F59E0B", "#FBBF24", "#FCD34D", "#FEF3C7"]
+      },
+      "info": {
+        "role": "info",
+        "displayName": "Info Blue",
+        "canonical": "#3B82F6",
+        "tonalRamp": ["#1E3A5F", "#1E40AF", "#2563EB", "#3B82F6", "#60A5FA", "#93C5FD", "#BFDBFE", "#DBEAFE"]
+      }
+    },
+    "shadows": [
+      { "name": "small", "value": "0 1px 2px rgba(0,0,0,0.05)", "purpose": "Ambient lift on chips and small interactive elements" },
+      { "name": "medium", "value": "0 2px 4px rgba(0,0,0,0.1)", "purpose": "Elevated cards and modal containers" },
+      { "name": "large", "value": "0 4px 8px rgba(0,0,0,0.15)", "purpose": "Full-screen modals and bottom sheets" }
+    ],
+    "motion": [
+      { "name": "ease-standard", "value": "cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Default easing for state transitions" },
+      { "name": "ease-decelerate", "value": "cubic-bezier(0, 0, 0.2, 1)", "purpose": "Elements entering the screen" },
+      { "name": "ease-accelerate", "value": "cubic-bezier(0.4, 0, 1, 1)", "purpose": "Elements leaving the screen" }
+    ],
+    "breakpoints": []
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Primary action button — forest green with white text. Used for CTAs, form submissions, and key interactions.",
+      "html": "<button class=\"ds-btn-primary\">Book Consultation</button>",
+      "css": ".ds-btn-primary { background: #2D6A4F; color: #FFFFFF; padding: 12px 16px; border-radius: 8px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 16px; font-weight: 600; line-height: 20px; border: none; cursor: pointer; transition: background 0.15s ease; } .ds-btn-primary:hover { background: #1B4332; } .ds-btn-primary:active { background: #1B4332; transform: scale(0.98); } .ds-btn-primary:focus-visible { outline: 2px solid #2D6A4F; outline-offset: 2px; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Secondary action button — mint wash with green text. Used for less critical actions.",
+      "html": "<button class=\"ds-btn-secondary\">View All</button>",
+      "css": ".ds-btn-secondary { background: #D1FAE5; color: #2D6A4F; padding: 12px 16px; border-radius: 8px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 16px; font-weight: 600; line-height: 20px; border: none; cursor: pointer; transition: background 0.15s ease; } .ds-btn-secondary:hover { background: #A8E6C3; } .ds-btn-secondary:active { background: #A8E6C3; transform: scale(0.98); }"
+    },
+    {
+      "name": "Elevated Card",
+      "kind": "card",
+      "refersTo": "card-elevated",
+      "description": "Default card container — white background with subtle shadow. Used for product items, consultation entries, and interactive content.",
+      "html": "<div class=\"ds-card-elevated\"><div class=\"ds-card-content\">Card content here</div></div>",
+      "css": ".ds-card-elevated { background: #FFFFFF; border-radius: 12px; padding: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }"
+    },
+    {
+      "name": "Chip",
+      "kind": "chip",
+      "refersTo": "chip-outlined",
+      "description": "Filter/selection pill — outlined by default, filled when selected. Used across consultation filters, shop categories, and health record tags.",
+      "html": "<div class=\"ds-chip\">Allergy</div>",
+      "css": ".ds-chip { display: inline-flex; align-items: center; padding: 8px 12px; border-radius: 999px; border: 1px solid #E5E7EB; background: transparent; color: #1A1A1A; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; cursor: pointer; transition: all 0.15s ease; } .ds-chip:hover { border-color: #2D6A4F; } .ds-chip-selected { background: #2D6A4F; color: #FFFFFF; border-color: #2D6A4F; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input-default",
+      "description": "Standard text input — white background with neutral border, green focus state.",
+      "html": "<div class=\"ds-input-wrapper\"><label class=\"ds-input-label\">Email</label><input class=\"ds-input\" type=\"text\" placeholder=\"Enter your email\" /></div>",
+      "css": ".ds-input-wrapper { display: flex; flex-direction: column; gap: 4px; } .ds-input-label { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; font-weight: 600; color: #1A1A1A; } .ds-input { background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 8px; padding: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 14px; color: #1A1A1A; outline: none; transition: border-color 0.15s ease; } .ds-input::placeholder { color: #9CA3AF; } .ds-input:focus { border-color: #2D6A4F; } .ds-input-error { border-color: #DC2626; }"
+    },
+    {
+      "name": "Tab Bar Item",
+      "kind": "nav",
+      "refersTo": "tab-active",
+      "description": "Bottom navigation tab — icon + label, green when active, fog-colored when inactive.",
+      "html": "<div class=\"ds-tab\"><svg class=\"ds-tab-icon\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z\"/></svg><span class=\"ds-tab-label\">Home</span></div>",
+      "css": ".ds-tab { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 0; cursor: pointer; } .ds-tab-icon { width: 24px; height: 24px; color: #9CA3AF; transition: color 0.15s ease; } .ds-tab-label { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12px; font-weight: 400; color: #9CA3AF; } .ds-tab-active .ds-tab-icon { color: #2D6A4F; } .ds-tab-active .ds-tab-label { color: #2D6A4F; font-weight: 600; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Herbal Apothecary",
+    "overview": "The Amrutam design system channels the quiet authority of a well-curated apothecary — every remedy has its place, every element earns its presence. The palette is rooted in deep forest greens that evoke Ayurvedic tradition without drifting into literal leaf imagery. Surfaces are clean but never sterile; the warm-gray backgrounds and generous spacing create breathing room that feels intentional, not empty. This system explicitly rejects the clinical coldness of generic telemedicine apps and the trendy DTC wellness aesthetic of beige-and-blur minimalism.",
+    "keyCharacteristics": [
+      "Deep muted green as the singular brand anchor — used with restraint, never wallpaper",
+      "Tonal layering over shadow-heavy elevation — depth through color shifts, not drop shadows",
+      "System typography at comfortable sizes — legible, unhurried, never shouting",
+      "Generous whitespace that lets content breathe — the apothecary shelf, not the cluttered drawer",
+      "Status colors tied to the green family for cohesion — even errors feel grounded, not alarming"
+    ],
+    "rules": [
+      { "name": "The One Green Rule", "body": "The primary green (#2D6A4F) is the only brand color. It appears on ≤15% of any given screen. Its restraint is the point.", "section": "colors" },
+      { "name": "The Status Family Rule", "body": "All status colors harmonize with the green anchor. Error red is the single exception — it must break the harmony to signal danger.", "section": "colors" },
+      { "name": "The Comfortable Size Rule", "body": "Body text never drops below 14px. This is a wellness app used during personal health moments — squinting undermines the sense of care.", "section": "typography" },
+      { "name": "The Weight Discipline Rule", "body": "Only three weights: 400 (body), 600 (emphasis), 700 (headings). The system typeface handles personality through size and spacing, not weight.", "section": "typography" },
+      { "name": "The Flat-By-Default Rule", "body": "Surfaces are flat at rest. Shadows appear only on elevated containers and interactive press states. Depth belongs to containers, not content.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do use the primary green (#2D6A4F) as the singular brand anchor",
+      "Do keep body text at 14px or above",
+      "Do use tonal layering to convey depth instead of heavy shadows",
+      "Do maintain generous whitespace — the apothecary shelf is organized, not crowded",
+      "Do use the system typeface at the defined sizes and weights",
+      "Do let status colors harmonize with the green family",
+      "Do use pill-shaped chips for filters and selection"
+    ],
+    "donts": [
+      "Don't use generic telemedicine aesthetics — no clinical blue-white palettes, no insurance-form layouts",
+      "Don't add border-left or border-right greater than 1px as a colored accent",
+      "Don't use background-clip: text with gradients",
+      "Don't over-round cards — cards top out at 12px radius",
+      "Don't pair a 1px border with a wide box-shadow (≥16px blur) on the same element",
+      "Don't use warm-tinted cream/sand/beige backgrounds",
+      "Don't put shadows on text, icons, or inline elements",
+      "Don't add tiny uppercase tracked eyebrows above every section"
+    ]
+  }
+}

@@ -74,13 +74,6 @@ export function ProductSearchScreen({ navigation }: ProductSearchScreenProps) {
     staleTime: 60 * 1000,
   });
 
-  const handleSearchSubmit = useCallback(() => {
-    if (searchQuery.trim().length >= 2) {
-      setDebouncedQuery(searchQuery.trim());
-      saveRecentSearch(searchQuery.trim());
-    }
-  }, [searchQuery, saveRecentSearch]);
-
   const handleTrendingPress = useCallback(
     (term: string) => {
       setSearchQuery(term);

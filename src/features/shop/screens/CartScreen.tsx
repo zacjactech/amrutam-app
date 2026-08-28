@@ -2,13 +2,11 @@
 
 import React, { useCallback, useMemo } from 'react';
 import { View, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import { Image } from 'expo-image';
 import { useCart } from '../hooks';
 import { CartItemComponent } from '../components/CartItem';
 import { ProductCard } from '../components/ProductCard';
 import { Button } from '../../../shared/components/Button';
 import { AppText } from '../../../shared/components/AppText';
-import { AppEmptyState } from '../../../shared/components/AppEmptyState';
 import { AppSkeleton } from '../../../shared/components/AppSkeleton';
 import { getProductCache } from '../generator';
 import { CartItem, Product } from '../types';

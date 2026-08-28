@@ -5,6 +5,7 @@ import { productRepository } from './repository';
 import { cartRepository } from './cartRepository';
 import { wishlistRepository } from './wishlistRepository';
 import { ProductFilter, DEFAULT_PRODUCT_FILTER, SortOption } from './types';
+import { useAuthContext } from '../../infrastructure/auth/AuthContext';
 
 export const shopKeys = {
   all: ['shop'] as const,
@@ -63,6 +64,7 @@ export function useProduct(productId: string) {
 
 export function useCart() {
   const queryClient = useQueryClient();
+  const { patientId } = useAuthContext();
 
   const cartQuery = useQuery({
     queryKey: shopKeys.cart(),
@@ -72,7 +74,7 @@ export function useCart() {
 
   const addToCart = useMutation({
     mutationFn: ({ productId, unitPrice }: { productId: string; unitPrice: number }) =>
-      cartRepository.addItem(productId, unitPrice),
+      cartRepository.addItem(productId, unitPrice, patientId ?? undefined),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: shopKeys.cart() });
     },
@@ -80,21 +82,21 @@ export function useCart() {
 
   const updateCartQuantity = useMutation({
     mutationFn: ({ productId, quantity }: { productId: string; quantity: number }) =>
-      cartRepository.updateQuantity(productId, quantity),
+      cartRepository.updateQuantity(productId, quantity, patientId ?? undefined),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: shopKeys.cart() });
     },
   });
 
   const removeFromCart = useMutation({
-    mutationFn: (productId: string) => cartRepository.removeItem(productId),
+    mutationFn: (productId: string) => cartRepository.removeItem(productId, patientId ?? undefined),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: shopKeys.cart() });
     },
   });
 
   const clearCart = useMutation({
-    mutationFn: () => cartRepository.clearAll(),
+    mutationFn: () => cartRepository.clearAll(patientId ?? undefined),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: shopKeys.cart() });
     },
@@ -111,6 +113,7 @@ export function useCart() {
 
 export function useWishlist() {
   const queryClient = useQueryClient();
+  const { patientId } = useAuthContext();
 
   const wishlistQuery = useQuery({
     queryKey: shopKeys.wishlist(),
@@ -124,10 +127,10 @@ export function useWishlist() {
   const toggleWishlist = useMutation({
     mutationFn: async ({ productId, isAdded }: { productId: string; isAdded: boolean }) => {
       if (isAdded) {
-        await wishlistRepository.removeItem(productId);
+        await wishlistRepository.removeItem(productId, patientId ?? undefined);
         return { productId, isAdded: false };
       }
-      await wishlistRepository.addItem(productId);
+      await wishlistRepository.addItem(productId, patientId ?? undefined);
       return { productId, isAdded: true };
     },
     onSuccess: () => {

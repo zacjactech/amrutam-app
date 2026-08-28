@@ -12,7 +12,6 @@ import { useDoctor, useDoctorSlots } from '../hooks';
 import { ConsultationSlot } from '../types';
 import { Button } from '../../../shared/components/Button';
 import { AppText } from '../../../shared/components/AppText';
-import { AppErrorState } from '../../../shared/components';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
 
 interface SlotSelectionScreenProps {
@@ -45,7 +44,7 @@ export function SlotSelectionScreen({
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<ConsultationSlot | null>(null);
 
-  const { data: doctor, isLoading: doctorLoading } = useDoctor(doctorId);
+  const { isLoading: doctorLoading } = useDoctor(doctorId);
   const { data: allSlots = [], isLoading: slotsLoading } = useDoctorSlots(doctorId);
 
   const weekDates = useMemo(() => {

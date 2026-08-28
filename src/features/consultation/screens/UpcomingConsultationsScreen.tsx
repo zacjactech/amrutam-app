@@ -9,13 +9,15 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { useBookings, useCancelConsultation } from '../hooks';
+import { useBookings, useDoctor, useHasReviewedBooking } from '../hooks';
 import { Booking, BookingStatus } from '../types';
+import { RateDoctorModal } from '../components/RateDoctorModal';
 import { Badge } from '../../../shared/components/Badge';
 import { Button } from '../../../shared/components/Button';
 import { AppText } from '../../../shared/components/AppText';
 import { AppEmptyState, AppErrorState } from '../../../shared/components';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
+import { useAuthContext } from '../../../infrastructure/auth/AuthContext';
 
 const STATUS_CONFIG: Record<BookingStatus, { label: string; badgeVariant: 'confirmed' | 'pending' | 'cancelled' | 'completed' }> = {
   pending_confirmation: { label: 'Pending', badgeVariant: 'pending' },
@@ -25,6 +27,33 @@ const STATUS_CONFIG: Record<BookingStatus, { label: string; badgeVariant: 'confi
   completed: { label: 'Completed', badgeVariant: 'completed' },
   no_show: { label: 'No Show', badgeVariant: 'cancelled' },
 };
+
+function BookingDoctorInfo({ doctorId, spacing }: { doctorId: string; spacing: ReturnType<typeof useThemeSpacing> }) {
+  const { data: doctor } = useDoctor(doctorId);
+  const colors = useThemeColors();
+
+  return (
+    <>
+      {doctor?.photoUrl ? (
+        <Image
+          source={{ uri: doctor.photoUrl }}
+          style={[styles.photo, { borderRadius: spacing.md, backgroundColor: colors.action.primarySoft }]}
+          contentFit="cover"
+        />
+      ) : (
+        <View style={[styles.photo, { borderRadius: spacing.md, backgroundColor: colors.action.primarySoft }]} />
+      )}
+      <View style={{ marginLeft: 12, flex: 1 }}>
+        <AppText variant="body" numberOfLines={1} style={{ fontWeight: '600' }}>
+          {doctor?.name ?? 'Loading...'}
+        </AppText>
+        <AppText variant="bodySmall" style={{ color: colors.text.secondary, marginTop: 2 }}>
+          {doctor?.specialization ?? ''}
+        </AppText>
+      </View>
+    </>
+  );
+}
 
 interface UpcomingConsultationsScreenProps {
   onConsultationPress: (bookingId: string) => void;
@@ -38,8 +67,8 @@ export function UpcomingConsultationsScreen({
   const colors = useThemeColors();
   const spacing = useThemeSpacing();
   const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming');
-  const { data: bookings = [], isLoading, isError, refetch } = useBookings('patient_001');
-  const cancelMutation = useCancelConsultation();
+  const [ratingModalBooking, setRatingModalBooking] = useState<Booking | null>(null);
+  const { data: bookings = [], isLoading, isError, refetch } = useBookings();
 
   const upcomingBookings = bookings.filter(
     (b) => b.status === 'confirmed' || b.status === 'pending_confirmation' || b.status === 'pending_sync',
@@ -54,6 +83,7 @@ export function UpcomingConsultationsScreen({
     ({ item }: { item: Booking }) => {
       const statusConfig = STATUS_CONFIG[item.status];
       const isUpcoming = item.status === 'confirmed' || item.status === 'pending_confirmation' || item.status === 'pending_sync';
+      const isCompleted = item.status === 'completed';
 
       return (
         <TouchableOpacity
@@ -63,17 +93,7 @@ export function UpcomingConsultationsScreen({
         >
           <View style={styles.cardHeader}>
             <View style={styles.doctorInfo}>
-              <Image
-                source={{ uri: `https://api.dicebear.com/7.x/person/svg?seed=${item.doctorId}` }}
-                style={[styles.photo, { borderRadius: spacing.md }]}
-                contentFit="cover"
-              />
-              <View style={{ marginLeft: 12, flex: 1 }}>
-                <AppText variant="body" numberOfLines={1} style={{ fontWeight: '600' }}>Doctor #{item.doctorId.slice(5)}</AppText>
-                <AppText variant="bodySmall" style={{ color: colors.text.secondary, marginTop: 2 }}>
-                  General Ayurveda
-                </AppText>
-              </View>
+              <BookingDoctorInfo doctorId={item.doctorId} spacing={spacing} />
             </View>
             <Badge variant={statusConfig.badgeVariant} label={statusConfig.label} />
           </View>
@@ -86,9 +106,9 @@ export function UpcomingConsultationsScreen({
             <View style={{ flexDirection: 'row', marginTop: spacing.sm, gap: spacing.sm }}>
               {isUpcoming ? (
                 <Button title="View Details" variant="outline" size="small" onPress={() => onConsultationPress(item.id)} />
-              ) : (
-                <Button title="Rate Doctor" variant="outline" size="small" onPress={() => {}} />
-              )}
+              ) : isCompleted ? (
+                <RateButton bookingId={item.id} doctorId={item.doctorId} onPress={() => setRatingModalBooking(item)} />
+              ) : null}
             </View>
           </View>
         </TouchableOpacity>
@@ -115,6 +135,8 @@ export function UpcomingConsultationsScreen({
       />
     );
   }
+
+
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
@@ -166,7 +188,50 @@ export function UpcomingConsultationsScreen({
         contentContainerStyle={{ padding: spacing.lg, paddingTop: spacing.sm }}
         showsVerticalScrollIndicator={false}
       />
+
+      {ratingModalBooking !== null && (
+        <RatingModalWrapper
+          booking={ratingModalBooking}
+          onClose={() => setRatingModalBooking(null)}
+        />
+      )}
     </View>
+  );
+}
+
+function RateButton({ bookingId, onPress }: { bookingId: string; doctorId: string; onPress: () => void }) {
+  const { patientId } = useAuthContext();
+  const { data: hasReviewed = false } = useHasReviewedBooking(patientId, bookingId);
+  const colors = useThemeColors();
+
+  if (hasReviewed) {
+    return (
+      <Button
+        title="✓ Reviewed"
+        variant="secondary"
+        size="small"
+        onPress={onPress}
+        textStyle={{ color: colors.action.primary }}
+      />
+    );
+  }
+
+  return (
+    <Button title="Rate Doctor" variant="outline" size="small" onPress={onPress} />
+  );
+}
+
+function RatingModalWrapper({ booking, onClose }: { booking: Booking; onClose: () => void }) {
+  const { data: doctor } = useDoctor(booking.doctorId);
+
+  return (
+    <RateDoctorModal
+      visible={true}
+      onClose={onClose}
+      bookingId={booking.id}
+      doctorId={booking.doctorId}
+      doctorName={doctor?.name ?? 'Doctor'}
+    />
   );
 }
 

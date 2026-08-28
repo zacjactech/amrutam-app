@@ -1,183 +1,177 @@
-# API Contract and Mock Server Specification
+# API Contract and Supabase Integration
 
 ## 1. Principle
 
 The assignment allows public or mock APIs. The application should behave as if it communicates with a real backend.
 
-The API adapter must therefore define stable contracts before mock implementation.
+The app uses Supabase (PostgreSQL + PostgREST) as the backend, providing a managed database with Row Level Security, real-time subscriptions, and automatic API generation.
 
-## 2. Endpoints
+## 2. Database Tables
 
 ### Doctors
 
-```http
-GET /doctors
-GET /doctors/:doctorId
-GET /doctors/:doctorId/slots
-```
+| Column | Type | Description |
+|--------|------|-------------|
+| id | text (PK) | `doc_XXXXX` format |
+| name | text | Doctor name |
+| photo_url | text | Profile image URL |
+| specialization | text | Ayurvedic specialization |
+| experience | integer | Years of experience |
+| rating | numeric(2,1) | Rating 0-5 |
+| review_count | integer | Number of reviews |
+| consultation_fee | integer | Fee in INR |
+| languages | text[] | Supported languages |
+| availability | jsonb | Availability status |
+| bio | text | Doctor biography |
+| clinic_name | text | Clinic name |
+| clinic_address | text | Clinic address |
 
-Query parameters:
+### Slots
 
-```text
-search
-specialty
-minRating
-maxFee
-available
-page
-limit
-```
+| Column | Type | Description |
+|--------|------|-------------|
+| id | text (PK) | `slot_doc_XXXXX_timestamp` |
+| doctor_id | text (FK) | References doctors.id |
+| start_time | timestamptz | Slot start |
+| end_time | timestamptz | Slot end |
+| is_booked | boolean | Booking status |
+| consultation_type | text | video/audio/chat/in-person |
 
 ### Bookings
 
-```http
-POST /bookings
-GET /bookings/upcoming
-POST /bookings/:bookingId/cancel
-```
+| Column | Type | Description |
+|--------|------|-------------|
+| id | text (PK) | `bk_timestamp_random` |
+| doctor_id | text (FK) | References doctors.id |
+| patient_id | text | Patient identifier |
+| slot_id | text (FK) | References slots.id |
+| consultation_type | text | Booking type |
+| status | text | pending_sync/confirmed/cancelled/etc |
+| idempotency_key | text (UNIQUE) | patientId + slotId hash |
+| notes | text | Optional notes |
 
 ### Products
 
-```http
-GET /products
-GET /products/:productId
-```
-
-Query parameters:
-
-```text
-search
-category
-minPrice
-maxPrice
-minRating
-sort
-page
-limit
-```
+| Column | Type | Description |
+|--------|------|-------------|
+| id | text (PK) | `prod_XXXXX` format |
+| name | text | Product name |
+| description | text | Product description |
+| category | text | Product category |
+| price | numeric(10,2) | Price in INR |
+| currency | text | ISO currency code |
+| image_url | text | Product image |
+| rating | numeric(2,1) | Rating 0-5 |
+| review_count | integer | Number of reviews |
+| stock | integer | Available stock |
+| tags | text[] | Product tags |
 
 ### Health Records
 
-```http
-GET /health-records
-GET /health-records/:recordId
-```
+| Column | Type | Description |
+|--------|------|-------------|
+| id | text (PK) | `rec_XXXXX` format |
+| patient_id | text | Patient identifier |
+| type | text | lab_report/prescription/etc |
+| title | text | Record title |
+| description | text | Record description |
+| occurred_at | timestamptz | When record was created |
+| tags | text[] | Record tags |
+| attachments | jsonb | File attachments |
+| metadata | jsonb | Additional data |
 
-Query parameters:
+## 3. Supabase Queries
 
-```text
-search
-type
-tag
-from
-to
-page
-limit
-```
-
-## 3. Standard Response Envelope
+The app uses `@supabase/supabase-js` client for all database operations:
 
 ```ts
-type ApiResponse<T> = {
-  data: T;
-  meta?: {
-    page?: number;
-    limit?: number;
-    total?: number;
-    hasNextPage?: boolean;
-    requestId?: string;
-  };
-};
+// Example: Fetch doctors with filters
+const { data, count } = await supabase
+  .from('doctors')
+  .select('*', { count: 'exact' })
+  .eq('specialization', 'Panchakarma')
+  .gte('rating', 4.0)
+  .order('rating', { ascending: false })
+  .range(0, 19);
+
+// Example: Create booking
+const { data, error } = await supabase
+  .from('bookings')
+  .insert({
+    doctor_id: doctorId,
+    patient_id: patientId,
+    slot_id: slotId,
+    consultation_type: 'video',
+    status: 'pending_sync',
+    idempotency_key: idempotencyKey,
+  })
+  .select()
+  .single();
 ```
 
-## 4. Error Envelope
+## 4. Row Level Security
+
+All tables have RLS enabled:
+
+- **Doctors, Slots, Products**: Public read, authenticated write
+- **Bookings, Cart, Wishlist, Health Records**: Authenticated read/write only
+
+## 5. Repository Pattern
 
 ```ts
-type ApiErrorResponse = {
-  error: {
-    code:
-      | "VALIDATION_ERROR"
-      | "NOT_FOUND"
-      | "SLOT_EXPIRED"
-      | "SLOT_CONFLICT"
-      | "SESSION_EXPIRED"
-      | "TIMEOUT"
-      | "SERVER_ERROR"
-      | "INVALID_RESPONSE";
-    message: string;
-    requestId?: string;
-    details?: unknown;
-  };
-};
+interface ConsultationRepository {
+  getDoctors(filter, pagination, sortBy): Promise<PaginatedResult<Doctor>>;
+  getDoctorById(id: string): Promise<Doctor | null>;
+  getDoctorSlots(doctorId: string): Promise<ConsultationSlot[]>;
+  getAvailableSlots(doctorId: string): Promise<ConsultationSlot[]>;
+  createBooking(request: BookingRequest): Promise<Booking>;
+  getBookings(patientId: string): Promise<Booking[]>;
+  cancelBooking(bookingId: string): Promise<Booking | null>;
+}
 ```
 
-## 5. Booking Contract
+The same pattern applies to shop and health records repositories.
+
+## 6. Booking Contract
 
 Request:
 
 ```ts
-type CreateBookingRequest = {
-  patientId: string;
+type BookingRequest = {
   doctorId: string;
+  patientId: string;
   slotId: string;
-  idempotencyKey: string;
+  consultationType: 'video' | 'audio' | 'chat' | 'in-person';
+  notes?: string;
 };
 ```
 
-Success:
+Idempotency:
 
-```text
-201 Created
+```ts
+const idempotencyKey = generateIdempotencyKey(patientId, slotId);
 ```
 
-Conflict:
-
-```text
-409 Conflict
-code = SLOT_CONFLICT
-```
-
-Expired:
-
-```text
-409 Conflict
-code = SLOT_EXPIRED
-```
-
-## 6. Mock Failure Injection
-
-The mock API should support deterministic failure scenarios during development:
-
-```text
-?failure=timeout
-?failure=server
-?failure=invalid-json
-?failure=partial
-?failure=empty
-?failure=session-expired
-```
-
-This makes reliability testable rather than theoretical.
+The idempotency key prevents duplicate bookings for the same patient and slot.
 
 ## 7. Pagination
 
-Use page/limit pagination as the default for mock implementation. The default page size should be 40 items for products.
-
-Use cursor pagination if the mock implementation supports it. Otherwise use page/limit.
-
-The UI must consume a pagination abstraction so the backend mechanism can later be changed.
-
-## 8. API Repository Interface
+Use Supabase range-based pagination:
 
 ```ts
-interface ConsultationRepository {
-  listDoctors(params: DoctorQuery): Promise<Paginated<Doctor>>;
-  getDoctor(id: string): Promise<Doctor>;
-  getSlots(doctorId: string): Promise<ConsultationSlot[]>;
-  createBooking(input: CreateBookingRequest): Promise<Booking>;
-  listUpcomingBookings(): Promise<Booking[]>;
-  cancelBooking(id: string): Promise<Booking>;
-}
+const from = page * pageSize;
+const to = from + pageSize - 1;
+
+const { data, count } = await supabase
+  .from('products')
+  .select('*', { count: 'exact' })
+  .range(from, to);
 ```
 
-The same pattern applies to shop and health records.
+The default page size is 20 items.
+
+## 8. Offline Support
+
+- **Cart/Wishlist**: SQLite-only (client-owned, no server sync)
+- **Bookings**: Queue in SQLite, sync to Supabase when online
+- **Doctors/Products/Health Records**: Supabase as source of truth, TanStack Query caching

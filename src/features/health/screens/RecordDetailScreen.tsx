@@ -1,13 +1,15 @@
 // Health Records Module - Record Detail Screen (Dynamic per type)
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { View, StyleSheet, ScrollView, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useHealthRecord } from '../hooks';
 import { Button } from '../../../shared/components/Button';
 import { AppText } from '../../../shared/components/AppText';
-import { AttachmentThumbnail } from '../components/AttachmentThumbnail';
+import { useToast } from '../../../shared/components/Toast';
 import { HealthRecord, RECORD_TYPE_LABELS } from '../types';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
+import { ArrowLeft, Share, IconDownload, FileText } from '../../../shared/assets/icons';
+import { shareRecordAsPdf, downloadRecordAsPdf } from '../pdfExporter';
 
 const RECORD_TYPE_COLORS: Record<string, string> = {
   lab_report: '#3B82F6',
@@ -32,6 +34,25 @@ export function RecordDetailScreen({ route, navigation }: RecordDetailScreenProp
   const spacing = useThemeSpacing();
   const { recordId } = route.params;
   const { data: record, isLoading, isError } = useHealthRecord(recordId);
+  const { showToast } = useToast();
+
+  const handleShare = useCallback(async () => {
+    if (record === null || record === undefined) return;
+    const success = await shareRecordAsPdf(record);
+    if (!success) {
+      showToast('Could not share record. Please try again.', 'error');
+    }
+  }, [record, showToast]);
+
+  const handleDownload = useCallback(async () => {
+    if (record === null || record === undefined) return;
+    const uri = await downloadRecordAsPdf(record);
+    if (uri !== null) {
+      showToast('Record saved to your device', 'success');
+    } else {
+      showToast('Could not save record. Please try again.', 'error');
+    }
+  }, [record, showToast]);
 
   if (isLoading) {
     return (
@@ -62,14 +83,14 @@ export function RecordDetailScreen({ route, navigation }: RecordDetailScreenProp
     <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
       <View style={[styles.topBar, { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.sm, backgroundColor: colors.surface.default, borderBottomColor: colors.border.light, borderBottomWidth: 1 }]}>
         <TouchableOpacity onPress={navigation.goBack} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <AppText variant="h2" style={{ color: colors.text.primary }}>←</AppText>
+          <ArrowLeft width={20} height={20} color={colors.text.primary} />
         </TouchableOpacity>
         <View style={styles.topBarRight}>
-          <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} style={{ padding: spacing.sm }}>
-            <AppText variant="body" style={{ color: colors.text.secondary }}>⤴</AppText>
+          <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} style={{ padding: spacing.sm }} onPress={handleShare} accessibilityLabel="Share record as PDF" accessibilityRole="button">
+            <Share width={18} height={18} color={colors.text.secondary} />
           </TouchableOpacity>
-          <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} style={{ padding: spacing.sm }}>
-            <AppText variant="body" style={{ color: colors.text.secondary }}>⬇</AppText>
+          <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} style={{ padding: spacing.sm }} onPress={handleDownload} accessibilityLabel="Download record as PDF" accessibilityRole="button">
+            <IconDownload width={18} height={18} color={colors.text.secondary} />
           </TouchableOpacity>
         </View>
       </View>
@@ -118,7 +139,7 @@ export function RecordDetailScreen({ route, navigation }: RecordDetailScreenProp
                 style={[styles.attachmentCard, { backgroundColor: colors.surface.default, borderRadius: spacing.md, padding: spacing.md, marginBottom: spacing.sm, flexDirection: 'row', alignItems: 'center' }]}
               >
                 <View style={[styles.attachmentIcon, { backgroundColor: att.mimeType === 'application/pdf' ? colors.status.error + '20' : colors.status.info + '20', width: 48, height: 48, borderRadius: spacing.sm, justifyContent: 'center', alignItems: 'center', marginRight: spacing.md }]}>
-                  <AppText variant="h3">{att.mimeType === 'application/pdf' ? '📄' : '🖼️'}</AppText>
+                  {att.mimeType === 'application/pdf' ? <FileText width={24} height={24} color={colors.status.error} /> : <AppText variant="h3">🖼️</AppText>}
                 </View>
                 <View style={{ flex: 1 }}>
                   <AppText variant="body" style={{ color: colors.text.primary, fontWeight: '600' }} numberOfLines={1}>
@@ -198,7 +219,7 @@ function LabReportContent({ record, colors, spacing }: { record: HealthRecord; c
   );
 }
 
-function PrescriptionContent({ record, colors, spacing }: { record: HealthRecord; colors: ReturnType<typeof useThemeColors>; spacing: ReturnType<typeof useThemeSpacing> }) {
+function PrescriptionContent({ colors, spacing }: { record: HealthRecord; colors: ReturnType<typeof useThemeColors>; spacing: ReturnType<typeof useThemeSpacing> }) {
   const medications = [
     { name: 'Ashwagandha Churna', dosage: '1 tsp twice daily with warm water', duration: '30 days', times: ['Morning', 'Evening'] },
     { name: 'Triphala Tablet', dosage: '1 tablet after dinner', duration: '15 days', times: ['Night'] },
@@ -211,7 +232,7 @@ function PrescriptionContent({ record, colors, spacing }: { record: HealthRecord
         <AppText variant="label" style={{ color: colors.text.secondary, marginBottom: spacing.md, textTransform: 'uppercase' }}>
           Medications
         </AppText>
-        {medications.map((med, idx) => (
+        {medications.map((med) => (
           <View
             key={med.name}
             style={[styles.medCard, { backgroundColor: colors.surface.default, borderRadius: spacing.md, padding: spacing.md, marginBottom: spacing.sm, borderLeftWidth: 3, borderLeftColor: '#2D6A4F' }]}
@@ -271,7 +292,7 @@ function PrescriptionContent({ record, colors, spacing }: { record: HealthRecord
   );
 }
 
-function ConsultationContent({ record, colors, spacing }: { record: HealthRecord; colors: ReturnType<typeof useThemeColors>; spacing: ReturnType<typeof useThemeSpacing> }) {
+function ConsultationContent({ colors, spacing }: { record: HealthRecord; colors: ReturnType<typeof useThemeColors>; spacing: ReturnType<typeof useThemeSpacing> }) {
   return (
     <>
       <View style={[styles.section, { marginTop: spacing.xl }]}>
@@ -358,7 +379,7 @@ function VaccinationContent({ record, colors, spacing }: { record: HealthRecord;
       </View>
 
       <View style={[styles.section, { marginTop: spacing.xl }]}>
-        <Button title="📅 Set Calendar Reminder" variant="primary" size="large" onPress={() => {}} style={{ width: '100%' }} />
+        <Button title="Set Calendar Reminder" variant="primary" size="large" onPress={() => {}} style={{ width: '100%' }} />
       </View>
     </>
   );

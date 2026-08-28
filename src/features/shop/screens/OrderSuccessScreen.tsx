@@ -7,6 +7,7 @@ import { Button } from '../../../shared/components/Button';
 import { Card } from '../../../shared/components/Card';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
 import { SuccessIllustration } from '../../../shared/components/Illustrations';
+import { Truck } from '../../../shared/assets/icons';
 
 interface OrderSuccessScreenProps {
   navigation: {
@@ -46,8 +47,7 @@ export function OrderSuccessScreen({ navigation }: OrderSuccessScreenProps) {
         </AppText>
 
         <Card variant="elevated" style={{ marginTop: spacing.xl, width: '100%' }}>
-          <View style={styles.deliveryRow}>
-            <AppText variant="h2">🚚</AppText>
+          <View style={styles.deliveryRow}>              <Truck width={32} height={32} color={colors.action.primary} />
             <View style={styles.deliveryInfo}>
               <AppText variant="body" style={{ color: colors.text.secondary }}>Estimated delivery</AppText>
               <AppText variant="h4" style={{ color: colors.text.primary, fontWeight: '700', marginTop: 2 }}>

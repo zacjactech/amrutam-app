@@ -1,7 +1,8 @@
-// Sync Worker - Process pending sync operations
+// Sync Worker - Process pending sync operations with real Supabase API calls
 
 import { logger } from '../logging/logger';
 import { getDatabase } from '../database/database';
+import { supabase } from '../supabase/client';
 
 type SyncOperationType = 'booking' | 'cart_update' | 'wishlist_update';
 
@@ -162,20 +163,123 @@ async function processOperation(operation: SyncOperation): Promise<SyncResult> {
   }
 }
 
-async function processBookingSync(_payload: unknown): Promise<SyncResult> {
-  // Placeholder: integrate with actual API client when available
-  return { success: true, operationId: '' };
+// ─── Real Supabase Sync Processors ──────────────────────────────────────────
+
+interface BookingPayload {
+  doctorId: string;
+  slotId: string;
+  patientId: string;
+  consultationType?: string;
+  notes?: string;
 }
 
-async function processCartSync(_payload: unknown): Promise<SyncResult> {
-  // Placeholder: integrate with actual API client when available
-  return { success: true, operationId: '' };
+async function processBookingSync(payload: BookingPayload): Promise<SyncResult> {
+  const bookingId = `bk_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+  const idempotencyKey = generateIdempotencyKey('booking', payload.patientId, payload.slotId);
+
+  const { data, error } = await supabase
+    .from('bookings')
+    .insert({
+      id: bookingId,
+      doctor_id: payload.doctorId,
+      patient_id: payload.patientId,
+      slot_id: payload.slotId,
+      consultation_type: payload.consultationType ?? 'video',
+      status: 'pending_sync',
+      idempotency_key: idempotencyKey,
+      notes: payload.notes ?? null,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    // Check for conflict (slot already booked)
+    if (error.code === '23505' || error.message?.includes('unique')) {
+      return { success: false, operationId: '', error: 'Slot already booked', conflict: true };
+    }
+    return { success: false, operationId: '', error: error.message };
+  }
+
+  // Also mark the slot as booked
+  const { error: slotError } = await supabase
+    .from('slots')
+    .update({ is_booked: true })
+    .eq('id', payload.slotId);
+
+  if (slotError) {
+    logger.warn('Failed to mark slot as booked', { slotId: payload.slotId, error: slotError.message });
+  }
+
+  logger.info('Booking synced to Supabase', { bookingId: data.id });
+  return { success: true, operationId: data.id };
 }
 
-async function processWishlistSync(_payload: unknown): Promise<SyncResult> {
-  // Placeholder: integrate with actual API client when available
-  return { success: true, operationId: '' };
+interface CartSyncPayload {
+  patientId: string;
+  items: Array<{ productId: string; quantity: number; unitPrice: number }>;
 }
+
+async function processCartSync(payload: CartSyncPayload): Promise<SyncResult> {
+  const { patientId, items } = payload;
+
+  // Upsert all cart items to Supabase
+  const upserts = items.map((item) => ({
+    patient_id: patientId,
+    product_id: item.productId,
+    quantity: item.quantity,
+    unit_price: item.unitPrice,
+  }));
+
+  const { error } = await supabase
+    .from('cart_items')
+    .upsert(upserts, { onConflict: 'patient_id,product_id' });
+
+  if (error) {
+    return { success: false, operationId: '', error: error.message };
+  }
+
+  logger.info('Cart synced to Supabase', { patientId, itemCount: items.length });
+  return { success: true, operationId: `cart_${patientId}` };
+}
+
+interface WishlistSyncPayload {
+  patientId: string;
+  items: Array<{ productId: string }>;
+}
+
+async function processWishlistSync(payload: WishlistSyncPayload): Promise<SyncResult> {
+  const { patientId, items } = payload;
+
+  // Delete existing wishlist items for this patient and re-insert
+  const { error: deleteError } = await supabase
+    .from('wishlist_items')
+    .delete()
+    .eq('patient_id', patientId);
+
+  if (deleteError) {
+    return { success: false, operationId: '', error: deleteError.message };
+  }
+
+  if (items.length > 0) {
+    const inserts = items.map((item) => ({
+      patient_id: patientId,
+      product_id: item.productId,
+    }));
+
+    const { error: insertError } = await supabase
+      .from('wishlist_items')
+      .insert(inserts);
+
+    if (insertError) {
+      return { success: false, operationId: '', error: insertError.message };
+    }
+  }
+
+  logger.info('Wishlist synced to Supabase', { patientId, itemCount: items.length });
+  return { success: true, operationId: `wishlist_${patientId}` };
+}
+
+// ─── Public API ─────────────────────────────────────────────────────────────
 
 export async function enqueueBookingSync(
   bookingData: { doctorId: string; slotId: string; patientId: string },
@@ -184,13 +288,13 @@ export async function enqueueBookingSync(
   return enqueueOperation('booking', bookingData, idempotencyKey);
 }
 
-export async function enqueueCartSync(cartData: unknown): Promise<string> {
-  const idempotencyKey = generateIdempotencyKey('cart_update', 'patient_001', 'cart');
+export async function enqueueCartSync(cartData: CartSyncPayload): Promise<string> {
+  const idempotencyKey = generateIdempotencyKey('cart_update', cartData.patientId, 'cart');
   return enqueueOperation('cart_update', cartData, idempotencyKey);
 }
 
-export async function enqueueWishlistSync(wishlistData: unknown): Promise<string> {
-  const idempotencyKey = generateIdempotencyKey('wishlist_update', 'patient_001', 'wishlist');
+export async function enqueueWishlistSync(wishlistData: WishlistSyncPayload): Promise<string> {
+  const idempotencyKey = generateIdempotencyKey('wishlist_update', wishlistData.patientId, 'wishlist');
   return enqueueOperation('wishlist_update', wishlistData, idempotencyKey);
 }
 

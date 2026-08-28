@@ -16,7 +16,9 @@ export { BookingConflictModal } from './screens/BookingConflictModal';
 export { SlotExpiredModal } from './screens/SlotExpiredModal';
 export { CancelConsultationSheet } from './screens/CancelConsultationSheet';
 export { CancellationSuccessScreen } from './screens/CancellationSuccessScreen';
+export { RateDoctorModal } from './components/RateDoctorModal';
 export { consultationRepository } from './repository';
+export { reviewRepository } from './reviewRepository';
 export {
   useDoctors,
   useDoctor,
@@ -25,6 +27,11 @@ export {
   useBookConsultation,
   useCancelConsultation,
   consultationKeys,
+  useDoctorReviews,
+  useBookingReview,
+  useHasReviewedBooking,
+  useSubmitReview,
+  reviewKeys,
 } from './hooks';
 export { generateDoctor, generateDoctors, generateSlotsForDoctor } from './generator';
 export {
@@ -40,5 +47,7 @@ export type {
   BookingStatus,
   DoctorFilter,
   DoctorAvailability,
+  DoctorReview,
 } from './types';
 export type { BookingRequest, PaginationParams, PaginatedResult } from './repository';
+export type { SubmitReviewRequest } from './reviewRepository';

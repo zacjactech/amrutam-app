@@ -59,23 +59,23 @@ describe('Record Filter', () => {
   ];
 
   it('filters by search query', () => {
-    const filtered = applyRecordFilter(records as any, { searchQuery: 'blood', types: [], tags: [], fromDate: null, toDate: null });
+    const filtered = applyRecordFilter(records as Parameters<typeof applyRecordFilter>[0], { searchQuery: 'blood', types: [], tags: [], fromDate: null, toDate: null });
     expect(filtered.length).toBeGreaterThanOrEqual(1);
   });
 
   it('filters by type', () => {
-    const filtered = applyRecordFilter(records as any, { searchQuery: '', types: ['lab_report'], tags: [], fromDate: null, toDate: null });
+    const filtered = applyRecordFilter(records as Parameters<typeof applyRecordFilter>[0], { searchQuery: '', types: ['lab_report'], tags: [], fromDate: null, toDate: null });
     expect(filtered.length).toBe(2);
   });
 
   it('filters by tag', () => {
-    const filtered = applyRecordFilter(records as any, { searchQuery: '', types: [], tags: ['annual'], fromDate: null, toDate: null });
+    const filtered = applyRecordFilter(records as Parameters<typeof applyRecordFilter>[0], { searchQuery: '', types: [], tags: ['annual'], fromDate: null, toDate: null });
     expect(filtered.length).toBe(1);
     expect(filtered[0]!.id).toBe('rec_1');
   });
 
   it('filters by date range', () => {
-    const filtered = applyRecordFilter(records as any, {
+    const filtered = applyRecordFilter(records as Parameters<typeof applyRecordFilter>[0], {
       searchQuery: '',
       types: [],
       tags: [],
@@ -93,7 +93,7 @@ describe('Record Timeline Grouping', () => {
       { occurredAt: '2024-01-15T10:00:00Z', id: '1' },
       { occurredAt: '2024-01-20T10:00:00Z', id: '2' },
       { occurredAt: '2024-02-10T10:00:00Z', id: '3' },
-    ] as any;
+    ] as Parameters<typeof groupRecordsByMonth>[0];
 
     const groups = groupRecordsByMonth(records);
     expect(groups.size).toBe(2);
@@ -106,7 +106,7 @@ describe('Record Timeline Grouping', () => {
       { occurredAt: '2024-01-10T10:00:00Z', id: '1' },
       { occurredAt: '2024-01-15T10:00:00Z', id: '2' },
       { occurredAt: '2024-01-05T10:00:00Z', id: '3' },
-    ] as any;
+    ] as Parameters<typeof groupRecordsByMonth>[0];
 
     const groups = groupRecordsByMonth(records);
     const janRecords = groups.get('2024-01');

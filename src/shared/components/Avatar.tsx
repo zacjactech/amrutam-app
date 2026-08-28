@@ -1,8 +1,8 @@
 // Avatar - Circular avatar component
 
 import React from 'react';
-import { View, Text, Image, StyleSheet, ViewStyle, ImageStyle } from 'react-native';
-import { useThemeColors, useThemeSpacing } from './ThemeProvider';
+import { View, Text, Image, StyleSheet, ViewStyle } from 'react-native';
+import { useThemeColors } from './ThemeProvider';
 
 type AvatarSize = 'sm' | 'md' | 'lg' | 'xl';
 

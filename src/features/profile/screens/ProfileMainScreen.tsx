@@ -1,31 +1,59 @@
 // Profile Module - Profile Main Screen
 
 import React from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { AppText } from '../../../shared/components/AppText';
 import { Avatar } from '../../../shared/components/Avatar';
+import { Button } from '../../../shared/components/Button';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
+import { useAuthContext } from '../../../infrastructure/auth/AuthContext';
 
 interface ProfileMainScreenProps {
   navigation: {
     navigate: (screen: string) => void;
+    reset: (state: { index: number; routes: { name: string }[] }) => void;
   };
 }
 
 export function ProfileMainScreen({ navigation }: ProfileMainScreenProps) {
   const colors = useThemeColors();
   const spacing = useThemeSpacing();
+  const { user, signOut } = useAuthContext();
+
+  const phone = user?.phone ?? 'Not available';
+  const displayName = user?.user_metadata?.full_name ?? user?.phone ?? 'User';
+
+  const handleSignOut = async () => {
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: async () => {
+            await signOut();
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Splash' }],
+            });
+          },
+        },
+      ],
+    );
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
-          <Avatar size="xl" />
+          <Avatar size="xl" initials={displayName.charAt(0).toUpperCase()} />
           <AppText variant="h1" style={{ color: colors.text.primary, marginTop: spacing.md }}>
-            User Name
+            {displayName}
           </AppText>
           <AppText variant="body" style={{ color: colors.text.secondary }}>
-            +91 98765 43210
+            {phone}
           </AppText>
         </View>
         <View style={[styles.section, { backgroundColor: colors.surface.default, borderColor: colors.border.default }]}>
@@ -41,6 +69,15 @@ export function ProfileMainScreen({ navigation }: ProfileMainScreenProps) {
           >
             <AppText variant="body" style={{ color: colors.text.primary }}>Notifications</AppText>
           </TouchableOpacity>
+        </View>
+        <View style={{ marginTop: spacing.xl }}>
+          <Button
+            title="Sign Out"
+            variant="outline"
+            onPress={handleSignOut}
+            style={{ borderColor: colors.action.destructive }}
+            textStyle={{ color: colors.action.destructive }}
+          />
         </View>
       </ScrollView>
     </View>

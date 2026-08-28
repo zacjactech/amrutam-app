@@ -6,8 +6,6 @@ import {
   Text,
   StyleSheet,
   Animated,
-  Dimensions,
-  TouchableOpacity,
   Modal as RNModal,
   TouchableWithoutFeedback,
   ViewStyle,

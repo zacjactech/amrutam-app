@@ -15,6 +15,7 @@ A production-oriented React Native implementation of the Amrutam Senior React As
 - Feature-first architecture
 - TanStack Query server-state management
 - Zustand client-state management
+- Supabase (PostgreSQL) backend
 - SQLite-backed offline persistence
 - Offline mutation queue
 - Idempotent booking mutations
@@ -24,7 +25,6 @@ A production-oriented React Native implementation of the Amrutam Senior React As
 - Dark mode
 - Accessibility
 - Unit/component/E2E testing
-- Deterministic mock failure injection
 
 ## Requirements
 
@@ -43,7 +43,8 @@ Create environment files from the example:
 Example variables:
 
 ```text
-API_BASE_URL=
+EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 API_TIMEOUT_MS=10000
 ENABLE_MOCK_FAILURES=false
 ENABLE_PERFORMANCE_LOGGING=false
@@ -59,11 +60,26 @@ Feature Hook
 Use Case
   ↓
 Repository
-  ├── API
-  └── SQLite
+  ├── Supabase (server state)
+  └── SQLite (offline state)
 ```
 
 TanStack Query owns server state. Zustand owns small client/UI state. SQLite owns durable offline state.
+
+## Backend
+
+The app uses Supabase as the backend:
+
+- **Database**: PostgreSQL with 8 tables (doctors, slots, bookings, products, cart_items, wishlist_items, health_records, sync_operations)
+- **Seeded Data**: 100 doctors, 8,900 slots, 500 products, 500 health records
+- **RLS**: Row Level Security enabled on all tables
+- **API**: Auto-generated REST API via PostgREST
+
+### Supabase Setup
+
+1. Link project: `supabase link --project-ref fxegywsxtrtosnnjhftm`
+2. Apply migrations: `supabase db push`
+3. Seed data: `supabase db query -f supabase/seed.sql --linked`
 
 ## Performance
 
@@ -76,12 +92,6 @@ The app uses:
 - Selective query persistence.
 - Avoidance of large global stores.
 
-The test dataset contains:
-
-- 5,000 doctors
-- 20,000 products
-- 10,000 health records
-
 ## Offline
 
 Cached data remains available when possible.
@@ -91,19 +101,6 @@ Cart operations are local-first.
 Offline bookings are inserted into a durable queue and synchronized when connectivity returns.
 
 Bookings are never displayed as confirmed until the remote operation succeeds.
-
-## Failure Handling
-
-The mock layer can simulate:
-
-- Timeout
-- Server failure
-- Invalid JSON
-- Empty response
-- Partial response
-- Session expiration
-
-The API layer converts these into typed application errors.
 
 ## Testing
 

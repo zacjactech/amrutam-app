@@ -1,16 +1,18 @@
 // Auth Module - Sign In Screen
 
 import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Alert } from 'react-native';
 import { AppText } from '../../../shared/components/AppText';
 import { Button } from '../../../shared/components/Button';
 import { Input } from '../../../shared/components/Input';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
 import { DoctorIllustration } from '../../../shared/components/Illustrations';
+import { useAuthContext } from '../../../infrastructure/auth/AuthContext';
+import { validatePhone } from '../../../shared/utils/phoneValidation';
 
 interface SignInScreenProps {
   navigation: {
-    navigate: (screen: string) => void;
+    navigate: (screen: string, params?: Record<string, unknown>) => void;
     goBack: () => void;
   };
 }
@@ -18,7 +20,29 @@ interface SignInScreenProps {
 export function SignInScreen({ navigation }: SignInScreenProps) {
   const colors = useThemeColors();
   const spacing = useThemeSpacing();
+  const { signInWithPhone } = useAuthContext();
   const [phone, setPhone] = useState('');
+  const [isSending, setIsSending] = useState(false);
+
+  const handleSendOtp = async () => {
+    const trimmed = phone.trim();
+    const validationError = validatePhone(trimmed);
+    if (validationError) {
+      Alert.alert('Invalid phone number', validationError);
+      return;
+    }
+
+    setIsSending(true);
+    const { error } = await signInWithPhone(trimmed);
+    setIsSending(false);
+
+    if (error) {
+      Alert.alert('Failed to send OTP', error);
+      return;
+    }
+
+    navigation.navigate('OTPVerification', { phone: trimmed });
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
@@ -36,15 +60,17 @@ export function SignInScreen({ navigation }: SignInScreenProps) {
           <Input
             value={phone}
             onChangeText={setPhone}
-            placeholder="Phone number"
+            placeholder="Phone number (e.g. +919876543210)"
+            keyboardType="phone-pad"
           />
         </View>
       </View>
       <View style={styles.buttons}>
         <Button
-          title="Send OTP"
-          onPress={() => navigation.navigate('OTPVerification')}
+          title={isSending ? 'Sending OTP...' : 'Send OTP'}
+          onPress={handleSendOtp}
           variant="primary"
+          disabled={isSending}
         />
         <Button
           title="Create Account"

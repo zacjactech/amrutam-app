@@ -7,7 +7,6 @@ import { Image } from 'expo-image';
 import { useWishlist, useCart } from '../hooks';
 import { AppText } from '../../../shared/components/AppText';
 import { Button } from '../../../shared/components/Button';
-import { AppEmptyState } from '../../../shared/components/AppEmptyState';
 import { AppSkeleton } from '../../../shared/components/AppSkeleton';
 import { getProductCache } from '../generator';
 import { Product } from '../types';

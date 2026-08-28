@@ -9,7 +9,7 @@ const wishlistItems = new Map<string, { product_id: string; added_at: string }>(
 function executeSql(
   sql: string,
   params: unknown[] = [],
-): any[] {
+): unknown[] {
   const normalized = sql.trim().toLowerCase();
 
   if (normalized.startsWith('select * from cart_items')) {
@@ -113,6 +113,35 @@ const mockDb = {
 
 jest.mock('expo-sqlite', () => ({
   openDatabaseAsync: jest.fn(() => Promise.resolve(mockDb)),
+}));
+
+// Mock Supabase client to avoid env var requirements in tests
+jest.mock('./src/infrastructure/supabase/client', () => ({
+  supabase: {
+    from: jest.fn(() => ({
+      select: jest.fn().mockReturnThis(),
+      insert: jest.fn().mockReturnThis(),
+      update: jest.fn().mockReturnThis(),
+      upsert: jest.fn().mockReturnThis(),
+      delete: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      neq: jest.fn().mockReturnThis(),
+      ilike: jest.fn().mockReturnThis(),
+      or: jest.fn().mockReturnThis(),
+      order: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+      single: jest.fn().mockResolvedValue({ data: null, error: null }),
+      then: jest.fn().mockResolvedValue({ data: [], error: null }),
+    })),
+    auth: {
+      getSession: jest.fn().mockResolvedValue({ data: { session: null }, error: null }),
+      onAuthStateChange: jest.fn().mockReturnValue({ data: { subscription: { unsubscribe: jest.fn() } } }),
+      signInWithOtp: jest.fn().mockResolvedValue({ data: {}, error: null }),
+      verifyOtp: jest.fn().mockResolvedValue({ data: { session: null, user: null }, error: null }),
+      signOut: jest.fn().mockResolvedValue({ error: null }),
+      updateUser: jest.fn().mockResolvedValue({ data: { user: null }, error: null }),
+    },
+  },
 }));
 
 // Mock console methods to reduce noise in tests

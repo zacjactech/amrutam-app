@@ -1,120 +1,139 @@
-// Health Records Module - Repository
+// Health Records Module - Repository (Supabase)
 
-import { z } from 'zod';
-import { HealthRecord, RecordFilter, PaginatedResult, Attachment } from './types';
-import { shouldFail, createFailureError } from '../../infrastructure/testing/failureInjector';
-import { apiRequest } from '../../infrastructure/api/apiClient';
-import { healthRecordSchema } from '../../domain/schemas';
+import { HealthRecord, RecordFilter, PaginatedResult } from './types';
+import { supabase } from '../../infrastructure/supabase/client';
+import { Database } from '../../infrastructure/supabase/database.types';
+
+type HealthRecordRow = Database['public']['Tables']['health_records']['Row'];
+type AttachmentJson = {
+  id: string;
+  name: string;
+  mimeType: 'image/jpeg' | 'image/png' | 'application/pdf';
+  thumbnailUrl?: string;
+  uri?: string;
+  sizeBytes?: number;
+};
 
 export interface HealthRecordRepository {
   getRecords(
     filter: RecordFilter,
     pagination: { page: number; pageSize: number },
+    patientId?: string,
   ): Promise<PaginatedResult<HealthRecord>>;
   getRecordById(recordId: string): Promise<HealthRecord | null>;
-  searchRecords(query: string): Promise<HealthRecord[]>;
+  searchRecords(query: string, patientId?: string): Promise<HealthRecord[]>;
 }
 
-function normalizeRecord(record: z.infer<typeof healthRecordSchema>): HealthRecord {
+function mapRowToRecord(row: HealthRecordRow): HealthRecord {
+  const attachments = (row.attachments as AttachmentJson[]) || [];
   return {
-    ...record,
-    description: record.description ?? '',
-    attachments: record.attachments.map((a): Attachment => ({
+    id: row.id,
+    patientId: row.patient_id,
+    type: row.type as HealthRecord['type'],
+    title: row.title,
+    description: row.description ?? undefined,
+    occurredAt: row.occurred_at,
+    tags: row.tags,
+    attachments: attachments.map((a) => ({
       id: a.id,
       name: a.name,
       mimeType: a.mimeType,
-      thumbnailUrl: a.thumbnailUrl ?? undefined,
-      uri: a.uri ?? undefined,
-      sizeBytes: a.sizeBytes ?? undefined,
+      thumbnailUrl: a.thumbnailUrl,
+      uri: a.uri,
+      sizeBytes: a.sizeBytes,
     })),
+    metadata: row.metadata as Record<string, string | number | boolean | null>,
   };
 }
 
-export class MockHealthRecordRepository implements HealthRecordRepository {
+export class HealthRecordRepositoryImpl implements HealthRecordRepository {
   async getRecords(
     filter: RecordFilter,
     pagination: { page: number; pageSize: number },
+    patientId?: string,
   ): Promise<PaginatedResult<HealthRecord>> {
-    const failure = shouldFail({ endpoint: '/health-records', method: 'GET' });
-    if (failure) {
-      throw createFailureError(failure);
-    }
+    let query = supabase
+      .from('health_records')
+      .select('*', { count: 'exact' });
 
-    const params = new URLSearchParams({
-      _page: String(pagination.page + 1),
-      _limit: String(pagination.pageSize),
-    });
+    if (patientId) {
+      query = query.eq('patient_id', patientId);
+    }
 
     if (filter.searchQuery) {
-      params.set('q', filter.searchQuery);
+      query = query.or(`title.ilike.%${filter.searchQuery}%,description.ilike.%${filter.searchQuery}%`);
     }
 
-    const records = await apiRequest(
-      { method: 'GET', endpoint: `/healthRecords?${params.toString()}` },
-      z.array(healthRecordSchema),
-    );
+    if (filter.types.length > 0) {
+      query = query.in('type', filter.types);
+    }
 
-    const filtered = records.filter((record) => {
-      if (filter.types.length > 0 && !filter.types.includes(record.type)) {
-        return false;
-      }
-      if (filter.tags.length > 0 && !filter.tags.some((tag) => record.tags.includes(tag))) {
-        return false;
-      }
-      if (filter.fromDate !== null && record.occurredAt < filter.fromDate) {
-        return false;
-      }
-      if (filter.toDate !== null && record.occurredAt > filter.toDate) {
-        return false;
-      }
-      return true;
-    });
+    if (filter.tags.length > 0) {
+      query = query.overlaps('tags', filter.tags);
+    }
 
-    const total = filtered.length;
-    const hasMore = total > pagination.pageSize;
+    if (filter.fromDate !== null) {
+      query = query.gte('occurred_at', filter.fromDate);
+    }
+
+    if (filter.toDate !== null) {
+      query = query.lte('occurred_at', filter.toDate);
+    }
+
+    const from = pagination.page * pagination.pageSize;
+    const to = from + pagination.pageSize - 1;
+
+    const { data, count, error } = await query
+      .order('occurred_at', { ascending: false })
+      .range(from, to);
+
+    if (error) throw error;
+
+    const records = (data || []).map(mapRowToRecord);
+    const total = count || 0;
 
     return {
-      data: filtered.map(normalizeRecord),
+      data: records,
       page: pagination.page,
       pageSize: pagination.pageSize,
       total,
-      hasMore,
+      hasMore: total > (pagination.page + 1) * pagination.pageSize,
     };
   }
 
   async getRecordById(recordId: string): Promise<HealthRecord | null> {
-    const failure = shouldFail({ endpoint: `/health-records/${recordId}`, method: 'GET' });
-    if (failure) {
-      throw createFailureError(failure);
-    }
+    const { data, error } = await supabase
+      .from('health_records')
+      .select('*')
+      .eq('id', recordId)
+      .single();
 
-    try {
-      const record = await apiRequest(
-        { method: 'GET', endpoint: `/healthRecords/${recordId}` },
-        healthRecordSchema,
-      );
-      return normalizeRecord(record);
-    } catch (error) {
-      if (error instanceof Error && error.name === 'ApiError') {
-        return null;
-      }
+    if (error) {
+      if (error.code === 'PGRST116') return null;
       throw error;
     }
+
+    return mapRowToRecord(data);
   }
 
-  async searchRecords(query: string): Promise<HealthRecord[]> {
-    const failure = shouldFail({ endpoint: '/health-records/search', method: 'GET' });
-    if (failure) {
-      throw createFailureError(failure);
+  async searchRecords(query: string, patientId?: string): Promise<HealthRecord[]> {
+    let queryBuilder = supabase
+      .from('health_records')
+      .select('*')
+      .or(`title.ilike.%${query}%,description.ilike.%${query}%`);
+
+    if (patientId) {
+      queryBuilder = queryBuilder.eq('patient_id', patientId);
     }
 
-    const records = await apiRequest(
-      { method: 'GET', endpoint: `/healthRecords?q=${encodeURIComponent(query)}` },
-      z.array(healthRecordSchema),
-    );
+    const { data, error } = await queryBuilder
+      .order('occurred_at', { ascending: false })
+      .limit(20);
 
-    return records.map(normalizeRecord);
+    if (error) throw error;
+
+    return (data || []).map(mapRowToRecord);
   }
 }
 
-export const healthRecordRepository = new MockHealthRecordRepository();
+export const healthRecordRepository = new HealthRecordRepositoryImpl();

@@ -1,13 +1,16 @@
 // Root Application Component
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { QueryClient } from '@tanstack/react-query';
 import { ErrorBoundary } from '../shared/components/ErrorBoundary';
 import { ThemeProvider } from '../shared/components/ThemeProvider';
 import { ToastProvider } from '../shared/components/Toast';
+import { AuthProvider } from '../infrastructure/auth/AuthContext';
 import { Navigation } from '../navigation/Navigation';
+import { startSyncScheduler, stopSyncScheduler } from '../infrastructure/sync/syncScheduler';
+import { SyncStatusProvider } from '../infrastructure/sync/SyncStatusContext';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -20,16 +23,33 @@ const queryClient = new QueryClient({
   },
 });
 
+function SyncSchedulerProvider({ children }: { children: React.ReactNode }) {
+  useEffect(() => {
+    startSyncScheduler();
+    return () => {
+      stopSyncScheduler();
+    };
+  }, []);
+
+  return <>{children}</>;
+}
+
 export default function App(): React.JSX.Element {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
-          <ToastProvider>
-            <Navigation />
-            <StatusBar style="auto" />
-          </ToastProvider>
-        </ThemeProvider>
+        <AuthProvider>
+          <SyncStatusProvider>
+          <SyncSchedulerProvider>
+          <ThemeProvider>
+            <ToastProvider>
+              <Navigation />
+              <StatusBar style="auto" />
+            </ToastProvider>
+          </ThemeProvider>
+          </SyncSchedulerProvider>
+          </SyncStatusProvider>
+        </AuthProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );

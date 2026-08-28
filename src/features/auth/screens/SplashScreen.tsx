@@ -5,6 +5,7 @@ import { View, StyleSheet } from 'react-native';
 import { AppText } from '../../../shared/components/AppText';
 import { useThemeColors } from '../../../shared/components/ThemeProvider';
 import { SplashIllustration } from '../../../shared/components/Illustrations';
+import { useAuthContext } from '../../../infrastructure/auth/AuthContext';
 
 interface SplashScreenProps {
   navigation: {
@@ -14,16 +15,27 @@ interface SplashScreenProps {
 
 export function SplashScreen({ navigation }: SplashScreenProps) {
   const colors = useThemeColors();
+  const { isAuthenticated, isLoading } = useAuthContext();
 
   useEffect(() => {
+    if (isLoading) return; // Wait for auth state to load
+
     const timer = setTimeout(() => {
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Onboarding' }],
-      });
-    }, 2000);
+      if (isAuthenticated) {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'MainTabs' }],
+        });
+      } else {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Onboarding' }],
+        });
+      }
+    }, 1500);
+
     return () => clearTimeout(timer);
-  }, [navigation]);
+  }, [isLoading, isAuthenticated, navigation]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.action.primary }]}>
