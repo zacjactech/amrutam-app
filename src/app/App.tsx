@@ -14,6 +14,7 @@ import { AuthProvider } from '../infrastructure/auth/AuthContext';
 import { Navigation } from '../navigation/Navigation';
 import { startSyncScheduler, stopSyncScheduler } from '../infrastructure/sync/syncScheduler';
 import { SyncStatusProvider } from '../infrastructure/sync/SyncStatusContext';
+import { initializeConnectivity } from '../infrastructure/connectivity/connectionManager';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -28,9 +29,16 @@ const queryClient = new QueryClient({
 
 function SyncSchedulerProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
+    let unsubConnectivity: (() => void) | undefined;
+    initializeConnectivity().then((unsub) => {
+      if (typeof unsub === 'function') {
+        unsubConnectivity = unsub;
+      }
+    });
     startSyncScheduler();
     return () => {
       stopSyncScheduler();
+      unsubConnectivity?.();
     };
   }, []);
 

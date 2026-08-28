@@ -23,11 +23,11 @@ export function ConnectionIndicator() {
     }).start();
   }, [status, slideAnim]);
 
-  if (status === 'online') {
+  if (status !== 'offline') {
     return null;
   }
 
-  const isError = status === 'offline';
+  const isError = true;
   const backgroundColor = isError ? colors.status.error : colors.status.warning;
   const textColor = '#FFFFFF';
   const message = isError ? 'You are offline' : 'Checking connection...';
