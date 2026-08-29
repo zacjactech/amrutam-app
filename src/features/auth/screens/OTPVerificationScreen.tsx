@@ -71,8 +71,11 @@ export function OTPVerificationScreen({ route, navigation }: OTPVerificationScre
     };
   }, [startCooldownTimer]);
 
+  const otpRef = useRef(otp);
+  otpRef.current = otp;
+
   const handleVerify = useCallback(async () => {
-    const trimmedOtp = otp.trim();
+    const trimmedOtp = otpRef.current.trim();
     if (!trimmedOtp || trimmedOtp.length < 8) {
       Alert.alert('Invalid OTP', 'Please enter the complete 8-digit OTP code.');
       return;
@@ -91,16 +94,11 @@ export function OTPVerificationScreen({ route, navigation }: OTPVerificationScre
       index: 0,
       routes: [{ name: 'MainTabs' }],
     });
-  }, [email, otp, name, verifyOtp, navigation]);
+  }, [email, name, verifyOtp, navigation]);
 
   const handleOtpChange = useCallback((text: string) => {
     setOtp(text);
-    if (text.length === 8) {
-      setTimeout(() => {
-        handleVerify();
-      }, 150);
-    }
-  }, [handleVerify]);
+  }, []);
 
   const handleResendOtp = async () => {
     if (cooldown > 0) {
