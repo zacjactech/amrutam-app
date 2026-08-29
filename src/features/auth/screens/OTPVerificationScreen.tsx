@@ -1,4 +1,4 @@
-// Auth Module - OTP Verification Screen
+// Auth Module - OTP Verification Screen (Email OTP)
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, StyleSheet, Alert, TextInput } from 'react-native';
@@ -11,7 +11,7 @@ import { AuthLayout } from '../components/AuthLayout';
 import { AuthHeader } from '../components/AuthHeader';
 
 interface OTPVerificationScreenProps {
-  route: { params: { phone: string; name?: string } };
+  route: { params: { email: string; name?: string } };
   navigation: {
     navigate: (screen: string) => void;
     reset: (state: { index: number; routes: { name: string }[] }) => void;
@@ -20,7 +20,7 @@ interface OTPVerificationScreenProps {
 
 export function OTPVerificationScreen({ route, navigation }: OTPVerificationScreenProps) {
   const colors = useThemeColors();
-  const { verifyOtp, signInWithPhone, otpCooldownSeconds } = useAuthContext();
+  const { verifyOtp, signInWithEmail, otpCooldownSeconds } = useAuthContext();
   const [otp, setOtp] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
@@ -28,7 +28,7 @@ export function OTPVerificationScreen({ route, navigation }: OTPVerificationScre
   const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const otpInputRef = useRef<TextInput>(null);
 
-  const phone = route.params.phone;
+  const email = route.params.email;
   const name = route.params.name;
 
   useEffect(() => {
@@ -43,7 +43,7 @@ export function OTPVerificationScreen({ route, navigation }: OTPVerificationScre
       clearInterval(cooldownRef.current);
     }
 
-    const remaining = otpCooldownSeconds(phone);
+    const remaining = otpCooldownSeconds(email);
     if (remaining <= 0) {
       setCooldown(0);
       return;
@@ -52,7 +52,7 @@ export function OTPVerificationScreen({ route, navigation }: OTPVerificationScre
     setCooldown(remaining);
 
     cooldownRef.current = setInterval(() => {
-      const newRemaining = otpCooldownSeconds(phone);
+      const newRemaining = otpCooldownSeconds(email);
       setCooldown(newRemaining);
 
       if (newRemaining <= 0 && cooldownRef.current) {
@@ -60,7 +60,7 @@ export function OTPVerificationScreen({ route, navigation }: OTPVerificationScre
         cooldownRef.current = null;
       }
     }, 1000);
-  }, [phone, otpCooldownSeconds]);
+  }, [email, otpCooldownSeconds]);
 
   useEffect(() => {
     startCooldownTimer();
@@ -73,13 +73,13 @@ export function OTPVerificationScreen({ route, navigation }: OTPVerificationScre
 
   const handleVerify = useCallback(async () => {
     const trimmedOtp = otp.trim();
-    if (!trimmedOtp || trimmedOtp.length < 4) {
-      Alert.alert('Invalid OTP', 'Please enter the complete OTP code.');
+    if (!trimmedOtp || trimmedOtp.length < 8) {
+      Alert.alert('Invalid OTP', 'Please enter the complete 8-digit OTP code.');
       return;
     }
 
     setIsVerifying(true);
-    const { error } = await verifyOtp(phone, trimmedOtp, name);
+    const { error } = await verifyOtp(email, trimmedOtp, name);
     setIsVerifying(false);
 
     if (error) {
@@ -91,11 +91,11 @@ export function OTPVerificationScreen({ route, navigation }: OTPVerificationScre
       index: 0,
       routes: [{ name: 'MainTabs' }],
     });
-  }, [phone, otp, name, verifyOtp, navigation]);
+  }, [email, otp, name, verifyOtp, navigation]);
 
   const handleOtpChange = useCallback((text: string) => {
     setOtp(text);
-    if (text.length === 6) {
+    if (text.length === 8) {
       setTimeout(() => {
         handleVerify();
       }, 150);
@@ -109,7 +109,7 @@ export function OTPVerificationScreen({ route, navigation }: OTPVerificationScre
     }
 
     setIsResending(true);
-    const { error } = await signInWithPhone(phone);
+    const { error } = await signInWithEmail(email);
     setIsResending(false);
 
     if (error) {
@@ -117,7 +117,7 @@ export function OTPVerificationScreen({ route, navigation }: OTPVerificationScre
       return;
     }
 
-    Alert.alert('OTP Sent', 'A new OTP has been sent to your phone.');
+    Alert.alert('OTP Sent', 'A new OTP has been sent to your email.');
     startCooldownTimer();
   };
 
@@ -127,9 +127,10 @@ export function OTPVerificationScreen({ route, navigation }: OTPVerificationScre
       ? 'Sending...'
       : 'Resend OTP';
 
-  const maskedPhone = phone.length > 6
-    ? phone.slice(0, -4).replace(/\d/g, '*') + phone.slice(-4)
-    : phone;
+  // Mask email for display: j***n@example.com
+  const maskedEmail = email.includes('@')
+    ? email[0] + '***' + email.slice(email.indexOf('@'))
+    : email;
 
   return (
     <AuthLayout
@@ -140,7 +141,7 @@ export function OTPVerificationScreen({ route, navigation }: OTPVerificationScre
             onPress={handleVerify}
             variant="primary"
             size="large"
-            disabled={isVerifying || otp.length < 4}
+            disabled={isVerifying || otp.length < 8}
             loading={isVerifying}
           />
           <Button
@@ -154,8 +155,8 @@ export function OTPVerificationScreen({ route, navigation }: OTPVerificationScre
       }
     >
       <AuthHeader
-        title="Verify your phone"
-        description={`Enter the 6-digit code sent to\n${maskedPhone}`}
+        title="Verify your email"
+        description={`Enter the 8-digit code sent to\n${maskedEmail}`}
       />
       <View style={styles.form}>
         <Input
@@ -164,12 +165,12 @@ export function OTPVerificationScreen({ route, navigation }: OTPVerificationScre
           onChangeText={handleOtpChange}
           placeholder="Enter OTP"
           keyboardType="number-pad"
-          maxLength={6}
+          maxLength={8}
           returnKeyType="done"
           onSubmitEditing={handleVerify}
         />
         <AppText variant="bodySmall" style={{ color: colors.text.tertiary, textAlign: 'center' }}>
-          Didn't receive the code? Check your messages.
+          Didn&apos;t receive the code? Check your spam folder.
         </AppText>
       </View>
     </AuthLayout>

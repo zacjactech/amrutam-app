@@ -9,6 +9,20 @@ import { ProductFilter, DEFAULT_PRODUCT_FILTER, SortOption } from './types';
 import { useAuthContext } from '../../infrastructure/auth/AuthContext';
 import type { Product } from './types';
 import { getProductCacheAsync } from './generator';
+import { logger } from '../../infrastructure/logging/logger';
+
+/** Module-level error handler — set by ShopMutationProvider */
+let _showError: ((message: string) => void) | null = null;
+
+export function setShopErrorHandler(handler: (message: string) => void): void {
+  _showError = handler;
+}
+
+function handleError(label: string, error: unknown): void {
+  const message = error instanceof Error ? error.message : `${label} failed`;
+  logger.error(label, { error: message });
+  _showError?.(message);
+}
 
 export const shopKeys = {
   all: ['shop'] as const,
@@ -81,6 +95,7 @@ export function useCart() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: shopKeys.cart() });
     },
+    onError: (error) => handleError('Cart: add item', error),
   });
 
   const updateCartQuantity = useMutation({
@@ -89,6 +104,7 @@ export function useCart() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: shopKeys.cart() });
     },
+    onError: (error) => handleError('Cart: update quantity', error),
   });
 
   const removeFromCart = useMutation({
@@ -96,6 +112,7 @@ export function useCart() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: shopKeys.cart() });
     },
+    onError: (error) => handleError('Cart: remove item', error),
   });
 
   const clearCart = useMutation({
@@ -103,6 +120,7 @@ export function useCart() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: shopKeys.cart() });
     },
+    onError: (error) => handleError('Cart: clear', error),
   });
 
   return {
@@ -139,6 +157,7 @@ export function useWishlist() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: shopKeys.wishlist() });
     },
+    onError: (error) => handleError('Wishlist: toggle', error),
   });
 
   const isInWishlist = (productId: string): boolean => {

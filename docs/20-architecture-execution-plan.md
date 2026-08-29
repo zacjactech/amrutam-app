@@ -438,30 +438,18 @@ User Action
 ```bash
 # .env.development
 APP_ENV=development
-API_BASE_URL=http://localhost:3000
-API_TIMEOUT_MS=10000
-ENABLE_MOCK_FAILURES=true
-ENABLE_PERFORMANCE_LOGGING=true
-MOCK_DATASET_SIZE=small
-ENCRYPTION_KEY=dev-only-key
+EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 
 # .env.staging
 APP_ENV=staging
-API_BASE_URL=https://staging-api.amrutam.app
-API_TIMEOUT_MS=15000
-ENABLE_MOCK_FAILURES=false
-ENABLE_PERFORMANCE_LOGGING=true
-MOCK_DATASET_SIZE=full
-ENCRYPTION_KEY=${EAS_ENCRYPTION_KEY}
+EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 
 # .env.production
 APP_ENV=production
-API_BASE_URL=https://api.amrutam.app
-API_TIMEOUT_MS=15000
-ENABLE_MOCK_FAILURES=false
-ENABLE_PERFORMANCE_LOGGING=false
-MOCK_DATASET_SIZE=full
-ENCRYPTION_KEY=${EAS_ENCRYPTION_KEY}
+EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
 
 ### 6.2 Environment Validation Schema
@@ -472,12 +460,8 @@ import { z } from 'zod';
 
 const envSchema = z.object({
   APP_ENV: z.enum(['development', 'staging', 'production']),
-  API_BASE_URL: z.string().url(),
-  API_TIMEOUT_MS: z.coerce.number().int().positive().max(30000),
-  ENABLE_MOCK_FAILURES: z.coerce.boolean(),
-  ENABLE_PERFORMANCE_LOGGING: z.coerce.boolean(),
-  MOCK_DATASET_SIZE: z.enum(['small', 'full']),
-  ENCRYPTION_KEY: z.string().min(16),
+  EXPO_PUBLIC_SUPABASE_URL: z.string().url(),
+  EXPO_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
 });
 
 export const env = envSchema.parse(process.env);

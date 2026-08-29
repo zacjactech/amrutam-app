@@ -1,14 +1,10 @@
-// Auth Module - Sign Up Screen
+// Auth Module - Sign Up Screen (Email OTP)
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Alert, Keyboard, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Keyboard, Alert } from 'react-native';
 import { Button } from '../../../shared/components/Button';
 import { Input } from '../../../shared/components/Input';
-import { CountryCodePicker } from '../../../shared/components/CountryCodePicker';
-import { useThemeColors } from '../../../shared/components/ThemeProvider';
 import { useAuthContext } from '../../../infrastructure/auth/AuthContext';
-import { validatePhone, formatLocalPhoneInput, toE164Phone } from '../../../shared/utils/phoneValidation';
-import { usePersistedCountryCode } from '../../../shared/hooks/usePersistedCountryCode';
 import { AuthLayout } from '../components/AuthLayout';
 import { AuthHeader } from '../components/AuthHeader';
 
@@ -20,21 +16,15 @@ interface SignUpScreenProps {
 }
 
 export function SignUpScreen({ navigation }: SignUpScreenProps) {
-  const colors = useThemeColors();
-  const { signInWithPhone } = useAuthContext();
+  const { signInWithEmail } = useAuthContext();
   const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const { selectedCountry, setSelectedCountry, recentCountries } = usePersistedCountryCode();
-  const [showCountryPicker, setShowCountryPicker] = useState(false);
 
   const handleContinue = async () => {
     Keyboard.dismiss();
     const trimmedName = name.trim();
-    
-    // Build full phone number with country code
-    const fullPhone = `${selectedCountry.dialCode}${phone}`;
-    const raw = toE164Phone(fullPhone);
+    const trimmedEmail = email.trim().toLowerCase();
 
     if (!trimmedName) {
       Alert.alert('Name required', 'Please enter your full name.');
@@ -46,14 +36,18 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
       return;
     }
 
-    const validationError = validatePhone(raw);
-    if (validationError) {
-      Alert.alert('Invalid phone number', validationError);
+    if (!trimmedEmail) {
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      Alert.alert('Invalid email', 'Please enter a valid email address.');
       return;
     }
 
     setIsSending(true);
-    const { error } = await signInWithPhone(raw);
+    const { error } = await signInWithEmail(trimmedEmail);
     setIsSending(false);
 
     if (error) {
@@ -61,7 +55,7 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
       return;
     }
 
-    navigation.navigate('OTPVerification', { phone: raw, name: trimmedName });
+    navigation.navigate('OTPVerification', { email: trimmedEmail, name: trimmedName });
   };
 
   return (
@@ -98,45 +92,18 @@ export function SignUpScreen({ navigation }: SignUpScreenProps) {
           textContentType="name"
           autoCapitalize="words"
         />
-        <View style={styles.phoneContainer}>
-          <TouchableOpacity
-            style={[
-              styles.countrySelector,
-              {
-                borderColor: colors.border.default,
-                backgroundColor: colors.surface.default,
-              },
-            ]}
-            onPress={() => setShowCountryPicker(true)}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.flag}>{selectedCountry.flag}</Text>
-            <Text style={[styles.dialCode, { color: colors.text.primary }]}>
-              {selectedCountry.dialCode}
-            </Text>
-            <Text style={[styles.chevron, { color: colors.text.tertiary }]}>▼</Text>
-          </TouchableOpacity>
-          <View style={styles.phoneInputContainer}>
-            <Input
-              value={phone}
-              onChangeText={(text) => setPhone(formatLocalPhoneInput(text))}
-              placeholder="Phone number"
-              keyboardType="phone-pad"
-              maxLength={15}
-              returnKeyType="done"
-              onSubmitEditing={handleContinue}
-            />
-          </View>
-        </View>
+        <Input
+          value={email}
+          onChangeText={setEmail}
+          placeholder="Email address"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoComplete="email"
+          textContentType="emailAddress"
+          returnKeyType="done"
+          onSubmitEditing={handleContinue}
+        />
       </View>
-
-      <CountryCodePicker
-        visible={showCountryPicker}
-        onClose={() => setShowCountryPicker(false)}
-        onSelect={setSelectedCountry}
-        selectedCountry={selectedCountry}
-        recentCountries={recentCountries}
-      />
     </AuthLayout>
   );
 }
@@ -146,34 +113,5 @@ const styles = StyleSheet.create({
     width: '100%',
     gap: 12,
     marginTop: 8,
-  },
-  phoneContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
-  },
-  countrySelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    height: 48,
-    minWidth: 100,
-  },
-  flag: {
-    fontSize: 20,
-    marginRight: 6,
-  },
-  dialCode: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  chevron: {
-    fontSize: 10,
-    marginLeft: 6,
-  },
-  phoneInputContainer: {
-    flex: 1,
   },
 });

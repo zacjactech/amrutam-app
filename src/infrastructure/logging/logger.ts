@@ -9,24 +9,43 @@ interface LogEntry {
   context?: Record<string, unknown>;
 }
 
-const SENSITIVE_PATTERNS = [
+/** Patterns that match against object keys (more aggressive — covers names, phone, etc.) */
+const SENSITIVE_KEY_PATTERNS = [
   /password/i,
   /token/i,
   /secret/i,
-  /key/i,
-  /auth/i,
+  /api[_-]?key/i,
+  /private[_-]?key/i,
   /credit/i,
+  /card[_-]?number/i,
   /ssn/i,
-  /social.security/i,
-  /patient/i,
-  /medical/i,
-  /diagnosis/i,
-  /prescription/i,
+  /social[_-]?security/i,
+  /phone/i,
+  /full[_-]?name/i,
+  /userName/i,
+  /^name$/i,
 ];
+
+/** Patterns that match against string values (restrictive — avoids matching error messages) */
+const SENSITIVE_VALUE_PATTERNS = [
+  /password/i,
+  /token/i,
+  /secret/i,
+  /api[_-]?key/i,
+  /private[_-]?key/i,
+  /credit/i,
+  /card[_-]?number/i,
+  /ssn/i,
+  /social[_-]?security/i,
+];
+
+function isSensitiveKey(key: string): boolean {
+  return SENSITIVE_KEY_PATTERNS.some((p) => p.test(key));
+}
 
 function sanitize(value: unknown): unknown {
   if (typeof value === 'string') {
-    for (const pattern of SENSITIVE_PATTERNS) {
+    for (const pattern of SENSITIVE_VALUE_PATTERNS) {
       if (pattern.test(value)) {
         return '[REDACTED]';
       }
@@ -41,7 +60,7 @@ function sanitize(value: unknown): unknown {
   if (value !== null && typeof value === 'object') {
     const sanitized: Record<string, unknown> = {};
     for (const [key, val] of Object.entries(value)) {
-      if (SENSITIVE_PATTERNS.some((p) => p.test(key))) {
+      if (isSensitiveKey(key)) {
         sanitized[key] = '[REDACTED]';
       } else {
         sanitized[key] = sanitize(val);
@@ -69,24 +88,29 @@ function createEntry(
   return entry;
 }
 
+function sanitizeMessage(message: string): string {
+  return message.replace(/[\r\n]/g, ' ');
+}
+
 function log(entry: LogEntry): void {
   const prefix = `[${entry.timestamp}] [${entry.level.toUpperCase()}]`;
+  const safeMessage = sanitizeMessage(entry.message);
   const contextStr = entry.context !== undefined ? ` ${JSON.stringify(entry.context)}` : '';
 
   switch (entry.level) {
     case 'debug':
       if (__DEV__) {
-        console.log(`${prefix} ${entry.message}${contextStr}`);
+        console.log(`${prefix} ${safeMessage}${contextStr}`);
       }
       break;
     case 'info':
-      console.log(`${prefix} ${entry.message}${contextStr}`);
+      console.log(`${prefix} ${safeMessage}${contextStr}`);
       break;
     case 'warn':
-      console.warn(`${prefix} ${entry.message}${contextStr}`);
+      console.warn(`${prefix} ${safeMessage}${contextStr}`);
       break;
     case 'error':
-      console.error(`${prefix} ${entry.message}${contextStr}`);
+      console.error(`${prefix} ${safeMessage}${contextStr}`);
       break;
   }
 }

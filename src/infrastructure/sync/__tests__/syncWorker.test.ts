@@ -57,6 +57,7 @@ describe('Sync Worker', () => {
         succeeded: 0,
         failed: 0,
         conflicts: 0,
+        permanentlyFailed: 0,
       });
     });
   });

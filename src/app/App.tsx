@@ -15,6 +15,8 @@ import { Navigation } from '../navigation/Navigation';
 import { startSyncScheduler, stopSyncScheduler } from '../infrastructure/sync/syncScheduler';
 import { SyncStatusProvider } from '../infrastructure/sync/SyncStatusContext';
 import { initializeConnectivity } from '../infrastructure/connectivity/connectionManager';
+import { useToast } from '../shared/components/Toast';
+import { setShopErrorHandler } from '../features/shop/hooks';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -45,6 +47,15 @@ function SyncSchedulerProvider({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+/** Bridges the shop mutation error handler to the Toast system */
+function ShopErrorBridge(): null {
+  const { showToast } = useToast();
+  useEffect(() => {
+    setShopErrorHandler((message) => showToast(message, 'error'));
+  }, [showToast]);
+  return null;
+}
+
 export default function App(): React.JSX.Element {
   return (
     <ErrorBoundary>
@@ -54,6 +65,7 @@ export default function App(): React.JSX.Element {
           <SyncSchedulerProvider>
           <ThemeProvider>
             <ToastProvider>
+              <ShopErrorBridge />
               <Navigation />
               <StatusBar style="auto" />
             </ToastProvider>

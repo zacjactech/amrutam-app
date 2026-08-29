@@ -9,6 +9,7 @@ import { AppText } from '../../../shared/components/AppText';
 import { Card } from '../../../shared/components/Card';
 import { Separator } from '../../../shared/components/Separator';
 import { getProductCache } from '../generator';
+import { useToast } from '../../../shared/components/Toast';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
 
 type PaymentMethod = 'upi' | 'card';
@@ -22,6 +23,7 @@ export function CheckoutScreen({ navigation }: CheckoutScreenProps) {
   const spacing = useThemeSpacing();
   const { data: cartItems = [], clearCart } = useCart();
   const productCache = getProductCache();
+  const { showToast } = useToast();
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('upi');
 
   const getProduct = useCallback(
@@ -45,12 +47,14 @@ export function CheckoutScreen({ navigation }: CheckoutScreenProps) {
     try {
       await clearCart.mutateAsync();
       navigation.navigate('OrderSuccess');
-    } catch {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to place order';
+      showToast(message, 'error');
       navigation.navigate('OrderFailed');
     } finally {
       setIsPlacing(false);
     }
-  }, [clearCart, navigation, isPlacing]);
+  }, [clearCart, navigation, isPlacing, showToast]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background.primary }]}>

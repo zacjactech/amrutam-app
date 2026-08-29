@@ -7,6 +7,7 @@ import { AppText } from '../../../shared/components/AppText';
 import { Avatar } from '../../../shared/components/Avatar';
 import { Button } from '../../../shared/components/Button';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
+import { useToast } from '../../../shared/components/Toast';
 import { useAuthContext } from '../../../infrastructure/auth/AuthContext';
 
 interface ProfileMainScreenProps {
@@ -20,9 +21,10 @@ export function ProfileMainScreen({ navigation }: ProfileMainScreenProps) {
   const colors = useThemeColors();
   const spacing = useThemeSpacing();
   const { user, signOut } = useAuthContext();
+  const { showToast } = useToast();
 
-  const phone = user?.phone ?? 'Not available';
-  const displayName = user?.user_metadata?.full_name ?? user?.phone ?? 'User';
+  const email = user?.email ?? 'Not available';
+  const displayName = user?.user_metadata?.full_name ?? user?.email ?? 'User';
 
   const handleSignOut = async () => {
     Alert.alert(
@@ -34,11 +36,15 @@ export function ProfileMainScreen({ navigation }: ProfileMainScreenProps) {
           text: 'Sign Out',
           style: 'destructive',
           onPress: async () => {
-            await signOut();
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'Splash' }],
-            });
+            try {
+              await signOut();
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'Splash' }],
+              });
+            } catch {
+              showToast('Failed to sign out. Please try again.', 'error');
+            }
           },
         },
       ],
@@ -54,7 +60,7 @@ export function ProfileMainScreen({ navigation }: ProfileMainScreenProps) {
             {displayName}
           </AppText>
           <AppText variant="body" style={{ color: colors.text.secondary }}>
-            {phone}
+            {email}
           </AppText>
         </View>
         <View style={[styles.section, { backgroundColor: colors.surface.default, borderColor: colors.border.default }]}>

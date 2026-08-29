@@ -6,12 +6,10 @@ import { AppText } from '../../../shared/components/AppText';
 import { Button } from '../../../shared/components/Button';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
 import { AlertCircle } from '../../../shared/assets/icons';
+import { ShopNavigation } from '../types';
 
 interface OrderFailedScreenProps {
-  navigation: {
-    goBack: () => void;
-    navigate: (screen: string) => void;
-  };
+  navigation: ShopNavigation;
 }
 
 export function OrderFailedScreen({ navigation }: OrderFailedScreenProps) {

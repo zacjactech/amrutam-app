@@ -1,6 +1,7 @@
 // Environment Configuration Validation
 
 import { z } from 'zod';
+import { logger } from './logging/logger';
 
 const envSchema = z.object({
   APP_ENV: z.enum(['development', 'staging', 'production']).default('development'),
@@ -30,8 +31,8 @@ function parseEnv(): Env {
 
       if (!hasSupabaseUrl && !hasSupabaseKey) {
         // No Supabase configured at all — use empty defaults but warn loudly
-        console.warn(`[env] Missing environment variables (using dev defaults):\n${missingFields}`);
-        console.warn(`[env] Supabase features will not work without valid credentials.`);
+        logger.warn('Missing environment variables (using dev defaults)', { missingFields });
+        logger.warn('Supabase features will not work without valid credentials');
         cachedEnv = {
           APP_ENV: 'development',
           EXPO_PUBLIC_SUPABASE_URL: '',

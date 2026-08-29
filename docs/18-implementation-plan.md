@@ -301,25 +301,16 @@ A feature is complete when:
 
 ```bash
 # .env.development
-API_BASE_URL=http://localhost:3000
-API_TIMEOUT_MS=10000
-ENABLE_MOCK_FAILURES=true
-ENABLE_PERFORMANCE_LOGGING=true
-MOCK_DATASET_SIZE=small
+EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 
 # .env.staging
-API_BASE_URL=https://staging-api.amrutam.app
-API_TIMEOUT_MS=15000
-ENABLE_MOCK_FAILURES=false
-ENABLE_PERFORMANCE_LOGGING=true
-MOCK_DATASET_SIZE=full
+EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 
 # .env.production
-API_BASE_URL=https://api.amrutam.app
-API_TIMEOUT_MS=15000
-ENABLE_MOCK_FAILURES=false
-ENABLE_PERFORMANCE_LOGGING=false
-MOCK_DATASET_SIZE=full
+EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
 
 ---

@@ -1,6 +1,6 @@
 // Shop Module - Wishlist Repository (SQLite + Supabase sync)
 
-import { WishlistItem } from './types';
+import type { WishlistItem } from './types';
 import { wishlistItemSchema } from './schemas';
 import { getDatabase } from '../../infrastructure/database/database';
 import { supabase } from '../../infrastructure/supabase/client';
@@ -13,6 +13,37 @@ export interface WishlistRepository {
   isInWishlist(productId: string): Promise<boolean>;
   clearAll(patientId?: string): Promise<void>;
   syncToCloud(patientId: string): Promise<void>;
+}
+
+async function syncWishlistToCloud(patientId: string): Promise<void> {
+  try {
+    const items = await wishlistRepository.getAllItems();
+
+    const { error: deleteError } = await supabase
+      .from('wishlist_items')
+      .delete()
+      .eq('patient_id', patientId);
+
+    if (deleteError) throw deleteError;
+
+    if (items.length > 0) {
+      const inserts = items.map((item) => ({
+        patient_id: patientId,
+        product_id: item.productId,
+      }));
+
+      const { error: insertError } = await supabase
+        .from('wishlist_items')
+        .insert(inserts);
+
+      if (insertError) throw insertError;
+    }
+
+    logger.debug('Wishlist synced to cloud', { patientId, itemCount: items.length });
+  } catch (error) {
+    logger.error('Wishlist: cloud sync failed', { error: error instanceof Error ? error.message : 'Unknown' });
+    throw error;
+  }
 }
 
 export const wishlistRepository: WishlistRepository = {
@@ -38,15 +69,9 @@ export const wishlistRepository: WishlistRepository = {
     );
 
     if (patientId) {
-      // Sync to cloud
-      supabase
-        .from('wishlist_items')
-        .insert({ patient_id: patientId, product_id: productId })
-        .then(({ error }) => {
-          if (error && !error.message?.includes('unique')) {
-            logger.warn('Wishlist: failed to sync addItem to cloud', { error: error.message });
-          }
-        });
+      syncWishlistToCloud(patientId).catch((error) => {
+        logger.warn('Wishlist: failed to sync addItem to cloud', { error: error instanceof Error ? error.message : 'Unknown' });
+      });
     }
   },
 
@@ -55,16 +80,9 @@ export const wishlistRepository: WishlistRepository = {
     await db.runAsync('DELETE FROM wishlist_items WHERE product_id = ?', [productId]);
 
     if (patientId) {
-      supabase
-        .from('wishlist_items')
-        .delete()
-        .eq('patient_id', patientId)
-        .eq('product_id', productId)
-        .then(({ error }) => {
-          if (error) {
-            logger.warn('Wishlist: failed to sync removeItem to cloud', { error: error.message });
-          }
-        });
+      syncWishlistToCloud(patientId).catch((error) => {
+        logger.warn('Wishlist: failed to sync removeItem to cloud', { error: error instanceof Error ? error.message : 'Unknown' });
+      });
     }
   },
 
@@ -82,47 +100,13 @@ export const wishlistRepository: WishlistRepository = {
     await db.runAsync('DELETE FROM wishlist_items');
 
     if (patientId) {
-      supabase
-        .from('wishlist_items')
-        .delete()
-        .eq('patient_id', patientId)
-        .then(({ error }) => {
-          if (error) {
-            logger.warn('Wishlist: failed to clear cloud wishlist', { error: error.message });
-          }
-        });
+      syncWishlistToCloud(patientId).catch((error) => {
+        logger.warn('Wishlist: failed to sync clearAll to cloud', { error: error instanceof Error ? error.message : 'Unknown' });
+      });
     }
   },
 
   async syncToCloud(patientId: string): Promise<void> {
-    try {
-      const items = await this.getAllItems();
-
-      // Delete existing and re-insert
-      const { error: deleteError } = await supabase
-        .from('wishlist_items')
-        .delete()
-        .eq('patient_id', patientId);
-
-      if (deleteError) throw deleteError;
-
-      if (items.length > 0) {
-        const inserts = items.map((item) => ({
-          patient_id: patientId,
-          product_id: item.productId,
-        }));
-
-        const { error: insertError } = await supabase
-          .from('wishlist_items')
-          .insert(inserts);
-
-        if (insertError) throw insertError;
-      }
-
-      logger.debug('Wishlist synced to cloud', { patientId, itemCount: items.length });
-    } catch (error) {
-      logger.error('Wishlist: cloud sync failed', { error: error instanceof Error ? error.message : 'Unknown' });
-      throw error;
-    }
+    await syncWishlistToCloud(patientId);
   },
 };

@@ -30,7 +30,7 @@ export function SplashScreen({ navigation }: SplashScreenProps) {
       } else {
         navigation.reset({
           index: 0,
-          routes: [{ name: 'SignIn' }],
+          routes: [{ name: 'Onboarding' }],
         });
       }
     }, 1500);

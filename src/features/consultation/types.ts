@@ -1,69 +1,24 @@
-// Consultation Module - Doctor Types
+// Consultation Module - Types
 
-export interface Doctor {
-  id: string;
-  name: string;
-  photoUrl: string;
-  specialization: string;
-  experience: number;
-  rating: number;
-  reviewCount: number;
-  consultationFee: number;
-  languages: string[];
-  availability: DoctorAvailability;
-  bio: string;
-  clinicName: string;
-  clinicAddress: string;
-}
+import type {
+  Booking,
+  BookingStatus,
+  ConsultationType,
+  Doctor,
+  DoctorAvailability,
+  ConsultationSlot,
+  DoctorReview,
+} from '../../shared/types';
 
-export interface DoctorAvailability {
-  isAvailable: boolean;
-  nextAvailableSlot: string | null;
-  slotDuration: number; // minutes
-}
-
-export interface ConsultationSlot {
-  id: string;
-  doctorId: string;
-  startTime: string;
-  endTime: string;
-  isBooked: boolean;
-  consultationType: ConsultationType;
-}
-
-export type ConsultationType = 'video' | 'audio' | 'chat' | 'in-person';
-
-export interface Booking {
-  id: string;
-  doctorId: string;
-  patientId: string;
-  slotId: string;
-  consultationType: ConsultationType;
-  status: BookingStatus;
-  createdAt: string;
-  updatedAt: string;
-  idempotencyKey: string;
-  notes?: string | undefined;
-}
-
-export interface DoctorReview {
-  id: string;
-  bookingId: string;
-  doctorId: string;
-  patientId: string;
-  rating: number; // 1-5
-  comment: string | undefined;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export type BookingStatus =
-  | 'pending_confirmation'
-  | 'confirmed'
-  | 'pending_sync'
-  | 'cancelled'
-  | 'completed'
-  | 'no_show';
+export type {
+  Booking,
+  BookingStatus,
+  ConsultationType,
+  Doctor,
+  DoctorAvailability,
+  ConsultationSlot,
+  DoctorReview,
+};
 
 export interface DoctorFilter {
   searchQuery: string;

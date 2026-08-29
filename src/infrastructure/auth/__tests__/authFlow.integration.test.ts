@@ -11,7 +11,7 @@ import { clearAllRateLimits } from '../otpRateLimiter';
 
 // ─── Test Fixtures ──────────────────────────────────────────────────────────
 
-const MOCK_PHONE = '+919876543210';
+const MOCK_EMAIL = 'test@example.com';
 const MOCK_OTP = '123456';
 const MOCK_USER_ID = 'user-abc-123';
 const MOCK_SESSION = {
@@ -19,22 +19,13 @@ const MOCK_SESSION = {
   refresh_token: 'mock-refresh-token',
   user: {
     id: MOCK_USER_ID,
-    phone: MOCK_PHONE,
+    email: MOCK_EMAIL,
     user_metadata: { full_name: 'Test User' },
     app_metadata: {},
     created_at: new Date().toISOString(),
   },
   expires_at: Date.now() + 3600,
   token_type: 'bearer',
-};
-
-const MOCK_NEW_PHONE = '+14155552671';
-const MOCK_PHONE_CHANGE_SESSION = {
-  ...MOCK_SESSION,
-  user: {
-    ...MOCK_SESSION.user,
-    phone: MOCK_NEW_PHONE,
-  },
 };
 
 // ─── Helper: create a sequence resolver ─────────────────────────────────────
@@ -83,9 +74,9 @@ describe('Auth Flow Integration', () => {
       const auth = getAuthMock();
 
       // Step 1: Send OTP
-      const otpResult = await auth.signInWithOtp({ phone: MOCK_PHONE });
+      const otpResult = await auth.signInWithOtp({ email: MOCK_EMAIL });
       expect(otpResult.error).toBeNull();
-      expect(auth.signInWithOtp).toHaveBeenCalledWith({ phone: MOCK_PHONE });
+      expect(auth.signInWithOtp).toHaveBeenCalledWith({ email: MOCK_EMAIL });
 
       // Step 2: Verify OTP (with name for new user)
       auth.verifyOtp.mockResolvedValue({
@@ -93,9 +84,9 @@ describe('Auth Flow Integration', () => {
         error: null,
       });
       const verifyResult = await auth.verifyOtp({
-        phone: MOCK_PHONE,
+        email: MOCK_EMAIL,
         token: MOCK_OTP,
-        type: 'sms',
+        type: 'email',
       });
       expect(verifyResult.error).toBeNull();
       expect(verifyResult.data.session).toEqual(MOCK_SESSION);
@@ -117,13 +108,13 @@ describe('Auth Flow Integration', () => {
       const { data: { session } } = await auth.getSession();
       expect(session).toEqual(MOCK_SESSION);
       expect(session?.user?.id).toBe(MOCK_USER_ID);
-      expect(session?.user?.phone).toBe(MOCK_PHONE);
+      expect(session?.user?.email).toBe(MOCK_EMAIL);
     });
 
-    it('sends correct OTP type (sms) for sign-up', async () => {
+    it('sends correct OTP type (email) for sign-up', async () => {
       const auth = getAuthMock();
-      await auth.signInWithOtp({ phone: MOCK_PHONE });
-      expect(auth.signInWithOtp).toHaveBeenCalledWith({ phone: MOCK_PHONE });
+      await auth.signInWithOtp({ email: MOCK_EMAIL });
+      expect(auth.signInWithOtp).toHaveBeenCalledWith({ email: MOCK_EMAIL });
     });
 
     it('handles OTP verification with name parameter', async () => {
@@ -136,11 +127,11 @@ describe('Auth Flow Integration', () => {
       auth.updateUser.mockResolvedValue({ data: { user: MOCK_SESSION.user }, error: null });
 
       // Verify OTP with name
-      await auth.verifyOtp({ phone: MOCK_PHONE, token: MOCK_OTP, type: 'sms' });
+      await auth.verifyOtp({ email: MOCK_EMAIL, token: MOCK_OTP, type: 'email' });
       expect(auth.verifyOtp).toHaveBeenCalledWith({
-        phone: MOCK_PHONE,
+        email: MOCK_EMAIL,
         token: MOCK_OTP,
-        type: 'sms',
+        type: 'email',
       });
 
       // Name should be saved
@@ -156,7 +147,7 @@ describe('Auth Flow Integration', () => {
       const auth = getAuthMock();
 
       // Step 1: Send OTP
-      await auth.signInWithOtp({ phone: MOCK_PHONE });
+      await auth.signInWithOtp({ email: MOCK_EMAIL });
       expect(auth.signInWithOtp).toHaveBeenCalledTimes(1);
 
       // Step 2: Verify OTP (no name for existing user)
@@ -164,7 +155,7 @@ describe('Auth Flow Integration', () => {
         data: { session: MOCK_SESSION, user: MOCK_SESSION.user },
         error: null,
       });
-      await auth.verifyOtp({ phone: MOCK_PHONE, token: MOCK_OTP, type: 'sms' });
+      await auth.verifyOtp({ email: MOCK_EMAIL, token: MOCK_OTP, type: 'email' });
 
       // Step 3: No profile update for existing user (name not passed)
       // updateUser should NOT be called
@@ -180,7 +171,7 @@ describe('Auth Flow Integration', () => {
       const { data: { session } } = await auth.getSession();
       expect(session).toEqual(MOCK_SESSION);
       expect(session?.user?.id).toBe(MOCK_USER_ID);
-      expect(session?.user?.phone).toBe(MOCK_PHONE);
+      expect(session?.user?.email).toBe(MOCK_EMAIL);
     });
 
     it('handles session expiry gracefully', async () => {
@@ -213,7 +204,7 @@ describe('Auth Flow Integration', () => {
         data: { session: MOCK_SESSION, user: MOCK_SESSION.user },
         error: null,
       });
-      await auth.verifyOtp({ phone: MOCK_PHONE, token: MOCK_OTP, type: 'sms' });
+      await auth.verifyOtp({ email: MOCK_EMAIL, token: MOCK_OTP, type: 'email' });
 
       // Second call: session is now available
       auth.getSession.mockResolvedValueOnce({ data: { session: MOCK_SESSION }, error: null });
@@ -246,7 +237,7 @@ describe('Auth Flow Integration', () => {
       const { data: { session } } = await auth.getSession();
 
       expect(session?.user?.user_metadata?.full_name).toBe('Test User');
-      expect(session?.user?.phone).toBe(MOCK_PHONE);
+      expect(session?.user?.email).toBe(MOCK_EMAIL);
     });
   });
 
@@ -299,9 +290,9 @@ describe('Auth Flow Integration', () => {
       });
 
       const { data, error } = await auth.verifyOtp({
-        phone: MOCK_PHONE,
+        email: MOCK_EMAIL,
         token: '000000',
-        type: 'sms',
+        type: 'email',
       });
 
       expect(error).toBeDefined();
@@ -313,18 +304,18 @@ describe('Auth Flow Integration', () => {
       const auth = getAuthMock();
       auth.signInWithOtp.mockRejectedValue(new Error('Network request failed'));
 
-      await expect(auth.signInWithOtp({ phone: MOCK_PHONE })).rejects.toThrow('Network request failed');
+      await expect(auth.signInWithOtp({ email: MOCK_EMAIL })).rejects.toThrow('Network request failed');
     });
 
     it('handles Supabase API error on OTP send', async () => {
       const auth = getAuthMock();
       auth.signInWithOtp.mockResolvedValue({
         data: {},
-        error: { message: 'Phone not verified', code: 'phone_not_verified' },
+        error: { message: 'Email not confirmed', code: 'email_not_confirmed' },
       });
 
-      const result = await auth.signInWithOtp({ phone: MOCK_PHONE });
-      expect(result.error?.message).toBe('Phone not verified');
+      const result = await auth.signInWithOtp({ email: MOCK_EMAIL });
+      expect(result.error?.message).toBe('Email not confirmed');
     });
 
     it('handles rate limiting', async () => {
@@ -334,9 +325,9 @@ describe('Auth Flow Integration', () => {
       const { recordSend, checkRateLimit } = require('../otpRateLimiter');
 
       // Simulate rapid OTP sends
-      recordSend(MOCK_PHONE);
+      recordSend(MOCK_EMAIL);
 
-      const result = checkRateLimit(MOCK_PHONE);
+      const result = checkRateLimit(MOCK_EMAIL);
       expect(result.allowed).toBe(false);
       expect(result.message).toContain('Please wait');
     });
@@ -354,39 +345,12 @@ describe('Auth Flow Integration', () => {
 
       expect(error?.message).toBe('Permission denied');
     });
-
-    it('handles phone change OTP failure', async () => {
-      const auth = getAuthMock();
-      auth.updateUser.mockResolvedValue({
-        data: { user: null },
-        error: { message: 'Invalid phone number' },
-      });
-
-      const { error } = await auth.updateUser({ phone: MOCK_NEW_PHONE });
-      expect(error?.message).toBe('Invalid phone number');
-    });
-
-    it('handles phone change verification failure', async () => {
-      const auth = getAuthMock();
-      auth.verifyOtp.mockResolvedValue({
-        data: { session: null, user: null },
-        error: { message: 'Invalid token' },
-      });
-
-      const { error } = await auth.verifyOtp({
-        phone: MOCK_NEW_PHONE,
-        token: '000000',
-        type: 'phone_change',
-      });
-
-      expect(error?.message).toBe('Invalid token');
-    });
   });
 
   // ─── Full Lifecycle ────────────────────────────────────────────────────
 
   describe('Full Lifecycle', () => {
-    it('complete user journey: sign up -> use app -> change phone -> sign out', async () => {
+    it('complete user journey: sign up -> use app -> sign out', async () => {
       const auth = getAuthMock();
 
       // 1. App loads with no session
@@ -395,15 +359,15 @@ describe('Auth Flow Integration', () => {
       expect(initial).toBeNull();
 
       // 2. User signs up: send OTP
-      await auth.signInWithOtp({ phone: MOCK_PHONE });
-      expect(auth.signInWithOtp).toHaveBeenCalledWith({ phone: MOCK_PHONE });
+      await auth.signInWithOtp({ email: MOCK_EMAIL });
+      expect(auth.signInWithOtp).toHaveBeenCalledWith({ email: MOCK_EMAIL });
 
       // 3. User verifies OTP with name
       auth.verifyOtp.mockResolvedValue({
         data: { session: MOCK_SESSION, user: MOCK_SESSION.user },
         error: null,
       });
-      await auth.verifyOtp({ phone: MOCK_PHONE, token: MOCK_OTP, type: 'sms' });
+      await auth.verifyOtp({ email: MOCK_EMAIL, token: MOCK_OTP, type: 'email' });
 
       // 4. Name is saved
       auth.updateUser.mockResolvedValue({ data: { user: MOCK_SESSION.user }, error: null });
@@ -414,34 +378,11 @@ describe('Auth Flow Integration', () => {
       const { data: { session: active } } = await auth.getSession();
       expect(active?.user?.id).toBe(MOCK_USER_ID);
 
-      // 6. User changes phone number
-      auth.updateUser.mockResolvedValue({
-        data: { user: { ...MOCK_SESSION.user, phone: MOCK_NEW_PHONE } },
-        error: null,
-      });
-      await auth.updateUser({ phone: MOCK_NEW_PHONE });
-
-      // 7. Verify phone change OTP
-      auth.verifyOtp.mockResolvedValue({
-        data: { session: MOCK_PHONE_CHANGE_SESSION, user: MOCK_PHONE_CHANGE_SESSION.user },
-        error: null,
-      });
-      await auth.verifyOtp({
-        phone: MOCK_NEW_PHONE,
-        token: MOCK_OTP,
-        type: 'phone_change',
-      });
-
-      // 8. New phone is active
-      auth.getSession.mockResolvedValue({ data: { session: MOCK_PHONE_CHANGE_SESSION }, error: null });
-      const { data: { session: updated } } = await auth.getSession();
-      expect(updated?.user?.phone).toBe(MOCK_NEW_PHONE);
-
-      // 9. User signs out
+      // 6. User signs out
       await auth.signOut();
       expect(auth.signOut).toHaveBeenCalledTimes(1);
 
-      // 10. Session is cleared
+      // 7. Session is cleared
       auth.getSession.mockResolvedValue({ data: { session: null }, error: null });
       const { data: { session: final } } = await auth.getSession();
       expect(final).toBeNull();
@@ -454,9 +395,9 @@ describe('Auth Flow Integration', () => {
       auth.signInWithOtp.mockResolvedValue({ data: {}, error: null });
 
       const results = await Promise.all([
-        auth.signInWithOtp({ phone: MOCK_PHONE }),
-        auth.signInWithOtp({ phone: MOCK_PHONE }),
-        auth.signInWithOtp({ phone: MOCK_PHONE }),
+        auth.signInWithOtp({ email: MOCK_EMAIL }),
+        auth.signInWithOtp({ email: MOCK_EMAIL }),
+        auth.signInWithOtp({ email: MOCK_EMAIL }),
       ]);
 
       // All should succeed (rate limiting is handled at the AuthContext level)

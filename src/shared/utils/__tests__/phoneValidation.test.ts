@@ -1,6 +1,6 @@
 // Phone Validation Tests
 
-import { isValidE164Phone, validatePhone, formatPhoneForDisplay, formatPhoneInput, toE164Phone } from '../phoneValidation';
+import { isValidE164Phone, validatePhone, formatPhoneForDisplay, formatPhoneInput, formatLocalPhoneInput, toE164Phone } from '../phoneValidation';
 
 describe('isValidE164Phone', () => {
   it('accepts valid E.164 numbers', () => {
@@ -158,5 +158,52 @@ describe('formatPhoneForDisplay', () => {
     expect(formatPhoneForDisplay('+123456789012')).toBe('+123****89012');
     // +12345678901 is 12 chars → start='+123', end='78901', mask=3
     expect(formatPhoneForDisplay('+12345678901')).toBe('+123***78901');
+  });
+});
+
+describe('formatLocalPhoneInput', () => {
+  it('returns empty string when empty', () => {
+    expect(formatLocalPhoneInput('')).toBe('');
+  });
+
+  it('returns digits only for input under 5 digits', () => {
+    expect(formatLocalPhoneInput('9')).toBe('9');
+    expect(formatLocalPhoneInput('98')).toBe('98');
+    expect(formatLocalPhoneInput('987')).toBe('987');
+    expect(formatLocalPhoneInput('9876')).toBe('9876');
+    expect(formatLocalPhoneInput('98765')).toBe('98765');
+  });
+
+  it('adds space after 5 digits', () => {
+    expect(formatLocalPhoneInput('987654')).toBe('98765 4');
+    expect(formatLocalPhoneInput('9876543')).toBe('98765 43');
+    expect(formatLocalPhoneInput('98765432')).toBe('98765 432');
+    expect(formatLocalPhoneInput('987654321')).toBe('98765 4321');
+    expect(formatLocalPhoneInput('9876543210')).toBe('98765 43210');
+  });
+
+  it('strips non-digit characters', () => {
+    expect(formatLocalPhoneInput('987-654-3210')).toBe('98765 43210');
+    expect(formatLocalPhoneInput('(987) 654-3210')).toBe('98765 43210');
+    expect(formatLocalPhoneInput('987 654 3210')).toBe('98765 43210');
+  });
+
+  it('truncates at 15 digits (max E.164 length)', () => {
+    // 15 digits: 98765 4321012345
+    expect(formatLocalPhoneInput('987654321012345')).toBe('98765 4321012345');
+    // More than 15 digits gets truncated
+    expect(formatLocalPhoneInput('987654321012345678')).toBe('98765 4321012345');
+  });
+
+  it('handles pasted input with special characters', () => {
+    expect(formatLocalPhoneInput('+1 (415) 555-2671')).toBe('14155 552671');
+    // Strips all non-digits, then formats with space after 5
+    expect(formatLocalPhoneInput('+91 98765 43210')).toBe('91987 6543210');
+  });
+
+  it('does not add country code prefix', () => {
+    // Unlike formatPhoneInput, this should NOT add +91
+    expect(formatLocalPhoneInput('9876543210')).not.toContain('+');
+    expect(formatLocalPhoneInput('9876543210')).not.toContain('91');
   });
 });

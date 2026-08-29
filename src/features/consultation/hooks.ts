@@ -2,11 +2,13 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { consultationRepository, BookingRequest } from './repository';
-import { DoctorFilter, DEFAULT_DOCTOR_FILTER, Booking } from './types';
+import { localBookingRepository } from './localBookingRepository';
+import { DoctorFilter, DEFAULT_DOCTOR_FILTER, Booking, ConsultationSlot } from './types';
 import { enqueueBookingSync } from '../../infrastructure/sync/syncWorker';
 import { useConnectionStatus } from '../../infrastructure/connectivity/connectionManager';
 import { classifyApiError } from '../../shared/errors/errorClasses';
 import { useAuthContext } from '../../infrastructure/auth/AuthContext';
+import { logger } from '../../infrastructure/logging/logger';
 
 export const consultationKeys = {
   all: ['consultations'] as const,
@@ -65,19 +67,29 @@ export function useBookings(patientId?: string) {
   });
 }
 
-function createPendingBooking(request: BookingRequest): Booking {
+function createPendingBooking(request: BookingRequest, slot: ConsultationSlot): Booking {
   const now = new Date().toISOString();
-  return {
+  const booking: Booking = {
     id: `bk_offline_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
     doctorId: request.doctorId,
     patientId: request.patientId,
     slotId: request.slotId,
-    consultationType: request.consultationType,
+    consultationType: slot.consultationType,
     status: 'pending_sync',
     createdAt: now,
     updatedAt: now,
-    idempotencyKey: `${request.patientId}:${request.slotId}`,
+    idempotencyKey: `booking:${request.patientId}:${request.slotId}`,
   };
+
+  void localBookingRepository.insert(booking).catch((error) => {
+    logger.warn('Failed to persist offline booking locally', {
+      feature: 'consultation',
+      action: 'persist_offline_booking',
+      error: error instanceof Error ? error.message : String(error),
+    });
+  });
+
+  return booking;
 }
 
 export function useBookConsultation() {
@@ -86,7 +98,7 @@ export function useBookConsultation() {
   const { patientId } = useAuthContext();
 
   return useMutation({
-    mutationFn: async (request: BookingRequest) => {
+    mutationFn: async (request: BookingRequest & { slot: ConsultationSlot }) => {
       const effectivePatientId = request.patientId || patientId;
       if (!effectivePatientId) {
         throw new Error('Patient ID not available. Please sign in.');
@@ -95,12 +107,14 @@ export function useBookConsultation() {
       const authenticatedRequest = { ...request, patientId: effectivePatientId };
 
       if (!isConnected) {
+        const booking = createPendingBooking(authenticatedRequest, authenticatedRequest.slot);
         await enqueueBookingSync({
           doctorId: authenticatedRequest.doctorId,
           slotId: authenticatedRequest.slotId,
           patientId: authenticatedRequest.patientId,
+          localBookingId: booking.id,
         });
-        return createPendingBooking(authenticatedRequest);
+        return booking;
       }
 
       try {
@@ -108,12 +122,14 @@ export function useBookConsultation() {
       } catch (error) {
         const classified = classifyApiError(error);
         if (classified.category === 'offline' || classified.category === 'retryable') {
+          const booking = createPendingBooking(authenticatedRequest, authenticatedRequest.slot);
           await enqueueBookingSync({
             doctorId: authenticatedRequest.doctorId,
             slotId: authenticatedRequest.slotId,
             patientId: authenticatedRequest.patientId,
+            localBookingId: booking.id,
           });
-          return createPendingBooking(authenticatedRequest);
+          return booking;
         }
         throw error;
       }

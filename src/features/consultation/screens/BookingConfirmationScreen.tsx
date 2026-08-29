@@ -62,6 +62,7 @@ export function BookingConfirmationScreen({
         patientId: patientId ?? '',
         slotId: slot.id,
         consultationType: slot.consultationType,
+        slot,
       });
       onBookingSuccess(booking.id);
     } catch (err) {

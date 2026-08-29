@@ -48,7 +48,7 @@ export function ConsultationDetailsScreen({
 
   const statusConfig = booking !== undefined ? STATUS_CONFIG[booking.status] : undefined;
 
-  const slotDate = booking !== undefined ? new Date(booking.createdAt) : new Date();
+  const slotDate = booking !== undefined ? new Date(booking.updatedAt) : new Date();
   const dateStr = slotDate.toLocaleDateString('en-IN', {
     weekday: 'long',
     day: 'numeric',
@@ -116,7 +116,7 @@ export function ConsultationDetailsScreen({
             { icon: <Clock width={18} height={18} color={colors.text.secondary} />, label: 'Duration', value: '30 minutes' },
             { icon: <Activities width={18} height={18} color={colors.text.secondary} />, label: 'Mode', value: booking.consultationType.charAt(0).toUpperCase() + booking.consultationType.slice(1) },
             { icon: <Star width={18} height={18} color={colors.text.secondary} />, label: 'Fee', value: `₹${doctor.consultationFee}`, isFee: true },
-            { icon: <Shield width={18} height={18} color={colors.text.secondary} />, label: 'Booking ID', value: booking.id.slice(0, 16) },
+             { icon: <Shield width={18} height={18} color={colors.text.secondary} />, label: 'Booking ID', value: booking.id },
             { icon: <Clipboard width={18} height={18} color={colors.text.secondary} />, label: 'Status', value: statusConfig.label },
           ].map((row) => (
             <View key={row.label} style={[styles.detailRow, { borderBottomColor: colors.border.light, borderBottomWidth: 1, paddingVertical: spacing.md }]}>

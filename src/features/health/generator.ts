@@ -69,7 +69,7 @@ function generateAttachment(index: number, random: () => number): Attachment {
 export function generateHealthRecord(index: number, patientId: string = 'patient_001'): HealthRecord {
   const random = seededRandom(index + 1);
   const type = pickRandom(HEALTH_RECORD_TYPES, random);
-  const titles = RECORD_TITLES[type];
+  const titles = RECORD_TITLES[type]!;
   const title = pickRandom(titles, random);
   const daysAgo = Math.floor(random() * 1825);
   const occurredAt = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000).toISOString();
@@ -92,7 +92,7 @@ export function generateHealthRecord(index: number, patientId: string = 'patient
     patientId,
     type,
     title: `${title} - ${RECORD_TYPE_LABELS[type]}`,
-    description: `This is a ${RECORD_TYPE_LABELS[type].toLowerCase()} record. Generated for testing purposes.`,
+    description: `This is a ${RECORD_TYPE_LABELS[type]!.toLowerCase()} record. Generated for testing purposes.`,
     occurredAt,
     tags: selectedTags,
     attachments,
@@ -128,7 +128,7 @@ export function applyRecordFilter(records: HealthRecord[], filter: RecordFilter)
       const query = filter.searchQuery.toLowerCase();
       const titleMatch = record.title.toLowerCase().includes(query);
       const descMatch = record.description?.toLowerCase().includes(query) ?? false;
-      const tagMatch = record.tags.some((tag) => tag.toLowerCase().includes(query));
+      const tagMatch = record.tags.some((tag: string) => tag.toLowerCase().includes(query));
       if (!titleMatch && !descMatch && !tagMatch) {
         return false;
       }

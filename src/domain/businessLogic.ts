@@ -39,7 +39,7 @@ export function generateIdempotencyKey(patientId: string, slotId: string): strin
 export function calculateRetryDelay(attemptCount: number, baseDelayMs = 1000): number {
   const exponentialDelay = baseDelayMs * Math.pow(2, attemptCount);
   const jitter = Math.random() * 1000;
-  return Math.min(exponentialDelay + jitter, 30000); // Cap at 30 seconds
+  return Math.min(exponentialDelay, 30000 - jitter);
 }
 
 /**

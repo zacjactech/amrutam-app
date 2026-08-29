@@ -4,20 +4,16 @@ import React, { useCallback } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
-import { useWishlist, useCart } from '../hooks';
+import { useWishlist, useCart, useProductCache } from '../hooks';
 import { AppText } from '../../../shared/components/AppText';
 import { Button } from '../../../shared/components/Button';
 import { AppSkeleton } from '../../../shared/components/AppSkeleton';
-import { getProductCache } from '../generator';
-import { Product } from '../types';
+import { Product, ShopNavigation } from '../types';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
 import { ShoppingBag } from '../../../shared/assets/icons';
 
 interface WishlistScreenProps {
-  navigation: {
-    goBack: () => void;
-    navigate: (screen: string, params?: { productId: string }) => void;
-  };
+  navigation: ShopNavigation;
 }
 
 export function WishlistScreen({ navigation }: WishlistScreenProps) {
@@ -25,7 +21,7 @@ export function WishlistScreen({ navigation }: WishlistScreenProps) {
   const spacing = useThemeSpacing();
   const { data: wishlistProductIds = [], isLoading, toggleWishlist } = useWishlist();
   const { addToCart } = useCart();
-  const productCache = getProductCache();
+  const productCache = useProductCache();
 
   const wishlistProducts = wishlistProductIds
     .map((id) => productCache.find((p) => p.id === id))

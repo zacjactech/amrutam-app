@@ -1,17 +1,14 @@
 // Profile Module - Settings Screen
-// Profile editing with name update and phone number change (OTP-verified)
+// Profile editing with name update and email display
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppText } from '../../../shared/components/AppText';
 import { Button } from '../../../shared/components/Button';
 import { Input } from '../../../shared/components/Input';
-import { CountryCodePicker } from '../../../shared/components/CountryCodePicker';
 import { useTheme, useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
 import { useAuthContext } from '../../../infrastructure/auth/AuthContext';
-import { validatePhone, formatLocalPhoneInput, formatPhoneForDisplay, toE164Phone } from '../../../shared/utils/phoneValidation';
-import { usePersistedCountryCode } from '../../../shared/hooks/usePersistedCountryCode';
 
 interface SettingsScreenProps {
   navigation: {
@@ -19,67 +16,23 @@ interface SettingsScreenProps {
   };
 }
 
-type PhoneChangeStep = 'idle' | 'entering' | 'otp_sent' | 'verifying';
-
 export function SettingsScreen({ navigation }: SettingsScreenProps) {
   const colors = useThemeColors();
   const spacing = useThemeSpacing();
   const { mode, setMode } = useTheme();
-  const {
-    user,
-    updateProfile,
-    sendPhoneChangeOtp,
-    verifyPhoneChange,
-    otpCooldownSeconds,
-  } = useAuthContext();
+  const { user, updateProfile } = useAuthContext();
 
   // Profile fields
   const currentName = (user?.user_metadata?.full_name as string) ?? '';
-  const currentPhone = user?.phone ?? '';
+  const currentEmail = user?.email ?? '';
 
   const [name, setName] = useState(currentName);
   const [isSavingName, setIsSavingName] = useState(false);
   const [nameSaved, setNameSaved] = useState(false);
-
-  // Phone change flow
-  const [phoneStep, setPhoneStep] = useState<PhoneChangeStep>('idle');
-  const [newPhone, setNewPhone] = useState('');
-  const [phoneOtp, setPhoneOtp] = useState('');
-  const [phoneError, setPhoneError] = useState('');
-  const [cooldown, setCooldown] = useState(0);
-  const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const nameSavedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { selectedCountry, setSelectedCountry, recentCountries } = usePersistedCountryCode();
-  const [showCountryPicker, setShowCountryPicker] = useState(false);
-
-  const startCooldownTimer = useCallback((phone: string) => {
-    if (cooldownRef.current) {
-      clearInterval(cooldownRef.current);
-    }
-
-    const remaining = otpCooldownSeconds(phone);
-    if (remaining <= 0) {
-      setCooldown(0);
-      return;
-    }
-
-    setCooldown(remaining);
-
-    cooldownRef.current = setInterval(() => {
-      const newRemaining = otpCooldownSeconds(phone);
-      setCooldown(newRemaining);
-      if (newRemaining <= 0 && cooldownRef.current) {
-        clearInterval(cooldownRef.current);
-        cooldownRef.current = null;
-      }
-    }, 1000);
-  }, [otpCooldownSeconds]);
 
   useEffect(() => {
     return () => {
-      if (cooldownRef.current) {
-        clearInterval(cooldownRef.current);
-      }
       if (nameSavedTimeoutRef.current) {
         clearTimeout(nameSavedTimeoutRef.current);
       }
@@ -93,6 +46,7 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
     if (trimmed === currentName) return;
 
     if (!trimmed) {
+      const { Alert } = require('react-native');
       Alert.alert('Name required', 'Please enter your name.');
       return;
     }
@@ -102,6 +56,7 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
     setIsSavingName(false);
 
     if (error) {
+      const { Alert } = require('react-native');
       Alert.alert('Failed to save name', error);
       return;
     }
@@ -111,93 +66,6 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
       clearTimeout(nameSavedTimeoutRef.current);
     }
     nameSavedTimeoutRef.current = setTimeout(() => setNameSaved(false), 2000);
-  };
-
-  // ─── Phone Change Flow ──────────────────────────────────────────────────
-
-  const handleStartPhoneChange = () => {
-    setPhoneStep('entering');
-    setNewPhone('');
-    setPhoneOtp('');
-    setPhoneError('');
-  };
-
-  const handleSendPhoneOtp = async () => {
-    // Combine country code with local phone number
-    const fullPhone = `${selectedCountry.dialCode}${newPhone}`;
-    const raw = toE164Phone(fullPhone);
-    
-    const validationError = validatePhone(raw);
-    if (validationError) {
-      setPhoneError(validationError);
-      return;
-    }
-
-    if (raw === currentPhone) {
-      setPhoneError('This is already your current phone number.');
-      return;
-    }
-
-    setPhoneError('');
-    const { error } = await sendPhoneChangeOtp(raw);
-    if (error) {
-      setPhoneError(error);
-      return;
-    }
-
-    setPhoneStep('otp_sent');
-    startCooldownTimer(raw);
-  };
-
-  const handleVerifyPhoneChange = async () => {
-    const trimmedOtp = phoneOtp.trim();
-    if (!trimmedOtp || trimmedOtp.length < 4) {
-      setPhoneError('Please enter the complete OTP code.');
-      return;
-    }
-
-    setPhoneStep('verifying');
-    setPhoneError('');
-
-    // Build full E.164 phone number (same as sendPhoneChangeOtp)
-    const fullPhone = `${selectedCountry.dialCode}${newPhone}`;
-    const raw = toE164Phone(fullPhone);
-
-    const { error } = await verifyPhoneChange(raw, trimmedOtp);
-    if (error) {
-      setPhoneStep('otp_sent');
-      setPhoneError(error);
-      return;
-    }
-
-    // Success — reset state
-    setPhoneStep('idle');
-    setNewPhone('');
-    setPhoneOtp('');
-    Alert.alert('Phone Updated', 'Your phone number has been changed successfully.');
-  };
-
-  const handleResendPhoneOtp = async () => {
-    if (cooldown > 0) {
-      Alert.alert('Please wait', `You can request another OTP in ${cooldown} second${cooldown === 1 ? '' : 's'}.`);
-      return;
-    }
-
-    const { error } = await sendPhoneChangeOtp(newPhone);
-    if (error) {
-      setPhoneError(error);
-      return;
-    }
-
-    Alert.alert('OTP Sent', 'A new OTP has been sent to your new phone number.');
-    startCooldownTimer(newPhone);
-  };
-
-  const handleCancelPhoneChange = () => {
-    setPhoneStep('idle');
-    setNewPhone('');
-    setPhoneOtp('');
-    setPhoneError('');
   };
 
   const nameHasChanges = name.trim() !== currentName && name.trim().length > 0;
@@ -223,12 +91,13 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
           <AppText variant="label" style={[styles.sectionTitle, { color: colors.text.secondary }]}>
             Full Name
           </AppText>
-          <View style={styles.fieldRow}>              <Input
-                value={name}
-                onChangeText={setName}
-                placeholder="Enter your name"
-                containerStyle={styles.input}
-              />
+          <View style={styles.fieldRow}>
+            <Input
+              value={name}
+              onChangeText={setName}
+              placeholder="Enter your name"
+              containerStyle={styles.input}
+            />
           </View>
           {nameHasChanges && (
             <Button
@@ -241,130 +110,17 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
           )}
         </View>
 
-        {/* ─── Phone Section ──────────────────────────────────── */}
+        {/* ─── Email Section ──────────────────────────────────── */}
         <View style={[styles.section, { backgroundColor: colors.surface.default, borderColor: colors.border.default }]}>
           <AppText variant="label" style={[styles.sectionTitle, { color: colors.text.secondary }]}>
-            Phone Number
+            Email
           </AppText>
-
-          {phoneStep === 'idle' && (
-            <>
-              <View style={styles.fieldRow}>
-                <AppText variant="body" style={{ color: colors.text.primary, flex: 1 }}>
-                  {formatPhoneForDisplay(currentPhone)}
-                </AppText>
-                <TouchableOpacity onPress={handleStartPhoneChange}>
-                  <AppText variant="body" style={{ color: colors.action.primary }}>
-                    Change
-                  </AppText>
-                </TouchableOpacity>
-              </View>
-            </>
-          )}
-
-          {phoneStep === 'entering' && (
-            <View style={styles.phoneChangeForm}>
-              <View style={styles.phoneContainer}>
-                <TouchableOpacity
-                  style={[
-                    styles.countrySelector,
-                    {
-                      borderColor: colors.border.default,
-                      backgroundColor: colors.surface.default,
-                    },
-                  ]}
-                  onPress={() => setShowCountryPicker(true)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.flag}>{selectedCountry.flag}</Text>
-                  <Text style={[styles.dialCode, { color: colors.text.primary }]}>
-                    {selectedCountry.dialCode}
-                  </Text>
-                  <Text style={[styles.chevron, { color: colors.text.tertiary }]}>▼</Text>
-                </TouchableOpacity>
-                <View style={styles.phoneInputContainer}>
-                  <Input
-                    value={newPhone}
-                    onChangeText={(text) => setNewPhone(formatLocalPhoneInput(text))}
-                    placeholder="Phone number"
-                    keyboardType="phone-pad"
-                    maxLength={15}
-                    containerStyle={styles.phoneInput}
-                  />
-                </View>
-              </View>
-              {phoneError ? (
-                <AppText variant="caption" style={{ color: colors.action.destructive, marginTop: spacing.xs }}>
-                  {phoneError}
-                </AppText>
-              ) : null}
-              <View style={styles.phoneChangeActions}>
-                <Button
-                  title="Send OTP"
-                  onPress={handleSendPhoneOtp}
-                  variant="primary"
-                  style={styles.halfButton}
-                />
-                <Button
-                  title="Cancel"
-                  onPress={handleCancelPhoneChange}
-                  variant="secondary"
-                  style={styles.halfButton}
-                />
-              </View>
-            </View>
-          )}
-
-          {(phoneStep === 'otp_sent' || phoneStep === 'verifying') && (
-            <View style={styles.phoneChangeForm}>
-              <AppText variant="body" style={{ color: colors.text.secondary, marginBottom: spacing.sm }}>
-                Enter the OTP sent to{'\n'}{formatPhoneForDisplay(`${selectedCountry.dialCode}${newPhone}`)}
-              </AppText>
-              <Input
-                value={phoneOtp}
-                onChangeText={setPhoneOtp}
-                placeholder="Enter OTP"
-                keyboardType="number-pad"
-                maxLength={6}
-                containerStyle={styles.input}
-              />
-              {phoneError ? (
-                <AppText variant="caption" style={{ color: colors.action.destructive, marginTop: spacing.xs }}>
-                  {phoneError}
-                </AppText>
-              ) : null}
-              <View style={styles.phoneChangeActions}>
-                <Button
-                  title={phoneStep === 'verifying' ? 'Verifying...' : 'Verify & Change'}
-                  onPress={handleVerifyPhoneChange}
-                  variant="primary"
-                  disabled={phoneStep === 'verifying'}
-                  style={styles.halfButton}
-                />
-                <Button
-                  title={cooldown > 0 ? `Resend (${cooldown}s)` : 'Resend OTP'}
-                  onPress={handleResendPhoneOtp}
-                  variant="secondary"
-                  disabled={cooldown > 0}
-                  style={styles.halfButton}
-                />
-              </View>
-              <TouchableOpacity onPress={handleCancelPhoneChange} style={{ marginTop: spacing.sm }}>
-                <AppText variant="caption" style={{ color: colors.text.secondary, textAlign: 'center' }}>
-                  Cancel phone change
-                </AppText>
-              </TouchableOpacity>
-            </View>
-          )}
+          <View style={styles.fieldRow}>
+            <AppText variant="body" style={{ color: colors.text.primary, flex: 1 }}>
+              {currentEmail || 'Not set'}
+            </AppText>
+          </View>
         </View>
-
-        <CountryCodePicker
-          visible={showCountryPicker}
-          onClose={() => setShowCountryPicker(false)}
-          onSelect={setSelectedCountry}
-          selectedCountry={selectedCountry}
-          recentCountries={recentCountries}
-        />
 
         {/* ─── Appearance ────────────────────────────────────── */}
         <View style={[styles.section, { backgroundColor: colors.surface.default, borderColor: colors.border.default }]}>
@@ -433,7 +189,7 @@ export function SettingsScreen({ navigation }: SettingsScreenProps) {
           <View style={styles.fieldRow}>
             <AppText variant="body" style={{ color: colors.text.secondary }}>Email</AppText>
             <AppText variant="body" style={{ color: colors.text.primary }}>
-              {user?.email ?? 'Not set'}
+              {currentEmail || 'Not set'}
             </AppText>
           </View>
           <View style={styles.fieldRow}>
@@ -484,17 +240,6 @@ const styles = StyleSheet.create({
   saveButton: {
     marginTop: 4,
   },
-  phoneChangeForm: {
-    gap: 8,
-  },
-  phoneChangeActions: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 8,
-  },
-  halfButton: {
-    flex: 1,
-  },
   themeToggleContainer: {
     flexDirection: 'row',
     padding: 3,
@@ -505,37 +250,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  phoneContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
-  },
-  countrySelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    height: 48,
-    minWidth: 100,
-  },
-  flag: {
-    fontSize: 20,
-    marginRight: 6,
-  },
-  dialCode: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  chevron: {
-    fontSize: 10,
-    marginLeft: 6,
-  },
-  phoneInputContainer: {
-    flex: 1,
-  },
-  phoneInput: {
-    flex: 1,
   },
 });

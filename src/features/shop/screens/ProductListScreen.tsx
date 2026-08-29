@@ -7,7 +7,7 @@ import { useInfiniteProducts } from '../hooks';
 import { ProductCard } from '../components/ProductCard';
 import { ProductFilterSheet } from '../components/ProductFilterSheet';
 import { SortSheet } from '../components/SortSheet';
-import { ProductFilter, DEFAULT_PRODUCT_FILTER, SortOption, Product } from '../types';
+import { ProductFilter, DEFAULT_PRODUCT_FILTER, SortOption, Product, ShopNavigation } from '../types';
 import { AppText } from '../../../shared/components/AppText';
 import { SearchBar } from '../../../shared/components/SearchBar';
 import { Chip } from '../../../shared/components/Chip';
@@ -24,10 +24,7 @@ const SORT_LABELS: Record<SortOption, string> = {
 
 interface ProductListScreenProps {
   route?: { params?: { category?: string } };
-  navigation: {
-    goBack: () => void;
-    navigate: (screen: string, params?: { productId: string }) => void;
-  };
+  navigation: ShopNavigation;
 }
 
 export function ProductListScreen({ route, navigation }: ProductListScreenProps) {

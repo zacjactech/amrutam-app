@@ -10,7 +10,7 @@ import { SearchBar } from '../../../shared/components/SearchBar';
 import { AppSkeleton } from '../../../shared/components/AppSkeleton';
 import { AppErrorState } from '../../../shared/components/AppErrorState';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
-import { Product } from '../types';
+import { Product, ShopNavigation } from '../types';
 import { ShoppingBag } from '../../../shared/assets/icons';
 
 import { Shield, Activities, Star, Heart, ClockCircle, Leaf, AlertTriangle, Flask } from '../../../shared/assets/icons';
@@ -27,9 +27,7 @@ const CATEGORIES = [
 ] as const;
 
 interface ShopHomeScreenProps {
-  navigation: {
-    navigate: (screen: string, params?: Record<string, unknown>) => void;
-  };
+  navigation: ShopNavigation;
 }
 
 export function ShopHomeScreen({ navigation }: ShopHomeScreenProps) {

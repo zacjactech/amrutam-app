@@ -1,14 +1,10 @@
-// Auth Module - Sign In Screen
+// Auth Module - Sign In Screen (Email OTP)
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Alert, Keyboard, TouchableOpacity } from 'react-native';
+import { Keyboard } from 'react-native';
 import { Button } from '../../../shared/components/Button';
 import { Input } from '../../../shared/components/Input';
-import { CountryCodePicker } from '../../../shared/components/CountryCodePicker';
-import { useThemeColors } from '../../../shared/components/ThemeProvider';
 import { useAuthContext } from '../../../infrastructure/auth/AuthContext';
-import { validatePhone, formatLocalPhoneInput, toE164Phone } from '../../../shared/utils/phoneValidation';
-import { usePersistedCountryCode } from '../../../shared/hooks/usePersistedCountryCode';
 import { AuthLayout } from '../components/AuthLayout';
 import { AuthHeader } from '../components/AuthHeader';
 
@@ -20,35 +16,38 @@ interface SignInScreenProps {
 }
 
 export function SignInScreen({ navigation }: SignInScreenProps) {
-  const colors = useThemeColors();
-  const { signInWithPhone } = useAuthContext();
-  const [phone, setPhone] = useState('');
+  const { signInWithEmail } = useAuthContext();
+  const [email, setEmail] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const { selectedCountry, setSelectedCountry, recentCountries } = usePersistedCountryCode();
-  const [showCountryPicker, setShowCountryPicker] = useState(false);
 
   const handleSendOtp = async () => {
     Keyboard.dismiss();
-    
-    // Build full phone number with country code
-    const fullPhone = `${selectedCountry.dialCode}${phone}`;
-    const raw = toE164Phone(fullPhone);
-    const validationError = validatePhone(raw);
-    if (validationError) {
-      Alert.alert('Invalid phone number', validationError);
+
+    const trimmed = email.trim().toLowerCase();
+    if (!trimmed) {
+      // Input component handles empty display; we still guard here
+      return;
+    }
+
+    // Basic email format check
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmed)) {
+      const { Alert } = require('react-native');
+      Alert.alert('Invalid email', 'Please enter a valid email address.');
       return;
     }
 
     setIsSending(true);
-    const { error } = await signInWithPhone(raw);
+    const { error } = await signInWithEmail(trimmed);
     setIsSending(false);
 
     if (error) {
+      const { Alert } = require('react-native');
       Alert.alert('Failed to send OTP', error);
       return;
     }
 
-    navigation.navigate('OTPVerification', { phone: raw });
+    navigation.navigate('OTPVerification', { email: trimmed });
   };
 
   return (
@@ -74,79 +73,19 @@ export function SignInScreen({ navigation }: SignInScreenProps) {
     >
       <AuthHeader
         title="Welcome back"
-        description="Enter your phone number to continue"
+        description="Enter your email to continue"
       />
-      <View style={styles.phoneContainer}>
-        <TouchableOpacity
-          style={[
-            styles.countrySelector,
-            {
-              borderColor: colors.border.default,
-              backgroundColor: colors.surface.default,
-            },
-          ]}
-          onPress={() => setShowCountryPicker(true)}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.flag}>{selectedCountry.flag}</Text>
-          <Text style={[styles.dialCode, { color: colors.text.primary }]}>
-            {selectedCountry.dialCode}
-          </Text>
-          <Text style={[styles.chevron, { color: colors.text.tertiary }]}>▼</Text>
-        </TouchableOpacity>
-        <View style={styles.phoneInputContainer}>
-          <Input
-            value={phone}
-            onChangeText={(text) => setPhone(formatLocalPhoneInput(text))}
-            placeholder="Phone number"
-            keyboardType="phone-pad"
-            maxLength={15}
-            returnKeyType="done"
-            onSubmitEditing={handleSendOtp}
-          />
-        </View>
-      </View>
-
-      <CountryCodePicker
-        visible={showCountryPicker}
-        onClose={() => setShowCountryPicker(false)}
-        onSelect={setSelectedCountry}
-        selectedCountry={selectedCountry}
-        recentCountries={recentCountries}
+      <Input
+        value={email}
+        onChangeText={setEmail}
+        placeholder="Email address"
+        keyboardType="email-address"
+        autoCapitalize="none"
+        autoComplete="email"
+        textContentType="emailAddress"
+        returnKeyType="done"
+        onSubmitEditing={handleSendOtp}
       />
     </AuthLayout>
   );
 }
-
-const styles = StyleSheet.create({
-  phoneContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
-    marginTop: 8,
-  },
-  countrySelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    height: 48,
-    minWidth: 100,
-  },
-  flag: {
-    fontSize: 20,
-    marginRight: 6,
-  },
-  dialCode: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  chevron: {
-    fontSize: 10,
-    marginLeft: 6,
-  },
-  phoneInputContainer: {
-    flex: 1,
-  },
-});

@@ -1,6 +1,6 @@
 // Text Input Component
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, forwardRef } from 'react';
 import {
   View,
   TextInput,
@@ -9,8 +9,6 @@ import {
   TextInputProps,
   TouchableOpacity,
   ViewStyle,
-  Animated,
-  AccessibilityInfo,
 } from 'react-native';
 import { useThemeColors, useThemeSpacing } from './ThemeProvider';
 import IconEye from '../../../assets/icons/icon-eye.svg';
@@ -25,89 +23,31 @@ interface InputProps extends Omit<TextInputProps, 'style'> {
   containerStyle?: ViewStyle | ViewStyle[];
 }
 
-function useShakeAnimation(error: string | undefined): Animated.Value {
-  const shakeAnim = useRef(new Animated.Value(0)).current;
-  const reducedMotionRef = useRef(false);
-  const prevErrorRef = useRef(error);
-
-  useEffect(() => {
-    const subscription = AccessibilityInfo.addEventListener(
-      'reduceMotionChanged',
-      (enabled) => {
-        reducedMotionRef.current = enabled;
-      },
-    );
-    return () => subscription.remove();
-  }, []);
-
-  useEffect(() => {
-    const hasError = error !== undefined && error.length > 0;
-    const prevHadError =
-      prevErrorRef.current !== undefined && prevErrorRef.current.length > 0;
-    prevErrorRef.current = error;
-
-    // Only shake when error transitions from none → present
-    if (!hasError || prevHadError || reducedMotionRef.current) {
-      if (!hasError) shakeAnim.setValue(0);
-      return;
-    }
-
-    Animated.sequence([
-      Animated.timing(shakeAnim, { toValue: -6, duration: 50, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 6, duration: 50, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: -4, duration: 50, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 4, duration: 50, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 0, duration: 50, useNativeDriver: true }),
-    ]).start();
-  }, [error, shakeAnim]);
-
-  return shakeAnim;
-}
-
-export function Input({
-  label,
-  error,
-  helper,
-  leftIcon,
-  rightIcon,
-  containerStyle,
-  secureTextEntry,
-  ...textInputProps
-}: InputProps): React.JSX.Element {
+export const Input = forwardRef<TextInput, InputProps>(function Input(
+  {
+    label,
+    error,
+    helper,
+    leftIcon,
+    rightIcon,
+    containerStyle,
+    secureTextEntry,
+    onFocus,
+    onBlur,
+    ...textInputProps
+  },
+  ref,
+): React.JSX.Element {
   const colors = useThemeColors();
   const spacing = useThemeSpacing();
   const [isFocused, setIsFocused] = useState(false);
   const [isSecure, setIsSecure] = useState(secureTextEntry);
-  const shakeAnim = useShakeAnimation(error);
 
-  const containerStyles: (ViewStyle | undefined)[] = [
-    styles.container,
-    {
-      borderColor: colors.border.default,
-      backgroundColor: colors.surface.default,
-    },
-    isFocused
-      ? {
-          borderColor: colors.action.primary,
-          shadowColor: colors.action.primary,
-          shadowOffset: { width: 0, height: 0 },
-          shadowOpacity: 0.12,
-          shadowRadius: 4,
-          elevation: 0,
-        }
-      : undefined,
-    error !== undefined
-      ? {
-          borderColor: colors.status.error,
-          shadowColor: colors.status.error,
-          shadowOffset: { width: 0, height: 0 },
-          shadowOpacity: 0.12,
-          shadowRadius: 4,
-          elevation: 0,
-        }
-      : undefined,
-    ...(Array.isArray(containerStyle) ? containerStyle : [containerStyle]),
-  ];
+  const borderColor = error
+    ? colors.status.error
+    : isFocused
+      ? colors.action.primary
+      : colors.border.default;
 
   return (
     <View style={[styles.wrapper, { marginBottom: spacing.md }]}>
@@ -121,51 +61,53 @@ export function Input({
           {label}
         </Text>
       )}
-      <Animated.View style={{ transform: [{ translateX: shakeAnim }] }}>
-        <View style={containerStyles}>
-          {leftIcon !== undefined && (
-            <View style={[styles.iconLeft, { marginRight: spacing.sm }]}>
-              {leftIcon}
+      <View
+        style={[
+          styles.container,
+          { borderColor, backgroundColor: colors.surface.default },
+          ...(Array.isArray(containerStyle) ? containerStyle : [containerStyle]),
+        ]}
+      >
+        {leftIcon !== undefined && (
+          <View style={[styles.iconLeft, { marginRight: spacing.sm }]}>
+            {leftIcon}
+          </View>
+        )}
+        <TextInput
+          ref={ref}
+          style={[styles.input, { color: colors.text.primary }]}
+          placeholderTextColor={colors.text.tertiary}
+          onFocus={(e) => {
+            setIsFocused(true);
+            onFocus?.(e);
+          }}
+          onBlur={(e) => {
+            setIsFocused(false);
+            onBlur?.(e);
+          }}
+          secureTextEntry={isSecure}
+          {...textInputProps}
+        />
+        {secureTextEntry !== undefined && secureTextEntry && (
+          <TouchableOpacity
+            onPress={() => setIsSecure(!isSecure)}
+            style={[styles.iconRight, { marginLeft: spacing.sm, padding: spacing.xs }]}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            {isSecure ? (
+              <IconEye width={18} height={18} color={colors.text.tertiary} />
+            ) : (
+              <IconEyeOff width={18} height={18} color={colors.action.primary} />
+            )}
+          </TouchableOpacity>
+        )}
+        {rightIcon !== undefined &&
+          (secureTextEntry === undefined || !secureTextEntry) && (
+            <View style={[styles.iconRight, { marginLeft: spacing.sm }]}>
+              {rightIcon}
             </View>
           )}
-          <TextInput
-            style={[
-              styles.input,
-              { color: colors.text.primary, paddingVertical: spacing.sm },
-            ]}
-            placeholderTextColor={colors.text.tertiary}
-            onFocus={(e) => {
-              setIsFocused(true);
-              textInputProps.onFocus?.(e);
-            }}
-            onBlur={(e) => {
-              setIsFocused(false);
-              textInputProps.onBlur?.(e);
-            }}
-            secureTextEntry={isSecure}
-            {...textInputProps}
-          />
-          {secureTextEntry !== undefined && secureTextEntry && (
-            <TouchableOpacity
-              onPress={() => setIsSecure(!isSecure)}
-              style={[styles.iconRight, { marginLeft: spacing.sm, padding: spacing.xs }]}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              {isSecure ? (
-                <IconEye width={18} height={18} color={colors.text.tertiary} />
-              ) : (
-                <IconEyeOff width={18} height={18} color={colors.action.primary} />
-              )}
-            </TouchableOpacity>
-          )}
-          {rightIcon !== undefined &&
-            (secureTextEntry === undefined || !secureTextEntry) && (
-              <View style={[styles.iconRight, { marginLeft: spacing.sm }]}>
-                {rightIcon}
-              </View>
-            )}
-        </View>
-      </Animated.View>
+      </View>
       {error !== undefined ? (
         <Text
           style={[
@@ -187,10 +129,12 @@ export function Input({
       ) : null}
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
-  wrapper: {},
+  wrapper: {
+    alignSelf: 'stretch',
+  },
   label: {
     fontSize: 12,
     fontWeight: '600',
@@ -208,7 +152,9 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     lineHeight: 24,
-    paddingVertical: 0,
+    height: 48,
+    paddingVertical: 12,
+    margin: 0,
   },
   iconLeft: {},
   iconRight: {},

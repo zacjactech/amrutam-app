@@ -8,12 +8,10 @@ import { Card } from '../../../shared/components/Card';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
 import { SuccessCheckCircle } from '../../../shared/assets/icons';
 import { Truck } from '../../../shared/assets/icons';
+import { ShopNavigation } from '../types';
 
 interface OrderSuccessScreenProps {
-  navigation: {
-    goBack: () => void;
-    navigate: (screen: string) => void;
-  };
+  navigation: ShopNavigation;
 }
 
 export function OrderSuccessScreen({ navigation }: OrderSuccessScreenProps) {

@@ -45,9 +45,6 @@ Example variables:
 ```text
 EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-API_TIMEOUT_MS=10000
-ENABLE_MOCK_FAILURES=false
-ENABLE_PERFORMANCE_LOGGING=false
 ```
 
 ## Architecture

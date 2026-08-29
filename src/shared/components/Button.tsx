@@ -40,15 +40,21 @@ export function Button({
   const colors = useThemeColors();
   const spacing = useThemeSpacing();
 
+  const isDisabled = disabled || loading;
+
   const buttonStyles: ViewStyle[] = [
     styles.base,
     { borderRadius: spacing.sm },
-    variant === 'primary' && { backgroundColor: colors.action.primary },
-    variant === 'secondary' && { backgroundColor: colors.action.primarySoft },
+    variant === 'primary' && {
+      backgroundColor: isDisabled ? colors.action.primary : colors.action.primary,
+    },
+    variant === 'secondary' && {
+      backgroundColor: isDisabled ? colors.action.primarySoft : colors.action.primarySoft,
+    },
     variant === 'outline' && {
       backgroundColor: 'transparent',
       borderWidth: 1.5,
-      borderColor: colors.action.primary,
+      borderColor: isDisabled ? colors.text.disabled : colors.action.primary,
     },
     variant === 'ghost' && { backgroundColor: 'transparent' },
     size === 'small' && {
@@ -66,7 +72,7 @@ export function Button({
       paddingHorizontal: spacing.xl,
       minHeight: 52,
     },
-    disabled && styles.disabled,
+    isDisabled && styles.disabled,
     style,
   ].filter((s): s is ViewStyle => s !== null && s !== undefined && s !== false);
 
@@ -74,12 +80,12 @@ export function Button({
     styles.text,
     variant === 'primary' && { color: colors.text.inverse },
     variant === 'secondary' && { color: colors.action.primary },
-    variant === 'outline' && { color: colors.action.primary },
+    variant === 'outline' && { color: isDisabled ? colors.text.disabled : colors.action.primary },
     variant === 'ghost' && { color: colors.action.primary },
     size === 'small' && { fontSize: 14 },
     size === 'medium' && { fontSize: 16 },
-    size === 'large' && { fontSize: 18 },
-    disabled && styles.disabledText,
+    size === 'large' && { fontSize: 16 },
+    isDisabled && styles.disabledText,
     textStyle,
   ].filter((s): s is TextStyle => s !== null && s !== undefined && s !== false);
 
@@ -87,7 +93,7 @@ export function Button({
     <TouchableOpacity
       style={buttonStyles}
       onPress={onPress}
-      disabled={disabled || loading}
+      disabled={isDisabled}
       activeOpacity={0.7}
       testID={testID}
     >
@@ -95,6 +101,7 @@ export function Button({
         <ActivityIndicator
           color={variant === 'primary' ? colors.text.inverse : colors.action.primary}
           size="small"
+          style={styles.loader}
         />
       ) : (
         <Text style={textStyles}>{title}</Text>
@@ -110,12 +117,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   disabled: {
-    opacity: 0.5,
+    opacity: 0.6,
   },
   text: {
     fontWeight: '600',
   },
   disabledText: {
-    opacity: 0.7,
+    opacity: 0.8,
+  },
+  loader: {
+    marginVertical: 2,
   },
 });

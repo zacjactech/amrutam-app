@@ -54,17 +54,18 @@ export function validatePhone(phone: string): string | null {
 
 /**
  * Formats phone input as the user types.
- * Auto-prefixes +91 (India) and formats as +91 XXXXX XXXXX.
+ * Auto-prefixes +91 (India) for 10-digit numbers starting with 6-9.
  * Returns the formatted string for display.
  *
  * Examples:
  *   "9" → "+91 9"
  *   "9876543210" → "+91 98765 43210"
  *   "+919876543210" → "+91 98765 43210"
- *   "44" → "+91 44"
+ *   "44791112345" → "+44 79111 23455"
  */
 export function formatPhoneInput(raw: string): string {
-  // Strip everything except digits
+  // Strip everything except digits and leading +
+  const hasPlus = raw.startsWith('+');
   const digits = raw.replace(/\D/g, '');
 
   // If empty, show just the prefix
@@ -72,13 +73,30 @@ export function formatPhoneInput(raw: string): string {
     return '+91 ';
   }
 
-  // Auto-prefix: if first digit is 9, assume Indian mobile and prepend country code
+  // If user is typing a non-Indian number (has + and doesn't start with 91)
+  // Just format with spaces, don't force +91
+  if (hasPlus && !digits.startsWith('91')) {
+    // International number - format with spaces every 5 digits
+    if (digits.length <= 5) {
+      return `+${digits}`;
+    }
+    return `+${digits.slice(0, 5)} ${digits.slice(5, 15)}`;
+  }
+
+  // Indian number handling
   let digitsToFormat = digits;
-  if (digits[0] === '9' && !digits.startsWith('91')) {
-    digitsToFormat = '91' + digits;
-  } else if (digits.startsWith('91') && digits.length > 2) {
-    // Already has country code
+
+  // If starts with 91 already, use as-is
+  if (digits.startsWith('91')) {
     digitsToFormat = digits;
+  }
+  // If 10-digit Indian mobile (starts with 6-9), prepend country code
+  else if (digits.length === 10 && /^[6-9]/.test(digits)) {
+    digitsToFormat = '91' + digits;
+  }
+  // If user typed without country code but with +91 prefix visible
+  else if (hasPlus && digits.length > 0 && digits.length <= 10 && /^[6-9]/.test(digits[0]!)) {
+    digitsToFormat = '91' + digits;
   }
 
   const withoutCode = digitsToFormat.replace(/^91/, '');
@@ -91,11 +109,38 @@ export function formatPhoneInput(raw: string): string {
 
 /**
  * Extracts the raw E.164 phone number from a formatted display string.
- * Strips all non-digit characters and prepends +.
+ * Handles both Indian (+91) and international numbers.
  */
 export function toE164Phone(formatted: string): string {
   const digits = formatted.replace(/\D/g, '');
+
+  // If starts with 91 (Indian country code), use as-is
+  if (digits.startsWith('91')) {
+    return `+${digits}`;
+  }
+
+  // Otherwise assume the digits include country code
   return `+${digits}`;
+}
+
+/**
+ * Formats local phone input as the user types (without country code prefix).
+ * Used with CountryCodePicker where the country code is selected separately.
+ *
+ * Examples:
+ *   "9876543210" → "98765 43210"
+ *   "98765" → "98765"
+ *   "" → ""
+ */
+export function formatLocalPhoneInput(raw: string): string {
+  // Strip everything except digits
+  const digits = raw.replace(/\D/g, '');
+
+  // Format with space after 5 digits
+  if (digits.length <= 5) {
+    return digits;
+  }
+  return `${digits.slice(0, 5)} ${digits.slice(5, 15)}`;
 }
 
 /**

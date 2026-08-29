@@ -134,7 +134,7 @@ Create from `.env.example`:
 - `.env.staging` — Performance logging, full dataset
 - `.env.production` — Optimized, no debug features
 
-Variables: `API_BASE_URL`, `API_TIMEOUT_MS`, `ENABLE_MOCK_FAILURES`, `ENABLE_PERFORMANCE_LOGGING`
+Variables: `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`
 
 ## Key References
 

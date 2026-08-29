@@ -1,35 +1,16 @@
 // Health Records Module - Types
 
-export type HealthRecordType = 'lab_report' | 'prescription' | 'consultation' | 'vaccination' | 'allergy';
+import type { HealthRecordType, Attachment, HealthRecord } from '../../shared/types';
 
-export type Attachment = {
-  id: string;
-  name: string;
-  mimeType: 'image/jpeg' | 'image/png' | 'application/pdf';
-  thumbnailUrl: string | undefined;
-  uri: string | undefined;
-  sizeBytes: number | undefined;
-};
+export type { HealthRecordType, Attachment, HealthRecord };
 
-export type HealthRecord = {
-  id: string;
-  patientId: string;
-  type: HealthRecordType;
-  title: string;
-  description: string | undefined;
-  occurredAt: string;
-  tags: string[];
-  attachments: Attachment[];
-  metadata: Record<string, string | number | boolean | null>;
-};
-
-export type RecordFilter = {
+export interface RecordFilter {
   searchQuery: string;
   types: HealthRecordType[];
   tags: string[];
   fromDate: string | null;
   toDate: string | null;
-};
+}
 
 export const DEFAULT_RECORD_FILTER: RecordFilter = {
   searchQuery: '',

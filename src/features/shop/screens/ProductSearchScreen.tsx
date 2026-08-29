@@ -6,7 +6,7 @@ import { FlashList } from '@shopify/flash-list';
 import { useQuery } from '@tanstack/react-query';
 import { productRepository } from '../repository';
 import { ProductCard } from '../components/ProductCard';
-import { Product } from '../types';
+import { Product, ShopNavigation } from '../types';
 import { AppText } from '../../../shared/components/AppText';
 import { SearchBar } from '../../../shared/components/SearchBar';
 import { Chip } from '../../../shared/components/Chip';
@@ -17,10 +17,7 @@ const TRENDING_SEARCHES = ['Ashwagandha', 'Immunity', 'Hair Oil', 'Skin Care', '
 let persistentRecentSearches: string[] = [];
 
 interface ProductSearchScreenProps {
-  navigation: {
-    goBack: () => void;
-    navigate: (screen: string, params?: { productId: string }) => void;
-  };
+  navigation: ShopNavigation;
 }
 
 export function ProductSearchScreen({ navigation }: ProductSearchScreenProps) {
