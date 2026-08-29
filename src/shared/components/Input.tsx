@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
   ViewStyle,
 } from 'react-native';
-import { useThemeColors, useThemeSpacing } from './ThemeProvider';
+import { useThemeColors } from './ThemeProvider';
 import IconEye from '../../../assets/icons/icon-eye.svg';
 import IconEyeOff from '../../../assets/icons/icon-eye-off.svg';
 
@@ -39,7 +39,6 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
   ref,
 ): React.JSX.Element {
   const colors = useThemeColors();
-  const spacing = useThemeSpacing();
   const [isFocused, setIsFocused] = useState(false);
   const [isSecure, setIsSecure] = useState(secureTextEntry);
 
@@ -50,12 +49,12 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
       : colors.border.default;
 
   return (
-    <View style={[styles.wrapper, { marginBottom: spacing.md }]}>
+    <View style={styles.wrapper}>
       {label !== undefined && (
         <Text
           style={[
             styles.label,
-            { color: colors.text.primary, marginBottom: spacing.xs },
+            { color: colors.text.primary },
           ]}
         >
           {label}
@@ -69,7 +68,7 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
         ]}
       >
         {leftIcon !== undefined && (
-          <View style={[styles.iconLeft, { marginRight: spacing.sm }]}>
+          <View style={styles.iconLeft}>
             {leftIcon}
           </View>
         )}
@@ -91,8 +90,10 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
         {secureTextEntry !== undefined && secureTextEntry && (
           <TouchableOpacity
             onPress={() => setIsSecure(!isSecure)}
-            style={[styles.iconRight, { marginLeft: spacing.sm, padding: spacing.xs }]}
+            style={styles.iconRight}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityLabel={isSecure ? 'Show password' : 'Hide password'}
+            accessibilityRole="button"
           >
             {isSecure ? (
               <IconEye width={18} height={18} color={colors.text.tertiary} />
@@ -103,26 +104,20 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
         )}
         {rightIcon !== undefined &&
           (secureTextEntry === undefined || !secureTextEntry) && (
-            <View style={[styles.iconRight, { marginLeft: spacing.sm }]}>
+            <View style={styles.iconRight}>
               {rightIcon}
             </View>
           )}
       </View>
       {error !== undefined ? (
         <Text
-          style={[
-            styles.error,
-            { color: colors.status.error, marginTop: spacing.xs },
-          ]}
+          style={[styles.error, { color: colors.status.error }]}
         >
           {error}
         </Text>
       ) : helper !== undefined ? (
         <Text
-          style={[
-            styles.helper,
-            { color: colors.text.secondary, marginTop: spacing.xs },
-          ]}
+          style={[styles.helper, { color: colors.text.secondary }]}
         >
           {helper}
         </Text>
@@ -134,36 +129,45 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
 const styles = StyleSheet.create({
   wrapper: {
     alignSelf: 'stretch',
+    marginBottom: 16,
   },
   label: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '600',
-    lineHeight: 16,
+    lineHeight: 20,
+    marginBottom: 8,
   },
   container: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderRadius: 8,
-    minHeight: 48,
-    paddingHorizontal: 12,
+    borderRadius: 12,
+    minHeight: 52,
+    paddingHorizontal: 16,
   },
   input: {
     flex: 1,
     fontSize: 16,
     lineHeight: 24,
-    height: 48,
-    paddingVertical: 12,
+    height: 52,
+    paddingVertical: 14,
     margin: 0,
   },
-  iconLeft: {},
-  iconRight: {},
+  iconLeft: {
+    marginRight: 8,
+  },
+  iconRight: {
+    marginLeft: 8,
+    padding: 4,
+  },
   error: {
     fontSize: 12,
     lineHeight: 16,
+    marginTop: 6,
   },
   helper: {
     fontSize: 12,
     lineHeight: 16,
+    marginTop: 6,
   },
 });

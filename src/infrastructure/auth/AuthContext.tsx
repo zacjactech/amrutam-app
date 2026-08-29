@@ -1,10 +1,16 @@
-// Auth Context - Supabase Auth session management (Email OTP)
+// Auth Context - Supabase Auth session management (Email OTP + Google OAuth)
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { Session, User } from '@supabase/supabase-js';
+import * as WebBrowser from 'expo-web-browser';
 import { supabase } from '../supabase/client';
 import { logger } from '../logging/logger';
-import { checkRateLimit, recordSend, getRateLimitStatus } from './otpRateLimiter';
+import { getRateLimitStatus } from './otpRateLimiter';
+
+WebBrowser.maybeCompleteAuthSession();
+
+// Expo auth proxy URL (you must be logged into Expo: npx expo login)
+const EXPO_AUTH_PROXY = 'https://auth.expo.io/@keyral/amrutam-app';
 
 interface AuthContextValue {
   session: Session | null;
@@ -13,11 +19,13 @@ interface AuthContextValue {
   userName: string | undefined;
   isLoading: boolean;
   isAuthenticated: boolean;
-  signInWithEmail: (email: string) => Promise<{ error?: string }>;
-  verifyOtp: (email: string, token: string, name?: string) => Promise<{ error?: string }>;
+  signUp: (email: string, password: string, name: string) => Promise<{ error?: string }>;
+  signIn: (email: string, password: string) => Promise<{ error?: string }>;
+  signInWithGoogle: () => Promise<{ error?: string }>;
+  sendEmailOtp: (email: string) => Promise<{ error?: string }>;
+  verifyEmailOtp: (email: string, token: string, name?: string) => Promise<{ error?: string }>;
   updateProfile: (metadata: { full_name?: string }) => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
-  /** Seconds until next OTP send is allowed (0 if ready) */
   otpCooldownSeconds: (identifier: string) => number;
 }
 
@@ -28,138 +36,155 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
     supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
       setSession(initialSession);
       setIsLoading(false);
-      logger.info('Auth: initial session loaded', {
-        hasSession: initialSession !== null,
-        userId: initialSession?.user?.id,
-      });
-    }).catch((error) => {
-      logger.error('Auth: failed to get initial session', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-      setIsLoading(false);
-    });
+    }).catch(() => setIsLoading(false));
 
-    // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession);
-      logger.info('Auth: session changed', {
-        event: _event,
-        hasSession: newSession !== null,
-        userId: newSession?.user?.id,
-      });
     });
 
-    return () => {
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
-  const signInWithEmail = useCallback(async (email: string): Promise<{ error?: string }> => {
+  const sendEmailOtp = useCallback(async (email: string): Promise<{ error?: string }> => {
     try {
-      // Check rate limit before sending
-      const rateLimit = checkRateLimit(email);
-      if (!rateLimit.allowed) {
-        logger.warn('Auth: signInWithEmail rate limited', {
-          email,
-          cooldownSeconds: rateLimit.cooldownSeconds,
-          sendsThisHour: rateLimit.sendsThisHour,
-        });
-        return { error: rateLimit.message };
-      }
-
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-      });
-
-      if (error) {
-        logger.error('Auth: signInWithEmail failed', { error: error.message });
-        return { error: error.message };
-      }
-
-      // Record the successful send for rate limiting
-      recordSend(email);
-
-      logger.info('Auth: OTP sent successfully', { email });
+      const { error } = await supabase.auth.signInWithOtp({ email });
+      if (error) throw error;
       return {};
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to send OTP';
-      logger.error('Auth: signInWithEmail exception', { error: message });
-      return { error: message };
+      return { error: error instanceof Error ? error.message : 'Failed to send OTP' };
     }
   }, []);
 
-  const verifyOtp = useCallback(async (email: string, token: string, name?: string): Promise<{ error?: string }> => {
+  const signUp = useCallback(async (email: string, password: string, name: string): Promise<{ error?: string }> => {
     try {
-      const { data, error } = await supabase.auth.verifyOtp({
+      const { error } = await supabase.auth.signUp({
         email,
-        token,
-        type: 'email',
+        password,
+        options: { data: { full_name: name } },
+      });
+      if (error) throw error;
+      return {};
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : 'Failed to sign up' };
+    }
+  }, []);
+
+  const signIn = useCallback(async (email: string, password: string): Promise<{ error?: string }> => {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      return {};
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : 'Failed to sign in' };
+    }
+  }, []);
+
+  const signInWithGoogle = useCallback(async (): Promise<{ error?: string }> => {
+    try {
+      // 1. Get OAuth URL from Supabase, redirect to Expo proxy
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: EXPO_AUTH_PROXY,
+          skipBrowserRedirect: true,
+        },
       });
 
+      if (error) throw error;
+      if (!data?.url) return { error: 'No OAuth URL received' };
+
+      // 2. Open browser - proxy captures the redirect
+      const result = await WebBrowser.openAuthSessionAsync(
+        data.url,
+        EXPO_AUTH_PROXY
+      );
+
+      if (result.type === 'success') {
+        const url = result.url;
+
+        // 3. Extract tokens from URL
+        const urlObj = new URL(url);
+        let params: URLSearchParams;
+
+        if (urlObj.hash && urlObj.hash.includes('access_token')) {
+          params = new URLSearchParams(urlObj.hash.substring(1));
+        } else {
+          params = new URLSearchParams(urlObj.search);
+        }
+
+        const accessToken = params.get('access_token');
+        const refreshToken = params.get('refresh_token');
+
+        if (accessToken && refreshToken) {
+          const { error: sessionError } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+          if (sessionError) throw sessionError;
+          return {};
+        }
+
+        return { error: 'No tokens received' };
+      } else if (result.type === 'cancel') {
+        return { error: 'Sign in was cancelled' };
+      }
+
+      return { error: 'Sign in failed' };
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : 'Failed to sign in with Google' };
+    }
+  }, []);
+
+  const verifyEmailOtp = useCallback(async (email: string, token: string, name?: string): Promise<{ error?: string }> => {
+    try {
+      // Try 'signup' type first (for new accounts)
+      let { data, error } = await supabase.auth.verifyOtp({ email, token, type: 'signup' });
+      
+      // If that fails, try 'email' type (for existing accounts)
       if (error) {
-        logger.error('Auth: verifyOtp failed', { error: error.message });
+        const result = await supabase.auth.verifyOtp({ email, token, type: 'email' });
+        data = result.data;
+        error = result.error;
+      }
+
+      if (error) {
+        logger.error('Auth: verifyEmailOtp failed', { error: error.message });
         return { error: error.message };
       }
 
-      if (data.session) {
-        setSession(data.session);
-      }
-
+      if (data.session) setSession(data.session);
+      
       // If a name was provided (new user from sign-up), save it to user_metadata
       if (name && data.user) {
         const { error: profileError } = await supabase.auth.updateUser({
           data: { full_name: name },
         });
-
         if (profileError) {
-          logger.warn('Auth: failed to save name to user_metadata', {
-            error: profileError.message,
-          });
-        } else {
-          logger.info('Auth: saved name to user_metadata', { name });
+          logger.warn('Auth: failed to save name', { error: profileError.message });
         }
       }
 
-      logger.info('Auth: OTP verified successfully', { userId: data.user?.id });
       return {};
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to verify OTP';
-      logger.error('Auth: verifyOtp exception', { error: message });
-      return { error: message };
+      return { error: error instanceof Error ? error.message : 'Failed to verify OTP' };
     }
   }, []);
 
   const signOut = useCallback(async () => {
-    try {
-      await supabase.auth.signOut();
-      setSession(null);
-      logger.info('Auth: signed out successfully');
-    } catch (error) {
-      logger.error('Auth: signOut failed', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-    }
+    await supabase.auth.signOut();
+    setSession(null);
   }, []);
 
   const updateProfile = useCallback(async (metadata: { full_name?: string }): Promise<{ error?: string }> => {
     try {
       const { error } = await supabase.auth.updateUser({ data: metadata });
-
-      if (error) {
-        logger.error('Auth: updateProfile failed', { error: error.message });
-        return { error: error.message };
-      }
-
-      logger.info('Auth: profile updated', { metadata });
+      if (error) return { error: error.message };
       return {};
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to update profile';
-      logger.error('Auth: updateProfile exception', { error: message });
-      return { error: message };
+      return { error: error instanceof Error ? error.message : 'Failed to update profile' };
     }
   }, []);
 
@@ -168,8 +193,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const otpCooldownSeconds = useCallback((identifier: string): number => {
     const status = getRateLimitStatus(identifier);
     if (!status.nextAllowedAt) return 0;
-    const remaining = Math.max(0, Math.ceil((status.nextAllowedAt - Date.now()) / 1000));
-    return remaining;
+    return Math.max(0, Math.ceil((status.nextAllowedAt - Date.now()) / 1000));
   }, []);
 
   const value: AuthContextValue = {
@@ -179,8 +203,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     userName,
     isLoading,
     isAuthenticated: session !== null && session.user !== undefined,
-    signInWithEmail,
-    verifyOtp,
+    signIn,
+    signUp,
+    signInWithGoogle,
+    sendEmailOtp,
+    verifyEmailOtp,
     updateProfile,
     signOut,
     otpCooldownSeconds,

@@ -26,7 +26,7 @@ export function SectionHeader({
         {title}
       </Text>
       {actionLabel !== undefined && onAction !== undefined && (
-        <TouchableOpacity onPress={onAction} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+        <TouchableOpacity onPress={onAction} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityLabel={actionLabel} accessibilityRole="button">
           <Text style={[styles.action, { color: colors.action.primary }]}>{actionLabel}</Text>
         </TouchableOpacity>
       )}

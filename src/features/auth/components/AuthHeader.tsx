@@ -3,56 +3,59 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { AppText } from '../../../shared/components/AppText';
-import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
-import Leaf from '../../../../assets/icons/leaf.svg';
+import { useThemeColors } from '../../../shared/components/ThemeProvider';
+import LogoIconBg from '../../../../assets/icons/logo-icon-bg.svg';
 
 interface AuthHeaderProps {
   title: string;
-  description: string;
-  /** Override the default icon size */
-  iconSize?: number;
+  description?: string;
 }
 
-export function AuthHeader({ title, description, iconSize = 56 }: AuthHeaderProps): React.JSX.Element {
+export function AuthHeader({ title, description }: AuthHeaderProps): React.JSX.Element {
   const colors = useThemeColors();
-  const spacing = useThemeSpacing();
 
   return (
     <View style={styles.container}>
-      <View style={[styles.iconCircle, { width: 96, height: 96, borderRadius: 48 }]}>
-        <Leaf width={iconSize} height={iconSize} color="#2D6A4F" />
+      <View style={styles.logoRow}>
+        <LogoIconBg width={32} height={32} />
+        <AppText variant="h2" style={{ color: colors.action.primary, marginLeft: 8 }}>
+          Amrutam
+        </AppText>
       </View>
       <AppText
-        variant="h1"
-        style={[styles.title, { color: colors.text.primary, marginTop: spacing.lg }]}
+        variant="display"
+        style={[styles.title, { color: colors.text.primary }]}
       >
         {title}
       </AppText>
-      <AppText
-        variant="body"
-        style={[styles.description, { color: colors.text.secondary, marginTop: spacing.sm }]}
-      >
-        {description}
-      </AppText>
+      {description && (
+        <AppText
+          variant="bodyLarge"
+          style={[styles.description, { color: colors.text.secondary }]}
+        >
+          {description}
+        </AppText>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: 'center',
     width: '100%',
+    marginBottom: 24,
   },
-  iconCircle: {
-    backgroundColor: '#D1FAE5',
-    justifyContent: 'center',
+  logoRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 20,
   },
   title: {
-    textAlign: 'center',
+    textAlign: 'left',
+    marginBottom: 4,
   },
   description: {
-    textAlign: 'center',
-    lineHeight: 20,
+    textAlign: 'left',
+    lineHeight: 22,
   },
 });

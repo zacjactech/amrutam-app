@@ -1,17 +1,8 @@
--- Amrutam Database Seed
--- Generates 100 doctors, slots, 500 products, 500 health records
+-- Amrutam Seed - General data only (doctors, slots, products)
+-- No user-specific data (bookings, health_records, cart, wishlist)
 
--- Helper function for seeded random
-CREATE OR REPLACE FUNCTION seed_random(seed INT) RETURNS FLOAT AS $$
-DECLARE
-  state INT := seed;
-BEGIN
-  state := (state * 1103515245 + 12345) & 2147483647;
-  RETURN state::FLOAT / 2147483647.0;
-END;
-$$ LANGUAGE plpgsql;
+-- ─── 100 Doctors ─────────────────────────────────────────────────────────────
 
--- Generate 100 doctors
 DO $$
 DECLARE
   i INT;
@@ -83,27 +74,26 @@ BEGIN
   END LOOP;
 END $$;
 
--- Generate slots for each doctor (7 days, 9am-6pm, 30min intervals)
+-- ─── Slots for each doctor (7 days ahead) ────────────────────────────────────
+
 DO $$
 DECLARE
   doc RECORD;
   day_offset INT;
   hour INT;
-  minute INT;
+  m INT;
   slot_start TIMESTAMPTZ;
   slot_end TIMESTAMPTZ;
   consult_type TEXT;
   is_booked BOOLEAN;
   types TEXT[] := ARRAY['video','audio','chat','in-person'];
   minutes_arr INT[] := ARRAY[0, 30];
-  m INT;
 BEGIN
   FOR doc IN SELECT id FROM doctors LOOP
     FOR day_offset IN 0..6 LOOP
       FOR hour IN 9..17 LOOP
         FOREACH m IN ARRAY minutes_arr LOOP
           IF hour = 17 AND m > 0 THEN EXIT; END IF;
-          -- Skip some slots randomly based on doctor id
           IF (length(doc.id)::int * 7 + day_offset * 3 + hour + m) % 4 = 0 THEN CONTINUE; END IF;
 
           slot_start := (date_trunc('day', now()) + (day_offset || ' days')::interval + (hour || ' hours')::interval + (m || ' minutes')::interval);
@@ -126,7 +116,8 @@ BEGIN
   END LOOP;
 END $$;
 
--- Generate 500 products
+-- ─── 500 Products ────────────────────────────────────────────────────────────
+
 DO $$
 DECLARE
   i INT;
@@ -203,75 +194,4 @@ BEGIN
   END LOOP;
 END $$;
 
--- Generate 500 health records
-DO $$
-DECLARE
-  i INT;
-  record_types TEXT[] := ARRAY['lab_report','prescription','consultation','vaccination','allergy'];
-  record_titles JSONB := '{
-    "lab_report": ["Complete Blood Count","Liver Function Test","Kidney Function Test","Lipid Profile","Thyroid Profile","Vitamin D Levels","Blood Sugar Fasting","HbA1c","Urine Routine","ECG Report"],
-    "prescription": ["Ayurvedic Prescription","Herbal Formulation","Traditional Remedy","Panchakarma Prescription","Herbal Decotion","Churna Prescription","Oil Prescription","Ghee Based Formulation","Tablet Prescription"],
-    "consultation": ["Initial Consultation","Follow-up Visit","Wellness Check","Dosha Assessment","Annual Review","Specialist Consultation","Video Consultation","In-Person Consultation","Telemedicine Session"],
-    "vaccination": ["COVID-19 Booster","Hepatitis B","Influenza Vaccine","Pneumococcal Vaccine","Typhoid Vaccine","MMR Booster","Tetanus Toxoid","Rabies Pre-exposure","Japanese Encephalitis"],
-    "allergy": ["Dust Allergy Test","Food Allergy Panel","Pollen Allergy","Drug Allergy Test","Insect Sting Allergy","Mold Allergy","Pet Dander Allergy","Latex Allergy","Nickel Allergy"]
-  }';
-  record_labels JSONB := '{"lab_report":"Lab Report","prescription":"Prescription","consultation":"Consultation","vaccination":"Vaccination","allergy":"Allergy"}';
-  tag_pool TEXT[] := ARRAY['annual','follow-up','urgent','routine','preventive','chronic','acute','wellness','screening','monitoring','ayurvedic','modern','integrated','digital','physical'];
-  rec_type TEXT;
-  rec_type_idx INT;
-  title_arr TEXT[];
-  title TEXT;
-  label TEXT;
-  days_ago INT;
-  num_tags INT;
-  tags TEXT[];
-  num_att INT;
-  attachments JSONB;
-  att JSONB;
-  j INT;
-BEGIN
-  FOR i IN 0..499 LOOP
-    rec_type_idx := (i % array_length(record_types, 1)) + 1;
-    rec_type := record_types[rec_type_idx];
-    title_arr := ARRAY(SELECT jsonb_array_elements_text((record_titles->>rec_type)::jsonb));
-    title := title_arr[(i % array_length(title_arr, 1)) + 1];
-    label := record_labels->>rec_type;
-    days_ago := (i * 127) % 1825;
-
-    num_tags := 1 + (i % 3);
-    tags := ARRAY[]::TEXT[];
-    FOR j IN 1..num_tags LOOP
-      tags := array_append(tags, tag_pool[((i * j * 11) % array_length(tag_pool, 1)) + 1]);
-    END LOOP;
-
-    num_att := (i * 3) % 4;
-    attachments := '[]'::jsonb;
-    FOR j IN 0..num_att-1 LOOP
-      att := jsonb_build_object(
-        'id', 'att_' || lpad((i * 10 + j)::text, 5, '0'),
-        'name', CASE WHEN (i + j) % 3 = 0 THEN 'document_' || i || '.pdf' ELSE 'scan_' || i || '.png' END,
-        'mimeType', CASE WHEN (i + j) % 3 = 0 THEN 'application/pdf' ELSE 'image/png' END,
-        'sizeBytes', (i * 71 + j * 1000) % 5000000 + 50000
-      );
-      IF (i + j) % 3 != 0 THEN
-        att := att || jsonb_build_object('thumbnailUrl', 'https://picsum.photos/seed/' || (i * 10 + j) || '/200/200');
-      END IF;
-      attachments := attachments || att;
-    END LOOP;
-
-    INSERT INTO health_records (id, patient_id, type, title, description, occurred_at, tags, attachments, metadata)
-    VALUES (
-      'rec_' || lpad(i::text, 5, '0'),
-      'patient_001',
-      rec_type,
-      title || ' - ' || label,
-      'This is a ' || lower(label) || ' record for patient patient_001.',
-      now() - (days_ago || ' days')::interval,
-      tags,
-      attachments,
-      jsonb_build_object('generated', true, 'recordIndex', i, 'source', 'mock')
-    );
-  END LOOP;
-END $$;
-
-SELECT 'Seed complete!' as status;
+SELECT 'Seed complete! 100 doctors, slots, 500 products' as status;

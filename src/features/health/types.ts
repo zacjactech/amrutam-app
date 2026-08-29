@@ -36,14 +36,6 @@ export const RECORD_TYPE_LABELS: Record<HealthRecordType, string> = {
   allergy: 'Allergy',
 };
 
-export const RECORD_TYPE_COLORS: Record<HealthRecordType, { bg: string; text: string }> = {
-  lab_report: { bg: '#E3F2FD', text: '#0D47A1' },
-  prescription: { bg: '#E8F5E9', text: '#1B5E3A' },
-  consultation: { bg: '#FFF8E1', text: '#F57F17' },
-  vaccination: { bg: '#F3E5F5', text: '#6A1B9A' },
-  allergy: { bg: '#FFEBEE', text: '#B71C1C' },
-};
-
 export type PaginatedResult<T> = {
   data: T[];
   page: number;

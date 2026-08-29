@@ -10,7 +10,8 @@ import { Button } from '../../../shared/components/Button';
 import { AppSkeleton } from '../../../shared/components/AppSkeleton';
 import { Product, ShopNavigation } from '../types';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
-import { ShoppingBag } from '../../../shared/assets/icons';
+import { ShoppingBag, ArrowLeft } from '../../../shared/assets/icons';
+import { lightTheme } from '../../../shared/design-system/theme';
 
 interface WishlistScreenProps {
   navigation: ShopNavigation;
@@ -47,11 +48,13 @@ export function WishlistScreen({ navigation }: WishlistScreenProps) {
         style={[styles.productCard, { backgroundColor: colors.surface.default, borderRadius: spacing.md }]}
         onPress={() => handleProductPress(item.id)}
         activeOpacity={0.7}
+        accessibilityLabel={`View ${item.name}`}
+        accessibilityRole="button"
       >
         <View style={styles.imageContainer}>
           <Image
             source={{ uri: item.imageUrl }}
-            style={[styles.productImage, { borderRadius: spacing.sm }]}
+            style={[styles.productImage, { borderRadius: spacing.sm, backgroundColor: colors.background.secondary }]}
             contentFit="cover"
             placeholder={{ blurhash: 'LGF5?xYk^6%M%%2e2~qoJ^Rj@AjZ' }}
           />
@@ -59,6 +62,8 @@ export function WishlistScreen({ navigation }: WishlistScreenProps) {
             style={[styles.heartIcon, { backgroundColor: colors.status.errorSoft }]}
             hitSlop={8}
             onPress={() => void toggleWishlist.mutate({ productId: item.id, isAdded: true })}
+            accessibilityLabel={`Remove ${item.name} from wishlist`}
+            accessibilityRole="button"
           >
             <AppText variant="body" style={{ color: colors.status.error }}>♥</AppText>
           </TouchableOpacity>
@@ -100,8 +105,8 @@ export function WishlistScreen({ navigation }: WishlistScreenProps) {
     <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
       <View style={[styles.header, { paddingHorizontal: spacing.lg, paddingTop: spacing.xl, paddingBottom: spacing.md }]}>
         <View style={styles.titleRow}>
-          <TouchableOpacity onPress={navigation.goBack} hitSlop={8}>
-            <AppText variant="h1">←</AppText>
+          <TouchableOpacity onPress={navigation.goBack} hitSlop={8} accessibilityLabel="Go back" accessibilityRole="button">
+            <ArrowLeft width={20} height={20} color={colors.text.primary} />
           </TouchableOpacity>
           <AppText variant="h1">Wishlist ({wishlistProducts.length})</AppText>
           <View style={{ width: 24 }} />
@@ -110,8 +115,8 @@ export function WishlistScreen({ navigation }: WishlistScreenProps) {
 
       {wishlistProducts.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <View style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: '#D1FAE5', justifyContent: 'center', alignItems: 'center' }}>
-            <ShoppingBag width={56} height={56} color="#2D6A4F" />
+          <View style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: colors.action.primarySoft, justifyContent: 'center', alignItems: 'center' }}>
+            <ShoppingBag width={56} height={56} color={colors.action.primary} />
           </View>
           <AppText variant="h3" style={{ color: colors.text.primary, marginTop: spacing.lg, marginBottom: spacing.sm }}>
             Your wishlist is empty
@@ -174,11 +179,7 @@ const styles = StyleSheet.create({
   productCard: {
     flex: 1,
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 2,
+    ...lightTheme.shadows.sm,
   },
   imageContainer: {
     position: 'relative',
@@ -186,7 +187,6 @@ const styles = StyleSheet.create({
   productImage: {
     width: '100%',
     aspectRatio: 1,
-    backgroundColor: '#F0F2EF',
   },
   heartIcon: {
     position: 'absolute',

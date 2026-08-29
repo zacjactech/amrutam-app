@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { View, Text, StyleSheet, Animated, TouchableOpacity } from 'react-native';
 import { SuccessCheckCircle, CheckCircleFilled } from '../assets/icons';
+import { useThemeColors } from './ThemeProvider';
 
 export type ToastVariant = 'success' | 'error' | 'warning' | 'info';
 
@@ -19,12 +20,14 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue | undefined>(undefined);
 
-const TOAST_CONFIG: Record<ToastVariant, { bg: string; text: string; iconCircle: string }> = {
-  success: { bg: '#D1FAE5', text: '#2D6A4F', iconCircle: '#2D6A4F' },
-  error: { bg: '#FEE2E2', text: '#DC2626', iconCircle: '#DC2626' },
-  warning: { bg: '#FEF3C7', text: '#F59E0B', iconCircle: '#F59E0B' },
-  info: { bg: '#DBEAFE', text: '#3B82F6', iconCircle: '#3B82F6' },
-};
+function getToastConfig(colors: ReturnType<typeof useThemeColors>): Record<ToastVariant, { bg: string; text: string; iconCircle: string }> {
+  return {
+    success: { bg: colors.status.successSoft, text: colors.status.success, iconCircle: colors.status.success },
+    error: { bg: colors.status.errorSoft, text: colors.status.error, iconCircle: colors.status.error },
+    warning: { bg: colors.status.warningSoft, text: colors.status.warning, iconCircle: colors.status.warning },
+    info: { bg: colors.status.infoSoft, text: colors.status.info, iconCircle: colors.status.info },
+  };
+}
 
 const DEFAULT_DURATION = 3000;
 
@@ -72,16 +75,17 @@ export function ToastProvider({ children }: { children: ReactNode }): React.JSX.
 }
 
 function ToastIcon({ variant }: { variant: ToastVariant }): React.JSX.Element {
+  const colors = useThemeColors();
   switch (variant) {
     case 'success':
-      return <SuccessCheckCircle width={18} height={18} color="#FFFFFF" />;
+      return <SuccessCheckCircle width={18} height={18} color={colors.text.inverse} />;
     case 'error':
-      return <CheckCircleFilled width={18} height={18} color="#FFFFFF" />;
+      return <CheckCircleFilled width={18} height={18} color={colors.text.inverse} />;
     case 'warning':
-      return <Text style={styles.iconText}>!</Text>;
+      return <Text style={[styles.iconText, { color: colors.text.inverse }]}>!</Text>;
     case 'info':
     default:
-      return <Text style={styles.iconText}>i</Text>;
+      return <Text style={[styles.iconText, { color: colors.text.inverse }]}>i</Text>;
   }
 }
 
@@ -92,7 +96,8 @@ function ToastMessage({
   toast: ToastItem;
   onDismiss: (id: string) => void;
 }): React.JSX.Element {
-  const config = TOAST_CONFIG[toast.variant];
+  const colors = useThemeColors();
+  const config = getToastConfig(colors)[toast.variant];
   const opacity = React.useRef(new Animated.Value(0)).current;
   const translateY = React.useRef(new Animated.Value(-20)).current;
 
@@ -141,7 +146,7 @@ function ToastMessage({
       <Text style={[styles.message, { color: config.text }]} numberOfLines={2}>
         {toast.message}
       </Text>
-      <TouchableOpacity onPress={handleDismiss} style={styles.dismiss}>
+      <TouchableOpacity onPress={handleDismiss} style={styles.dismiss} accessibilityLabel="Dismiss notification" accessibilityRole="button">
         <Text style={[styles.dismissText, { color: config.text }]}>×</Text>
       </TouchableOpacity>
     </Animated.View>
@@ -185,7 +190,6 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   iconText: {
-    color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '700',
   },

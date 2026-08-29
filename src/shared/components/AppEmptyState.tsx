@@ -1,7 +1,8 @@
 // AppEmptyState - Standardized empty state with icon
 
 import React from 'react';
-import { View, Text, StyleSheet, ViewStyle } from 'react-native';
+import { View, StyleSheet, ViewStyle } from 'react-native';
+import { AppText } from './AppText';
 import { Button } from './Button';
 import { useThemeColors, useThemeSpacing } from './ThemeProvider';
 
@@ -39,13 +40,13 @@ export function AppEmptyState({
           {icon}
         </View>
       )}
-      <Text style={[styles.title, { color: colors.text.primary, marginBottom: spacing.sm }]}>
+      <AppText variant="h3" style={{ color: colors.text.primary, marginBottom: spacing.sm, textAlign: 'center' }}>
         {title}
-      </Text>
+      </AppText>
       {message !== undefined && (
-        <Text style={[styles.message, { color: colors.text.secondary, marginBottom: spacing.lg }]}>
+        <AppText variant="body" style={{ color: colors.text.secondary, marginBottom: spacing.lg, textAlign: 'center' }}>
           {message}
-        </Text>
+        </AppText>
       )}
       {actionLabel !== undefined && onAction !== undefined && (
         <Button title={actionLabel} onPress={onAction} variant="outline" size="medium" />
@@ -60,20 +61,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   iconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-  message: {
-    fontSize: 14,
-    lineHeight: 20,
-    textAlign: 'center',
   },
 });

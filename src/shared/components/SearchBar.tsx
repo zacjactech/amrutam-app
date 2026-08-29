@@ -1,8 +1,9 @@
 // SearchBar - Search input component
 
 import React, { useState } from 'react';
-import { View, TextInput, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
+import { View, TextInput, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
 import { useThemeColors, useThemeSpacing } from './ThemeProvider';
+import { Search, Close } from '../assets/icons';
 
 interface SearchBarProps {
   placeholder?: string;
@@ -58,19 +59,17 @@ export function SearchBar({
         styles.container,
         {
           backgroundColor: colors.background.secondary,
-          borderRadius: 24,
+          borderRadius: 999,
           paddingHorizontal: spacing.lg,
-          paddingVertical: spacing.sm,
+          paddingVertical: spacing.md,
         },
         isFocused && { backgroundColor: colors.surface.default, borderWidth: 1.5, borderColor: colors.action.primary },
         style,
       ]}
     >
-      <View style={styles.searchIcon}>
-        <Text style={[styles.magnifier, { color: colors.text.tertiary }]}>🔍</Text>
-      </View>
+      <Search width={18} height={18} color={colors.text.tertiary} style={{ marginRight: spacing.sm }} />
       <TextInput
-        style={[styles.input, { color: colors.text.primary }]}
+        style={[styles.input, { color: colors.text.primary, fontSize: 16 }]}
         placeholder={placeholder}
         placeholderTextColor={colors.text.tertiary}
         value={displayValue}
@@ -79,14 +78,16 @@ export function SearchBar({
         onBlur={handleBlur}
         autoFocus={autoFocus}
         returnKeyType="search"
+        accessibilityLabel={placeholder}
       />
       {displayValue.length > 0 && (
         <TouchableOpacity
           onPress={handleClear}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           style={[styles.clearBtn, { backgroundColor: colors.border.default }]}
+          accessibilityLabel="Clear search"
         >
-          <Text style={[styles.clearIcon, { color: colors.text.secondary }]}>✕</Text>
+          <Close width={12} height={12} color={colors.text.secondary} />
         </TouchableOpacity>
       )}
     </View>
@@ -98,27 +99,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  searchIcon: {
-    marginRight: 8,
-  },
-  magnifier: {
-    fontSize: 16,
-  },
   input: {
     flex: 1,
-    fontSize: 16,
-    paddingVertical: 4,
+    paddingVertical: 2,
   },
   clearBtn: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 8,
-  },
-  clearIcon: {
-    fontSize: 12,
-    fontWeight: '600',
   },
 });

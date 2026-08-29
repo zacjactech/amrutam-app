@@ -6,7 +6,7 @@ import { AppText } from '../../../shared/components/AppText';
 import { useThemeColors } from '../../../shared/components/ThemeProvider';
 import { useAuthContext } from '../../../infrastructure/auth/AuthContext';
 import { useIconEntrance, useTextEntrance } from '../../../shared/hooks/useEntranceAnimation';
-import LogoIconBg from '../../../../assets/icons/logo-icon-bg.svg';
+import LogoIconBgLight from '../../../../assets/icons/logo-icon-bg-light.svg';
 
 interface SplashScreenProps {
   navigation: {
@@ -45,16 +45,16 @@ export function SplashScreen({ navigation }: SplashScreenProps) {
   return (
     <View style={[styles.container, { backgroundColor: colors.action.primary }]}>
       <Animated.View style={[styles.logoWrapper, iconStyle]}>
-        <LogoIconBg width={80} height={80} />
+        <LogoIconBgLight width={80} height={80} />
       </Animated.View>
       <Animated.View style={titleStyle}>
-        <AppText variant="h1" style={styles.logo}>
+        <AppText variant="h1" style={[styles.logo, { color: colors.text.inverse }]}>
           Amrutam
         </AppText>
       </Animated.View>
       <Animated.View style={taglineStyle}>
-        <AppText variant="bodySmall" style={styles.tagline}>
-          Ayurvedic Wellness
+        <AppText variant="body" style={[styles.tagline, { color: colors.text.inverse, opacity: 0.8 }]}>
+          Your complete Ayurvedic wellness companion
         </AppText>
       </Animated.View>
     </View>
@@ -72,11 +72,9 @@ const styles = StyleSheet.create({
     height: 80,
   },
   logo: {
-    color: '#FFFFFF',
     marginTop: 24,
   },
   tagline: {
-    color: 'rgba(255,255,255,0.8)',
     marginTop: 8,
   },
 });

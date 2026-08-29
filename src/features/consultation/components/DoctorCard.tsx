@@ -21,10 +21,12 @@ export const DoctorCard = memo(function DoctorCard({ doctor, onPress }: DoctorCa
       style={[styles.container, { backgroundColor: colors.surface.default, borderRadius: spacing.md, padding: spacing.md, marginHorizontal: spacing.lg, marginVertical: spacing.sm }]}
       onPress={() => onPress(doctor.id)}
       activeOpacity={0.7}
+      accessibilityLabel={`View profile of ${doctor.name}`}
+      accessibilityRole="button"
     >
       <Image
         source={{ uri: doctor.photoUrl }}
-        style={styles.photo}
+        style={[styles.photo, { backgroundColor: colors.action.primarySoft }]}
         contentFit="cover"
       />
       <View style={styles.info}>
@@ -86,7 +88,6 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 12,
-    backgroundColor: '#E8F3EC',
     marginRight: 12,
   },
   info: {

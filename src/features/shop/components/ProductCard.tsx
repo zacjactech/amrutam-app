@@ -29,10 +29,12 @@ export const ProductCard = memo(function ProductCard({ product, onPress }: Produ
       style={[styles.container, { backgroundColor: colors.surface.default, borderRadius: spacing.md, padding: spacing.md, marginHorizontal: spacing.md, marginVertical: spacing.sm }]}
       onPress={() => onPress(product.id)}
       activeOpacity={0.7}
+      accessibilityLabel={`View ${product.name}`}
+      accessibilityRole="button"
     >
       <Image
         source={{ uri: product.imageUrl }}
-        style={styles.image}
+        style={[styles.image, { backgroundColor: colors.background.secondary }]}
         contentFit="cover"
         placeholder={{ blurhash: 'LGF5?xYk^6%M%%2e2~qoJ^Rj@AjZ' }}
         transition={300}
@@ -60,6 +62,9 @@ export const ProductCard = memo(function ProductCard({ product, onPress }: Produ
             onPress={handleWishlistPress}
             style={styles.wishlistButton}
             hitSlop={8}
+            accessibilityLabel={inWishlist ? `Remove ${product.name} from wishlist` : `Add ${product.name} to wishlist`}
+            accessibilityRole="button"
+            accessibilityState={{ selected: inWishlist }}
           >
             <AppText variant="body" style={{ color: inWishlist ? colors.status.error : colors.text.disabled }}>
               {inWishlist ? '♥' : '♡'}
@@ -89,7 +94,6 @@ const styles = StyleSheet.create({
     width: '100%',
     aspectRatio: 1,
     borderRadius: 8,
-    backgroundColor: '#F0F2EF',
     marginBottom: 10,
   },
   info: {

@@ -64,6 +64,7 @@ export { default as RecordIconBg1 } from '../../../../assets/icons/record-icon-b
 export { default as RecordIconBg2 } from '../../../../assets/icons/record-icon-bg-2.svg';
 export { default as RecordIconBg3 } from '../../../../assets/icons/record-icon-bg-3.svg';
 export { default as LogoIconBg } from '../../../../assets/icons/logo-icon-bg.svg';
+export { default as LogoIconBgLight } from '../../../../assets/icons/logo-icon-bg-light.svg';
 
 // Navigation Icons
 export { default as Clock } from '../../../../assets/icons/clock.svg';

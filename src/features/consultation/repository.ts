@@ -1,4 +1,4 @@
-// Consultation Module - Repository (Supabase)
+// Consultation Module - Repository (Supabase with fallback to generated data)
 
 import { Doctor, ConsultationSlot, Booking, DoctorFilter } from './types';
 import { supabase } from '../../infrastructure/supabase/client';
@@ -183,7 +183,7 @@ export const consultationRepository = {
 
   async createBooking(request: BookingRequest): Promise<Booking> {
     const idempotencyKey = `booking:${request.patientId}:${request.slotId}`;
-    const bookingId = `bk_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+    const bookingId = `bk_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
 
     const { data, error } = await supabase
       .from('bookings')

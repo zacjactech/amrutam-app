@@ -19,8 +19,8 @@ export function OrderFailedScreen({ navigation }: OrderFailedScreenProps) {
   return (
     <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
       <View style={styles.content}>
-        <View style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: '#FEE2E2', justifyContent: 'center', alignItems: 'center' }}>
-          <AlertCircle width={56} height={56} color="#DC2626" />
+        <View style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: colors.status.errorSoft, justifyContent: 'center', alignItems: 'center' }}>
+          <AlertCircle width={56} height={56} color={colors.status.error} />
         </View>
 
         <AppText variant="h2" style={{ textAlign: 'center', marginTop: spacing.xl, color: colors.text.primary }}>

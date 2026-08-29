@@ -1,8 +1,9 @@
 // Badge - Status badge component
 
 import React from 'react';
-import { View, Text, StyleSheet, ViewStyle } from 'react-native';
-import { useThemeSpacing } from './ThemeProvider';
+import { View, StyleSheet, ViewStyle } from 'react-native';
+import { AppText } from './AppText';
+import { useThemeColors, useThemeSpacing } from './ThemeProvider';
 
 type BadgeVariant = 'confirmed' | 'pending' | 'cancelled' | 'completed' | 'info';
 
@@ -12,33 +13,48 @@ interface BadgeProps {
   style?: ViewStyle;
 }
 
-const BADGE_COLORS: Record<BadgeVariant, { bg: string; text: string }> = {
-  confirmed: { bg: '#D1FAE5', text: '#2D6A4F' },
-  pending: { bg: '#FEF3C7', text: '#F59E0B' },
-  cancelled: { bg: '#FEE2E2', text: '#DC2626' },
-  completed: { bg: '#E5E7EB', text: '#6B7280' },
-  info: { bg: '#DBEAFE', text: '#3B82F6' },
-};
+function getBadgeColors(
+  variant: BadgeVariant,
+  colors: ReturnType<typeof useThemeColors>,
+): { bg: string; text: string } {
+  switch (variant) {
+    case 'confirmed':
+      return { bg: colors.status.successSoft, text: colors.status.success };
+    case 'pending':
+      return { bg: colors.status.warningSoft, text: colors.status.warning };
+    case 'cancelled':
+      return { bg: colors.status.errorSoft, text: colors.status.error };
+    case 'completed':
+      return { bg: colors.background.secondary, text: colors.text.secondary };
+    case 'info':
+      return { bg: colors.status.infoSoft, text: colors.status.info };
+  }
+}
 
 export function Badge({ variant, label, style }: BadgeProps): React.JSX.Element {
   const spacing = useThemeSpacing();
-  const colors = BADGE_COLORS[variant];
+  const colors = useThemeColors();
+  const badgeColors = getBadgeColors(variant, colors);
 
   return (
     <View
       style={[
         styles.container,
         {
-          backgroundColor: colors.bg,
+          backgroundColor: badgeColors.bg,
           paddingHorizontal: spacing.sm,
-          paddingVertical: 2,
+          paddingVertical: spacing.xs,
         },
         style,
       ]}
     >
-      <Text style={[styles.text, { color: colors.text }]} numberOfLines={1}>
+      <AppText
+        variant="caption"
+        style={[styles.text, { color: badgeColors.text }]}
+        numberOfLines={1}
+      >
         {label}
-      </Text>
+      </AppText>
     </View>
   );
 }
@@ -49,8 +65,6 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   text: {
-    fontSize: 11,
     fontWeight: '600',
-    lineHeight: 16,
   },
 });

@@ -21,7 +21,12 @@ export function BookingConflictModal({
   const colors = useThemeColors();
 
   const warningIcon = (
-    <View style={[styles.iconContainer, { backgroundColor: colors.status.warningSoft }]}>
+    <View
+      style={[
+        styles.iconContainer,
+        { backgroundColor: colors.status.warningSoft },
+      ]}
+    >
       <AlertTriangle width={32} height={32} color={colors.status.warning} />
     </View>
   );
@@ -31,7 +36,7 @@ export function BookingConflictModal({
       visible={visible}
       onClose={onClose}
       title="Unable to book this slot"
-      description="This time slot has just been booked by someone else. Please choose a different time slot to continue."
+      description="This time slot is no longer available — another appointment may have taken it."
       icon={warningIcon}
       primaryAction={
         <Button

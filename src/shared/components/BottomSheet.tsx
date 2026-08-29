@@ -115,7 +115,7 @@ export function BottomSheet({
                 <Text style={[styles.title, { color: colors.text.primary }]}>
                   {title}
                 </Text>
-                <TouchableOpacity onPress={handleClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <TouchableOpacity onPress={handleClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Close" accessibilityRole="button">
                   <Text style={[styles.closeIcon, { color: colors.text.secondary }]}>✕</Text>
                 </TouchableOpacity>
               </View>

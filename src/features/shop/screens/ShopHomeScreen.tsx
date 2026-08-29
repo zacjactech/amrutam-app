@@ -67,10 +67,12 @@ export function ShopHomeScreen({ navigation }: ShopHomeScreenProps) {
         style={[styles.bestsellerCard, { backgroundColor: colors.surface.default, borderRadius: spacing.md }]}
         onPress={() => handleProductPress(item.id)}
         activeOpacity={0.7}
+        accessibilityLabel={`View ${item.name}`}
+        accessibilityRole="button"
       >
         <Image
           source={{ uri: item.imageUrl }}
-          style={[styles.bestsellerImage, { borderRadius: spacing.sm }]}
+          style={[styles.bestsellerImage, { borderRadius: spacing.sm, backgroundColor: colors.background.secondary }]}
           contentFit="cover"
           placeholder={{ blurhash: 'LGF5?xYk^6%M%%2e2~qoJ^Rj@AjZ' }}
         />
@@ -112,11 +114,11 @@ export function ShopHomeScreen({ navigation }: ShopHomeScreenProps) {
       <View style={[styles.header, { paddingHorizontal: spacing.lg, paddingTop: spacing.xl, paddingBottom: spacing.md }]}>
         <AppText variant="h1">Shop</AppText>
         <View style={styles.headerIcons}>
-          <TouchableOpacity hitSlop={8} onPress={() => navigation.navigate('Wishlist')}>
-            <AppText variant="body" style={{ color: colors.text.primary }}>♡</AppText>
+          <TouchableOpacity hitSlop={8} onPress={() => navigation.navigate('Wishlist')} accessibilityLabel="View wishlist" accessibilityRole="button">
+            <Heart width={24} height={24} color={colors.text.primary} />
           </TouchableOpacity>
-          <TouchableOpacity hitSlop={8} onPress={() => navigation.navigate('Cart')}>
-            <AppText variant="body" style={{ color: colors.text.primary }}>🛒</AppText>
+          <TouchableOpacity hitSlop={8} onPress={() => navigation.navigate('Cart')} accessibilityLabel={`View cart${cartItems.length > 0 ? ` (${cartItems.length} items)` : ''}`} accessibilityRole="button">
+            <ShoppingBag width={24} height={24} color={colors.text.primary} />
             {cartItems.length > 0 && (
               <View style={[styles.cartBadge, { backgroundColor: colors.action.primary }]}>
                 <AppText variant="caption" style={{ color: colors.text.inverse }}>{cartItems.length}</AppText>
@@ -127,7 +129,7 @@ export function ShopHomeScreen({ navigation }: ShopHomeScreenProps) {
       </View>
 
       <View style={{ paddingHorizontal: spacing.lg, marginBottom: spacing.lg }}>
-        <TouchableOpacity activeOpacity={0.8} onPress={handleSearchPress}>
+        <TouchableOpacity activeOpacity={0.8} onPress={handleSearchPress} accessibilityLabel="Search products" accessibilityRole="search">
           <SearchBar
             placeholder="Search immunity, digestion, hair care..."
             style={{ backgroundColor: colors.background.secondary }}
@@ -135,17 +137,17 @@ export function ShopHomeScreen({ navigation }: ShopHomeScreenProps) {
         </TouchableOpacity>
       </View>
 
-      <View style={[styles.heroBanner, { backgroundColor: '#1B4332', marginHorizontal: spacing.lg, borderRadius: spacing.lg, padding: spacing.xl }]}>
+      <View style={[styles.heroBanner, { backgroundColor: colors.action.primaryPressed, marginHorizontal: spacing.lg, borderRadius: spacing.lg, padding: spacing.xl }]}>
         <View style={styles.heroContent}>
           <View style={{ flex: 1 }}>
-            <AppText variant="h2" style={{ color: '#FFFFFF', marginBottom: spacing.sm }}>
+            <AppText variant="h2" style={{ color: colors.text.inverse, marginBottom: spacing.sm }}>
               Ayurveda for Every Day
             </AppText>
-            <AppText variant="body" style={{ color: 'rgba(255,255,255,0.85)', lineHeight: 22 }}>
+            <AppText variant="body" style={{ color: colors.text.inverse, opacity: 0.85, lineHeight: 22 }}>
               Authentic Ayurvedic products for everyday wellness and holistic vitality.
             </AppText>
           </View>
-          <ShoppingBag width={80} height={80} color="#D1FAE5" />
+          <ShoppingBag width={80} height={80} color={colors.action.primarySoft} />
         </View>
       </View>
 
@@ -158,6 +160,8 @@ export function ShopHomeScreen({ navigation }: ShopHomeScreenProps) {
               style={[styles.categoryCard, { backgroundColor: colors.surface.default, borderRadius: spacing.md }]}
               onPress={() => handleCategoryPress(cat.label)}
               activeOpacity={0.7}
+              accessibilityLabel={`Browse ${cat.label} products`}
+              accessibilityRole="button"
             >
               <cat.Icon width={28} height={28} color={colors.action.primary} />
               <AppText variant="caption" style={{ color: colors.text.primary, marginTop: spacing.xs, textAlign: 'center' }}>
@@ -171,7 +175,7 @@ export function ShopHomeScreen({ navigation }: ShopHomeScreenProps) {
       <View style={[styles.section, { paddingHorizontal: spacing.lg, marginTop: spacing.xxl, marginBottom: spacing.xxl }]}>
         <View style={styles.sectionHeader}>
           <AppText variant="h3">Bestsellers</AppText>
-          <TouchableOpacity onPress={handleSeeAll}>
+          <TouchableOpacity onPress={handleSeeAll} accessibilityLabel="See all products" accessibilityRole="button">
             <AppText variant="body" style={{ color: colors.action.primary, fontWeight: '600' }}>See all</AppText>
           </TouchableOpacity>
         </View>
@@ -272,7 +276,6 @@ const styles = StyleSheet.create({
   bestsellerImage: {
     width: '100%',
     height: 140,
-    backgroundColor: '#F0F2EF',
   },
   bestsellerInfo: {
     marginTop: 8,

@@ -18,6 +18,7 @@ import { AppText } from '../../../shared/components/AppText';
 import { AppEmptyState, AppErrorState } from '../../../shared/components';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
 import { FilterSortSheet } from './FilterSortSheet';
+import { Search, IconFilter, ArrowLeft } from '../../../shared/assets/icons';
 
 interface DoctorListScreenProps {
   onDoctorPress: (doctorId: string) => void;
@@ -70,30 +71,88 @@ export function DoctorListScreen({
   const renderDoctorItem = useCallback(
     ({ item }: { item: Doctor }) => (
       <TouchableOpacity
-        style={[styles.card, { backgroundColor: colors.surface.default, borderRadius: spacing.md, padding: spacing.md, marginHorizontal: spacing.lg, marginBottom: spacing.md }]}
+        style={[
+          styles.card,
+          {
+            backgroundColor: colors.surface.default,
+            borderRadius: spacing.md,
+            padding: spacing.lg,
+            marginHorizontal: spacing.lg,
+            marginBottom: spacing.md,
+          },
+        ]}
         onPress={() => onDoctorPress(item.id)}
         activeOpacity={0.7}
+        accessibilityLabel={`View profile of ${item.name}`}
+        accessibilityRole="button"
       >
         <View style={styles.cardRow}>
-          <Image source={{ uri: item.photoUrl }} style={[styles.avatar, { borderRadius: spacing.md }]} contentFit="cover" />
+          <Image
+            source={{ uri: item.photoUrl }}
+            style={[
+              styles.avatar,
+              { borderRadius: spacing.md, backgroundColor: colors.action.primarySoft },
+            ]}
+            contentFit="cover"
+          />
           <View style={styles.cardInfo}>
-            <AppText variant="body" numberOfLines={1} style={{ color: colors.text.primary, fontWeight: '600' }}>{item.name}</AppText>
-            <AppText variant="bodySmall" numberOfLines={1} style={{ color: colors.text.secondary, marginTop: 2 }}>{item.specialization}</AppText>
+            <AppText
+              variant="body"
+              numberOfLines={1}
+              style={{ color: colors.text.primary, fontWeight: '600' }}
+            >
+              {item.name}
+            </AppText>
+            <AppText
+              variant="bodySmall"
+              numberOfLines={1}
+              style={{ color: colors.text.secondary, marginTop: spacing.xs }}
+            >
+              {item.specialization}
+            </AppText>
             <View style={styles.ratingRow}>
-              <AppText variant="bodySmall" style={{ color: colors.rating, fontWeight: '600' }}>★ {item.rating.toFixed(1)}</AppText>
-              <AppText variant="bodySmall" style={{ color: colors.text.tertiary, marginLeft: spacing.xs }}>· {item.experience} yrs exp</AppText>
+              <AppText
+                variant="bodySmall"
+                style={{ color: colors.rating, fontWeight: '600' }}
+              >
+                ★ {item.rating.toFixed(1)}
+              </AppText>
+              <AppText
+                variant="bodySmall"
+                style={{ color: colors.text.tertiary, marginLeft: spacing.xs }}
+              >
+                · {item.experience} Yrs Exp · {item.reviewCount} Consults
+              </AppText>
             </View>
           </View>
         </View>
 
-        <View style={[styles.cardBottom, { borderTopColor: colors.border.light, borderTopWidth: 1, marginTop: spacing.md, paddingTop: spacing.md }]}>
+        <View
+          style={[
+            styles.cardBottom,
+            {
+              borderTopColor: colors.border.light,
+              borderTopWidth: 1,
+              marginTop: spacing.md,
+              paddingTop: spacing.md,
+            },
+          ]}
+        >
           <View style={styles.feeSection}>
-            <AppText variant="caption" style={{ color: colors.text.secondary }}>Consultation Fee</AppText>
-            <AppText variant="bodyLarge" style={{ color: colors.action.primary, fontWeight: '700' }}>₹{item.consultationFee}</AppText>
+            <AppText variant="caption" style={{ color: colors.text.secondary }}>
+              Consultation Fee
+            </AppText>
+            <AppText
+              variant="bodyLarge"
+              style={{ color: colors.action.primary, fontWeight: '700' }}
+            >
+              ₹{item.consultationFee}
+            </AppText>
           </View>
           <View style={styles.slotSection}>
-            <AppText variant="caption" style={{ color: colors.status.warning }}>Next available slot</AppText>
-            <AppText variant="bodySmall" style={{ color: colors.text.secondary }}>{formatNextSlot(item.availability.nextAvailableSlot)}</AppText>
+            <AppText variant="caption" style={{ color: colors.status.warning }}>
+              Next available slot: {formatNextSlot(item.availability.nextAvailableSlot)}
+            </AppText>
           </View>
         </View>
 
@@ -109,47 +168,125 @@ export function DoctorListScreen({
     [colors, spacing, onDoctorPress],
   );
 
-  const renderHeader = useCallback(() => (
-    <View style={{ padding: spacing.lg, paddingBottom: spacing.sm }}>
-      <View style={styles.titleRow}>
-        <TouchableOpacity onPress={onBack} style={{ marginRight: spacing.md }}>
-          <AppText variant="body" style={{ color: colors.action.primary }}>← Back</AppText>
-        </TouchableOpacity>
-        <AppText variant="h1">Doctors</AppText>
-      </View>
+  const renderHeader = useCallback(
+    () => (
+      <View style={{ padding: spacing.lg, paddingBottom: spacing.sm }}>
+        <View style={styles.titleRow}>
+          <TouchableOpacity
+            onPress={onBack}
+            style={{ marginRight: spacing.md, padding: spacing.xs }}
+            accessibilityLabel="Go back"
+            accessibilityRole="button"
+          >
+            <ArrowLeft width={20} height={20} color={colors.text.primary} />
+          </TouchableOpacity>
+          <AppText variant="h1">Doctors</AppText>
+        </View>
 
-      <TextInput
-        style={[styles.searchInput, { backgroundColor: colors.surface.default, borderColor: colors.border.default, borderRadius: spacing.sm, color: colors.text.primary }]}
-        placeholder="Search doctors..."
-        placeholderTextColor={colors.text.tertiary}
-        value={searchQuery}
-        onChangeText={setSearchQuery}
-      />
+        <View
+          style={[
+            styles.searchContainer,
+            {
+              backgroundColor: colors.surface.default,
+              borderColor: colors.border.default,
+              borderRadius: spacing.md,
+              paddingHorizontal: spacing.md,
+              paddingVertical: spacing.sm,
+            },
+          ]}
+        >
+          <Search width={18} height={18} color={colors.text.tertiary} />
+          <TextInput
+            style={[styles.searchInput, { color: colors.text.primary }]}
+            placeholder="Search doctors, specializations..."
+            placeholderTextColor={colors.text.tertiary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        </View>
 
-      <View style={styles.infoBar}>
-        <AppText variant="body" style={{ color: colors.text.secondary, flex: 1 }}>{totalDoctors} doctors available</AppText>
-        <TouchableOpacity
-          style={[styles.filterBtn, { borderColor: colors.border.default, borderRadius: spacing.sm }]}
-          onPress={() => { setSheetTab('filter'); setSheetVisible(true); }}
-        >
-          <AppText variant="bodySmall" style={{ color: colors.text.primary }}>Filter{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}</AppText>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.sortBtn, { borderColor: colors.border.default, borderRadius: spacing.sm }]}
-          onPress={() => { setSheetTab('sort'); setSheetVisible(true); }}
-        >
-          <AppText variant="bodySmall" style={{ color: colors.text.primary }}>Sort: {sortBy.charAt(0).toUpperCase() + sortBy.slice(1)}</AppText>
-          <AppText variant="caption" style={{ color: colors.text.tertiary, marginLeft: 4 }}>▼</AppText>
-        </TouchableOpacity>
+        <View style={styles.infoBar}>
+          <AppText
+            variant="body"
+            style={{ color: colors.text.secondary, flex: 1 }}
+          >
+            {totalDoctors} doctors available
+          </AppText>
+          <TouchableOpacity
+            style={[
+              styles.filterBtn,
+              {
+                borderColor: colors.border.default,
+                borderRadius: spacing.sm,
+                paddingHorizontal: spacing.md,
+                paddingVertical: spacing.sm,
+                flexDirection: 'row',
+                alignItems: 'center',
+              },
+            ]}
+            onPress={() => {
+              setSheetTab('filter');
+              setSheetVisible(true);
+            }}
+            accessibilityLabel={`Filter doctors${activeFilterCount > 0 ? ` (${activeFilterCount} active)` : ''}`}
+            accessibilityRole="button"
+          >
+            <IconFilter
+              width={14}
+              height={14}
+              color={colors.text.primary}
+              style={{ marginRight: spacing.xs }}
+            />
+            <AppText variant="bodySmall" style={{ color: colors.text.primary }}>
+              Filter{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
+            </AppText>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.sortBtn,
+              {
+                borderColor: colors.border.default,
+                borderRadius: spacing.sm,
+                paddingHorizontal: spacing.md,
+                paddingVertical: spacing.sm,
+                flexDirection: 'row',
+                alignItems: 'center',
+                marginLeft: spacing.sm,
+              },
+            ]}
+            onPress={() => {
+              setSheetTab('sort');
+              setSheetVisible(true);
+            }}
+            accessibilityLabel={`Sort doctors by ${sortBy}`}
+            accessibilityRole="button"
+          >
+            <AppText variant="bodySmall" style={{ color: colors.text.primary }}>
+              Sort: {sortBy.charAt(0).toUpperCase() + sortBy.slice(1)}
+            </AppText>
+            <AppText
+              variant="caption"
+              style={{ color: colors.text.tertiary, marginLeft: spacing.xs }}
+            >
+              ▼
+            </AppText>
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
-  ), [spacing, totalDoctors, activeFilterCount, sortBy, searchQuery, colors, onBack]);
+    ),
+    [spacing, totalDoctors, activeFilterCount, sortBy, searchQuery, colors, onBack],
+  );
 
   if (isLoading) {
     return (
       <View style={[styles.center, { backgroundColor: colors.background.primary }]}>
         <ActivityIndicator size="large" color={colors.action.primary} />
-        <AppText variant="body" style={{ marginTop: spacing.md, color: colors.text.secondary }}>Loading doctors...</AppText>
+        <AppText
+          variant="body"
+          style={{ marginTop: spacing.md, color: colors.text.secondary }}
+        >
+          Loading doctors...
+        </AppText>
       </View>
     );
   }
@@ -177,7 +314,10 @@ export function DoctorListScreen({
             title="No doctors found"
             message="Try adjusting your filters or search query."
             actionLabel="Clear Filters"
-            onAction={() => { setFilter(DEFAULT_DOCTOR_FILTER); setSearchQuery(''); }}
+            onAction={() => {
+              setFilter(DEFAULT_DOCTOR_FILTER);
+              setSearchQuery('');
+            }}
           />
         }
         refreshControl={
@@ -209,16 +349,22 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   titleRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
-  searchInput: { borderWidth: 1, paddingVertical: 12, paddingHorizontal: 16, fontSize: 15, marginBottom: 12 },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  searchInput: { flex: 1, fontSize: 15, paddingVertical: 4, marginLeft: 8 },
   infoBar: { flexDirection: 'row', alignItems: 'center' },
-  filterBtn: { borderWidth: 1, paddingHorizontal: 12, paddingVertical: 6, marginLeft: 8 },
-  sortBtn: { borderWidth: 1, paddingHorizontal: 12, paddingVertical: 6, marginLeft: 8, flexDirection: 'row', alignItems: 'center' },
+  filterBtn: {},
+  sortBtn: {},
   card: {},
   cardRow: { flexDirection: 'row' },
-  avatar: { width: 80, height: 80, backgroundColor: '#E8F3EC' },
+  avatar: { width: 80, height: 80 },
   cardInfo: { flex: 1, marginLeft: 12, justifyContent: 'center' },
   ratingRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
   cardBottom: { flexDirection: 'row', justifyContent: 'space-between' },
   feeSection: {},
-  slotSection: { alignItems: 'flex-end' },
+  slotSection: { alignItems: 'flex-end', flex: 1, marginLeft: 8 },
 });

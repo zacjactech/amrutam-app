@@ -70,7 +70,7 @@ export function useBookings(patientId?: string) {
 function createPendingBooking(request: BookingRequest, slot: ConsultationSlot): Booking {
   const now = new Date().toISOString();
   const booking: Booking = {
-    id: `bk_offline_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+    id: `bk_offline_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
     doctorId: request.doctorId,
     patientId: request.patientId,
     slotId: request.slotId,

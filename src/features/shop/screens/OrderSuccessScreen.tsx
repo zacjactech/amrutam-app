@@ -34,8 +34,8 @@ export function OrderSuccessScreen({ navigation }: OrderSuccessScreenProps) {
   return (
     <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
       <View style={styles.content}>
-        <View style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: '#D1FAE5', justifyContent: 'center', alignItems: 'center' }}>
-          <SuccessCheckCircle width={56} height={56} color="#2D6A4F" />
+        <View style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: colors.status.successSoft, justifyContent: 'center', alignItems: 'center' }}>
+          <SuccessCheckCircle width={56} height={56} color={colors.status.success} />
         </View>
 
         <AppText variant="h2" style={{ color: colors.action.primary, textAlign: 'center', marginTop: spacing.xl }}>

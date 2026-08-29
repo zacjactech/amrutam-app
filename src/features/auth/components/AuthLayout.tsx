@@ -62,17 +62,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   spacerTop: {
-    height: 100,
+    height: 48,
   },
   content: {
-    alignItems: 'center',
-    gap: 20,
+    gap: 0,
   },
   footer: {
-    marginTop: 32,
+    marginTop: 24,
     gap: 12,
   },
   spacerBottom: {
-    height: 40,
+    height: 24,
   },
 });

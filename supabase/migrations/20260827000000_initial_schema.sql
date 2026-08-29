@@ -1,8 +1,12 @@
 -- Amrutam Database Schema
 -- Migration: 20260827000000_initial_schema
 
--- Enable UUID extension
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- gen_random_uuid() is built into PostgreSQL 13+
+
+-- ─── Sequences (must exist before tables that use them) ──────────────────────
+CREATE SEQUENCE doctors_id_seq START 1;
+CREATE SEQUENCE products_id_seq START 1;
+CREATE SEQUENCE health_records_id_seq START 1;
 
 -- ─── Doctors ─────────────────────────────────────────────────────────────────
 
@@ -23,8 +27,6 @@ CREATE TABLE doctors (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-
-CREATE SEQUENCE doctors_id_seq START 1;
 
 -- ─── Consultation Slots ──────────────────────────────────────────────────────
 
@@ -80,8 +82,6 @@ CREATE TABLE products (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE SEQUENCE products_id_seq START 1;
-
 CREATE INDEX idx_products_category ON products(category);
 CREATE INDEX idx_products_rating ON products(rating DESC);
 CREATE INDEX idx_products_price ON products(price);
@@ -90,7 +90,7 @@ CREATE INDEX idx_products_stock ON products(stock);
 -- ─── Cart Items ──────────────────────────────────────────────────────────────
 
 CREATE TABLE cart_items (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   patient_id TEXT NOT NULL,
   product_id TEXT NOT NULL REFERENCES products(id),
   quantity INTEGER NOT NULL DEFAULT 1 CHECK (quantity > 0),
@@ -105,7 +105,7 @@ CREATE INDEX idx_cart_patient ON cart_items(patient_id);
 -- ─── Wishlist Items ──────────────────────────────────────────────────────────
 
 CREATE TABLE wishlist_items (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   patient_id TEXT NOT NULL,
   product_id TEXT NOT NULL REFERENCES products(id),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -130,8 +130,6 @@ CREATE TABLE health_records (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE SEQUENCE health_records_id_seq START 1;
-
 CREATE INDEX idx_health_records_patient ON health_records(patient_id);
 CREATE INDEX idx_health_records_type ON health_records(type);
 CREATE INDEX idx_health_records_occurred ON health_records(occurred_at DESC);
@@ -139,7 +137,7 @@ CREATE INDEX idx_health_records_occurred ON health_records(occurred_at DESC);
 -- ─── Sync Operations ─────────────────────────────────────────────────────────
 
 CREATE TABLE sync_operations (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   type TEXT NOT NULL CHECK (type IN ('CREATE_BOOKING', 'CANCEL_BOOKING')),
   payload JSONB NOT NULL,
   status TEXT NOT NULL DEFAULT 'queued' CHECK (status IN ('queued', 'processing', 'succeeded', 'failed')),
@@ -166,18 +164,13 @@ $$ language 'plpgsql';
 
 CREATE TRIGGER update_doctors_updated_at BEFORE UPDATE ON doctors
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
 CREATE TRIGGER update_bookings_updated_at BEFORE UPDATE ON bookings
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
 CREATE TRIGGER update_products_updated_at BEFORE UPDATE ON products
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
 CREATE TRIGGER update_cart_items_updated_at BEFORE UPDATE ON cart_items
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
 CREATE TRIGGER update_health_records_updated_at BEFORE UPDATE ON health_records
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
 CREATE TRIGGER update_sync_operations_updated_at BEFORE UPDATE ON sync_operations
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

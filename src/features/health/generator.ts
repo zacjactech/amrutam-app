@@ -1,7 +1,6 @@
 // Health Records Module - Data Generator
 
 import { HealthRecord, Attachment, HealthRecordType, RecordFilter, HEALTH_RECORD_TYPES, RECORD_TYPE_LABELS } from './types';
-import { healthRecordSchema, attachmentSchema } from './schemas';
 
 const RECORD_TITLES: Record<HealthRecordType, string[]> = {
   lab_report: [
@@ -56,14 +55,14 @@ function generateAttachment(index: number, random: () => number): Attachment {
     ? `document_${index}.pdf`
     : `scan_${index}.png`;
 
-  return attachmentSchema.parse({
+  return {
     id,
     name,
     mimeType,
     thumbnailUrl: mimeType === 'image/png' ? `https://picsum.photos/seed/${index}/200/200` : undefined,
     uri: mimeType === 'application/pdf' ? `file:///documents/${name}` : undefined,
     sizeBytes: Math.floor(random() * 5000000) + 50000,
-  }) as Attachment;
+  } as Attachment;
 }
 
 export function generateHealthRecord(index: number, patientId: string = 'patient_001'): HealthRecord {
@@ -87,7 +86,7 @@ export function generateHealthRecord(index: number, patientId: string = 'patient
     attachments.push(generateAttachment(index * 10 + i, random));
   }
 
-  return healthRecordSchema.parse({
+  return {
     id: `rec_${index.toString().padStart(5, '0')}`,
     patientId,
     type,
@@ -101,7 +100,7 @@ export function generateHealthRecord(index: number, patientId: string = 'patient
       recordIndex: index,
       source: 'mock',
     },
-  }) as HealthRecord;
+  } as HealthRecord;
 }
 
 export function generateHealthRecords(count: number, patientId?: string): HealthRecord[] {
@@ -114,12 +113,30 @@ export function generateHealthRecords(count: number, patientId?: string): Health
 }
 
 let healthRecordCache: HealthRecord[] | null = null;
+let healthRecordCachePromise: Promise<HealthRecord[]> | null = null;
 
 export function getHealthRecordCache(): HealthRecord[] {
   if (healthRecordCache === null) {
     healthRecordCache = generateHealthRecords(10000);
   }
   return healthRecordCache;
+}
+
+export async function getHealthRecordCacheAsync(): Promise<HealthRecord[]> {
+  if (healthRecordCache !== null) {
+    return healthRecordCache;
+  }
+
+  if (healthRecordCachePromise === null) {
+    healthRecordCachePromise = new Promise((resolve) => {
+      setTimeout(() => {
+        healthRecordCache = generateHealthRecords(10000);
+        resolve(healthRecordCache);
+      }, 0);
+    });
+  }
+
+  return healthRecordCachePromise;
 }
 
 export function applyRecordFilter(records: HealthRecord[], filter: RecordFilter): HealthRecord[] {

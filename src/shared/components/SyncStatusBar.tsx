@@ -8,17 +8,23 @@ import React, { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { AppText } from './AppText';
 import { useSyncStatus } from '../../infrastructure/sync/SyncStatusContext';
+import { useThemeColors } from './ThemeProvider';
 
-const STATUS_CONFIG = {
-  idle: { color: 'transparent', textColor: 'transparent', label: '' },
-  syncing: { color: '#E8F5E9', textColor: '#2E7D32', label: 'Syncing data...' },
-  pending: { color: '#FFF3E0', textColor: '#E65100', label: '' },
-  error: { color: '#FFEBEE', textColor: '#C62828', label: '' },
-  offline: { color: '#F5F5F5', textColor: '#616161', label: 'You\'re offline' },
-} as const;
+type SyncStatus = 'idle' | 'syncing' | 'pending' | 'error' | 'offline';
+
+function getStatusConfig(colors: ReturnType<typeof useThemeColors>): Record<SyncStatus, { color: string; textColor: string; label: string }> {
+  return {
+    idle: { color: 'transparent', textColor: 'transparent', label: '' },
+    syncing: { color: colors.status.successSoft, textColor: colors.status.success, label: 'Syncing data...' },
+    pending: { color: colors.status.warningSoft, textColor: colors.status.warning, label: '' },
+    error: { color: colors.status.errorSoft, textColor: colors.status.error, label: '' },
+    offline: { color: colors.background.secondary, textColor: colors.text.secondary, label: 'You\'re offline' },
+  };
+}
 
 export function SyncStatusBar() {
   const { status, pendingCount, failedCount, lastSyncResult, retryAll } = useSyncStatus();
+  const colors = useThemeColors();
   const [expanded, setExpanded] = useState(false);
 
   // Don't render when idle
@@ -26,6 +32,7 @@ export function SyncStatusBar() {
     return null;
   }
 
+  const STATUS_CONFIG = getStatusConfig(colors);
   const config = STATUS_CONFIG[status];
 
   const getStatusLabel = (): string => {
@@ -49,11 +56,14 @@ export function SyncStatusBar() {
   const label = getStatusLabel();
 
   return (
-    <View style={[styles.container, { backgroundColor: config.color }]}>
+    <View style={[styles.container, { backgroundColor: config.color, borderBottomColor: colors.border.default }]}>
       <TouchableOpacity
         onPress={() => setExpanded(!expanded)}
         style={styles.mainRow}
         activeOpacity={0.7}
+        accessibilityLabel={expanded ? 'Collapse sync details' : 'Expand sync details'}
+        accessibilityRole="button"
+        accessibilityState={{ expanded }}
       >
         {/* Status icon */}
         {status === 'syncing' && (
@@ -76,7 +86,7 @@ export function SyncStatusBar() {
 
         {/* Action */}
         {status === 'error' && failedCount > 0 && (
-          <TouchableOpacity onPress={handleRetry} style={styles.retryButton}>
+          <TouchableOpacity onPress={handleRetry} style={styles.retryButton} accessibilityLabel="Retry all failed syncs" accessibilityRole="button">
             <AppText variant="caption" style={{ color: config.textColor, fontWeight: '600' }}>
               Retry All
             </AppText>
@@ -102,7 +112,7 @@ export function SyncStatusBar() {
             </View>
           )}
           <View style={styles.actionRow}>
-            <TouchableOpacity onPress={handleRetry} style={[styles.actionButton, { borderColor: config.textColor }]}>
+            <TouchableOpacity onPress={handleRetry} style={[styles.actionButton, { borderColor: config.textColor }]} accessibilityLabel="Retry all failed syncs" accessibilityRole="button">
               <AppText variant="caption" style={{ color: config.textColor }}>
                 Retry All Failed
               </AppText>
@@ -117,7 +127,7 @@ export function SyncStatusBar() {
             Data will sync automatically when connection is available.
           </AppText>
           <View style={styles.actionRow}>
-            <TouchableOpacity onPress={handleRetry} style={[styles.actionButton, { borderColor: config.textColor }]}>
+            <TouchableOpacity onPress={handleRetry} style={[styles.actionButton, { borderColor: config.textColor }]} accessibilityLabel="Sync now" accessibilityRole="button">
               <AppText variant="caption" style={{ color: config.textColor }}>
                 Sync Now
               </AppText>
@@ -132,7 +142,6 @@ export function SyncStatusBar() {
 const styles = StyleSheet.create({
   container: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
   },
   mainRow: {
     flexDirection: 'row',
@@ -153,7 +162,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 12,
-    backgroundColor: 'rgba(0,0,0,0.05)',
   },
   detail: {
     paddingHorizontal: 16,

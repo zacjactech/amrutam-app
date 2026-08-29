@@ -5,7 +5,7 @@ export type RootStackParamList = {
   Onboarding: undefined;
   SignIn: undefined;
   SignUp: undefined;
-  OTPVerification: { email: string; name?: string };
+  EmailVerification: { email: string; name?: string };
   MainTabs: undefined;
 };
 
@@ -48,7 +48,7 @@ export type ConsultationStackParamList = {
   };
   UpcomingConsultations: undefined;
   ConsultationDetails: { bookingId: string };
-  CancellationSuccess: undefined;
+  CancellationSuccess: { doctorName: string };
 };
 
 export type ShopStackParamList = {

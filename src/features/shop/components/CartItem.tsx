@@ -1,6 +1,6 @@
 // Shop Module - Cart Item Component
 
-import React from 'react';
+import React, { memo } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Image } from 'expo-image';
 import { AppText } from '../../../shared/components/AppText';
@@ -15,7 +15,7 @@ interface CartItemProps {
   onRemove: (productId: string) => void;
 }
 
-export function CartItemComponent({ cartItem, product, onUpdateQuantity, onRemove }: CartItemProps) {
+export const CartItemComponent = memo(function CartItemComponent({ cartItem, product, onUpdateQuantity, onRemove }: CartItemProps) {
   const colors = useThemeColors();
   const spacing = useThemeSpacing();
 
@@ -23,7 +23,7 @@ export function CartItemComponent({ cartItem, product, onUpdateQuantity, onRemov
     <View style={[styles.container, { backgroundColor: colors.surface.default, borderRadius: spacing.md, padding: spacing.md, marginHorizontal: spacing.lg, marginVertical: spacing.sm }]}>
       <Image
         source={{ uri: product.imageUrl }}
-        style={styles.image}
+        style={[styles.image, { backgroundColor: colors.background.secondary }]}
         contentFit="cover"
       />
       <View style={styles.info}>
@@ -37,6 +37,8 @@ export function CartItemComponent({ cartItem, product, onUpdateQuantity, onRemov
           <TouchableOpacity
             style={[styles.quantityButton, { backgroundColor: colors.background.secondary, width: 28, height: 28, borderRadius: 6, alignItems: 'center', justifyContent: 'center' }]}
             onPress={() => onUpdateQuantity(cartItem.productId, cartItem.quantity - 1)}
+            accessibilityLabel="Decrease quantity"
+            accessibilityRole="button"
           >
             <AppText variant="body" style={{ color: colors.text.primary, fontWeight: '600' }}>-</AppText>
           </TouchableOpacity>
@@ -46,6 +48,8 @@ export function CartItemComponent({ cartItem, product, onUpdateQuantity, onRemov
           <TouchableOpacity
             style={[styles.quantityButton, { backgroundColor: colors.background.secondary, width: 28, height: 28, borderRadius: 6, alignItems: 'center', justifyContent: 'center' }]}
             onPress={() => onUpdateQuantity(cartItem.productId, cartItem.quantity + 1)}
+            accessibilityLabel="Increase quantity"
+            accessibilityRole="button"
           >
             <AppText variant="body" style={{ color: colors.text.primary, fontWeight: '600' }}>+</AppText>
           </TouchableOpacity>
@@ -65,7 +69,7 @@ export function CartItemComponent({ cartItem, product, onUpdateQuantity, onRemov
       </View>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -80,7 +84,6 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 8,
-    backgroundColor: '#F0F2EF',
   },
   info: {
     flex: 1,

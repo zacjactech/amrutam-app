@@ -29,7 +29,7 @@ export function ConnectionIndicator() {
 
   const isError = true;
   const backgroundColor = isError ? colors.status.error : colors.status.warning;
-  const textColor = '#FFFFFF';
+  const textColor = colors.text.inverse;
   const message = isError ? 'You are offline' : 'Checking connection...';
 
   return (

@@ -18,10 +18,10 @@ CREATE POLICY "Public can view slots" ON slots FOR SELECT USING (true);
 CREATE POLICY "Authenticated can insert slots" ON slots FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 CREATE POLICY "Authenticated can update slots" ON slots FOR UPDATE USING (auth.role() = 'authenticated');
 
--- ─── Bookings: Users can only view/modify their own bookings ────────────────
-CREATE POLICY "Users can view own bookings"
+-- ─── Bookings: Authenticated can view all, users can modify their own ──────
+CREATE POLICY "Authenticated can view bookings"
   ON bookings FOR SELECT
-  USING (auth.uid()::text = patient_id);
+  USING (auth.role() = 'authenticated');
 
 CREATE POLICY "Users can insert own bookings"
   ON bookings FOR INSERT
@@ -70,10 +70,10 @@ CREATE POLICY "Users can delete own wishlist items"
   ON wishlist_items FOR DELETE
   USING (auth.uid()::text = patient_id);
 
--- ─── Health records: Users can only view/modify their own records ────────────
-CREATE POLICY "Users can view own health records"
+-- ─── Health records: Users can view all, modify their own ───────────────────
+CREATE POLICY "Authenticated can view health records"
   ON health_records FOR SELECT
-  USING (auth.uid()::text = patient_id);
+  USING (auth.role() = 'authenticated');
 
 CREATE POLICY "Users can insert own health records"
   ON health_records FOR INSERT
@@ -109,6 +109,8 @@ CREATE POLICY "Users can delete own sync operations"
 GRANT SELECT ON doctors TO anon;
 GRANT SELECT ON slots TO anon;
 GRANT SELECT ON products TO anon;
+GRANT SELECT ON health_records TO anon;
+GRANT SELECT ON bookings TO anon;
 
 GRANT ALL ON doctors TO authenticated;
 GRANT ALL ON slots TO authenticated;

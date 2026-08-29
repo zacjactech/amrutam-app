@@ -60,7 +60,7 @@ const QUICK_ACTIONS = [
     key: 'shop',
     label: 'Shop',
     icon: ShoppingBag,
-    screen: 'ShopHome' as const,
+    screen: 'Shop' as const,
     accessibilityHint: 'Browse Ayurvedic products and supplements',
   },
 ];
@@ -199,6 +199,11 @@ export function HomeDashboardScreen({ navigation }: HomeDashboardScreenProps) {
   const isLoading = bookingsQuery.isLoading || productsQuery.isLoading || recordsQuery.isLoading;
   const isRefreshing = bookingsQuery.isRefetching || productsQuery.isRefetching || recordsQuery.isRefetching;
 
+  // Only consider errors from queries that have actually fetched (not disabled queries)
+  const bookingsHasError = bookingsQuery.isFetched && bookingsQuery.isError;
+  const productsHasError = productsQuery.isFetched && productsQuery.isError;
+  const recordsHasError = recordsQuery.isFetched && recordsQuery.isError;
+
   const onRefresh = useCallback(() => {
     bookingsQuery.refetch();
     productsQuery.refetch();
@@ -234,7 +239,7 @@ export function HomeDashboardScreen({ navigation }: HomeDashboardScreenProps) {
   // ─── Error State ──────────────────────────────────────────────────────────
 
   const error = bookingsQuery.error ?? productsQuery.error ?? recordsQuery.error;
-  const hasError = bookingsQuery.isError || productsQuery.isError || recordsQuery.isError;
+  const hasError = bookingsHasError || productsHasError || recordsHasError;
 
   if (hasError && !isLoading) {
     return (
@@ -411,7 +416,7 @@ export function HomeDashboardScreen({ navigation }: HomeDashboardScreenProps) {
         <View style={styles.sectionHeader}>
           <AppText variant="h3">Recommended for You</AppText>
           <TouchableOpacity
-            onPress={() => navigation.navigate('ShopHome')}
+            onPress={() => navigation.navigate('Shop')}
             accessibilityLabel="See all products"
             accessibilityRole="link"
           >
@@ -443,7 +448,7 @@ export function HomeDashboardScreen({ navigation }: HomeDashboardScreenProps) {
                     borderRadius: spacing.md,
                   },
                 ]}
-                onPress={() => navigation.navigate('ShopHome')}
+                onPress={() => navigation.navigate('Shop')}
                 activeOpacity={0.7}
                 accessibilityLabel={`${product.name}, ${formatCurrency(product.price)}`}
                 accessibilityRole="button"

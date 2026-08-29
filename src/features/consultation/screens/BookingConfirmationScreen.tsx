@@ -17,6 +17,7 @@ import { AppText } from '../../../shared/components/AppText';
 import { AppErrorState } from '../../../shared/components';
 import { useToast } from '../../../shared/components/Toast';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
+import { ArrowLeft } from '../../../shared/assets/icons';
 
 interface BookingConfirmationScreenProps {
   doctorId: string;
@@ -96,38 +97,118 @@ export function BookingConfirmationScreen({
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
-      <View style={[styles.header, { paddingHorizontal: spacing.lg, paddingTop: spacing.xxl, paddingBottom: spacing.sm }]}>
-        <TouchableOpacity onPress={onBack} style={styles.backBtn}>
-          <AppText variant="body" style={{ color: colors.action.primary }}>← Back</AppText>
+      <View
+        style={[
+          styles.header,
+          {
+            paddingHorizontal: spacing.lg,
+            paddingTop: spacing.xxl,
+            paddingBottom: spacing.md,
+          },
+        ]}
+      >
+        <TouchableOpacity
+          onPress={onBack}
+          style={{ padding: spacing.xs, marginRight: spacing.sm }}
+          accessibilityLabel="Go back"
+          accessibilityRole="button"
+        >
+          <ArrowLeft width={20} height={20} color={colors.text.primary} />
         </TouchableOpacity>
         <AppText variant="h1">Confirm Consultation</AppText>
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <View style={[styles.doctorCard, { marginHorizontal: spacing.lg, backgroundColor: colors.surface.default, borderRadius: spacing.md, padding: spacing.lg, flexDirection: 'row', alignItems: 'center' }]}>
-          <Image source={{ uri: doctor.photoUrl }} style={[styles.avatar, { borderRadius: spacing.md }]} contentFit="cover" />
-          <View style={styles.doctorInfo}>
-            <AppText variant="body" style={{ fontWeight: '600' }}>{doctor.name}</AppText>
-            <AppText variant="bodySmall" style={{ color: colors.text.secondary }}>{doctor.specialization}</AppText>
+        <View
+          style={[
+            styles.doctorCard,
+            {
+              marginHorizontal: spacing.lg,
+              backgroundColor: colors.surface.default,
+              borderRadius: spacing.md,
+              padding: spacing.lg,
+              flexDirection: 'row',
+              alignItems: 'center',
+            },
+          ]}
+        >
+          <Image
+            source={{ uri: doctor.photoUrl }}
+            style={[
+              styles.avatar,
+              { borderRadius: spacing.md, backgroundColor: colors.action.primarySoft },
+            ]}
+            contentFit="cover"
+          />
+          <View style={{ marginLeft: spacing.md, flex: 1 }}>
+            <AppText variant="body" style={{ fontWeight: '600' }}>
+              {doctor.name}
+            </AppText>
+            <AppText
+              variant="bodySmall"
+              style={{ color: colors.text.secondary, marginTop: spacing.xs }}
+            >
+              {doctor.specialization}
+            </AppText>
           </View>
         </View>
 
-        <View style={[styles.detailsCard, { marginHorizontal: spacing.lg, marginTop: spacing.md, backgroundColor: colors.surface.default, borderRadius: spacing.md, padding: spacing.lg }]}>
-          <AppText variant="h3" style={{ marginBottom: spacing.md }}>Booking Details</AppText>
+        <View
+          style={[
+            styles.detailsCard,
+            {
+              marginHorizontal: spacing.lg,
+              marginTop: spacing.md,
+              backgroundColor: colors.surface.default,
+              borderRadius: spacing.md,
+              padding: spacing.lg,
+            },
+          ]}
+        >
+          <AppText variant="h3" style={{ marginBottom: spacing.md }}>
+            Booking Details
+          </AppText>
 
           {[
             { label: 'Date', value: dateStr },
             { label: 'Time', value: timeStr },
-            { label: 'Duration', value: `${slot.consultationType === 'video' ? '30 min' : '20 min'}` },
-            { label: 'Type', value: slot.consultationType.charAt(0).toUpperCase() + slot.consultationType.slice(1) },
+            {
+              label: 'Duration',
+              value: `${slot.consultationType === 'video' ? '30 minutes' : '20 minutes'}`,
+            },
+            {
+              label: 'Type',
+              value:
+                slot.consultationType.charAt(0).toUpperCase() +
+                slot.consultationType.slice(1) +
+                ' (Video)',
+            },
             { label: 'Fee', value: `₹${doctor.consultationFee}`, isFee: true },
-            { label: 'Payment', value: 'Pay at clinic' },
+            { label: 'Payment', value: 'Pay after consultation' },
           ].map((row) => (
-            <View key={row.label} style={[styles.detailRow, { borderBottomColor: colors.border.light, borderBottomWidth: 1, paddingVertical: spacing.md }]}>
-              <AppText variant="body" style={{ color: colors.text.secondary }}>{row.label}</AppText>
+            <View
+              key={row.label}
+              style={[
+                styles.detailRow,
+                {
+                  borderBottomColor: colors.border.light,
+                  borderBottomWidth: 1,
+                  paddingVertical: spacing.md,
+                },
+              ]}
+            >
               <AppText
                 variant="body"
-                style={{ color: row.isFee ? colors.action.primary : colors.text.primary, fontWeight: row.isFee ? '700' : '500' }}
+                style={{ color: colors.text.secondary }}
+              >
+                {row.label}
+              </AppText>
+              <AppText
+                variant="body"
+                style={{
+                  color: row.isFee ? colors.action.primary : colors.text.primary,
+                  fontWeight: row.isFee ? '700' : '500',
+                }}
               >
                 {row.value}
               </AppText>
@@ -135,14 +216,37 @@ export function BookingConfirmationScreen({
           ))}
         </View>
 
-        <View style={{ marginHorizontal: spacing.lg, marginTop: spacing.xl, paddingHorizontal: spacing.md }}>
-          <AppText variant="bodySmall" style={{ color: colors.text.tertiary, textAlign: 'center', lineHeight: 18 }}>
-            By confirming, you agree to our Terms of Service and Privacy Policy. Consultation fees are non-refundable once the session begins.
+        <View
+          style={{
+            marginHorizontal: spacing.lg,
+            marginTop: spacing.xl,
+            paddingHorizontal: spacing.md,
+          }}
+        >
+          <AppText
+            variant="bodySmall"
+            style={{
+              color: colors.text.tertiary,
+              textAlign: 'center',
+              lineHeight: 18,
+            }}
+          >
+            By confirming, you agree to Amrutam's consultation terms, medical
+            disclosure guidelines and cancellation policy.
           </AppText>
         </View>
       </ScrollView>
 
-      <View style={[styles.stickyFooter, { backgroundColor: colors.surface.default, borderTopColor: colors.border.default, padding: spacing.lg }]}>
+      <View
+        style={[
+          styles.stickyFooter,
+          {
+            backgroundColor: colors.surface.default,
+            borderTopColor: colors.border.default,
+            padding: spacing.lg,
+          },
+        ]}
+      >
         <Button
           title={bookMutation.isPending ? 'Booking...' : 'Confirm Booking'}
           variant="primary"
@@ -160,13 +264,17 @@ export function BookingConfirmationScreen({
 const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  backBtn: { padding: 4 },
+  header: { flexDirection: 'row', alignItems: 'center' },
   scroll: { paddingBottom: 120 },
   doctorCard: {},
-  avatar: { width: 56, height: 56, backgroundColor: '#E8F3EC' },
-  doctorInfo: { marginLeft: 14, flex: 1 },
+  avatar: { width: 56, height: 56 },
   detailsCard: {},
   detailRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  stickyFooter: { position: 'absolute', bottom: 0, left: 0, right: 0, borderTopWidth: 1 },
+  stickyFooter: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    borderTopWidth: 1,
+  },
 });

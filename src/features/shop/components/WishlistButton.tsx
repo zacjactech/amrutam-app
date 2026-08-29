@@ -20,7 +20,7 @@ export function WishlistButton({ productId, size = 24 }: WishlistButtonProps) {
   };
 
   return (
-    <TouchableOpacity onPress={handlePress} hitSlop={8}>
+    <TouchableOpacity onPress={handlePress} hitSlop={8} accessibilityLabel={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'} accessibilityRole="button" accessibilityState={{ selected: inWishlist }}>
       <Text style={{ fontSize: size, color: inWishlist ? colors.status.error : colors.text.disabled }}>
         {inWishlist ? '♥' : '♡'}
       </Text>

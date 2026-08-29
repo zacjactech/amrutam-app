@@ -9,9 +9,10 @@ import { ProductCard } from '../components/ProductCard';
 import { Button } from '../../../shared/components/Button';
 import { AppText } from '../../../shared/components/AppText';
 import { AppSkeleton } from '../../../shared/components/AppSkeleton';
+import { AppErrorState } from '../../../shared/components';
 import { CartItem, Product, ShopNavigation } from '../types';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
-import { ShoppingBag } from '../../../shared/assets/icons';
+import { ShoppingBag, ArrowLeft } from '../../../shared/assets/icons';
 
 interface CartScreenProps {
   navigation: ShopNavigation;
@@ -20,7 +21,7 @@ interface CartScreenProps {
 export function CartScreen({ navigation }: CartScreenProps) {
   const colors = useThemeColors();
   const spacing = useThemeSpacing();
-  const { data: cartItems = [], isLoading, updateCartQuantity, removeFromCart } = useCart();
+  const { data: cartItems = [], isLoading, isError, refetch, updateCartQuantity, removeFromCart } = useCart();
   const productCache = useProductCache();
 
   const getProduct = useCallback(
@@ -85,12 +86,25 @@ export function CartScreen({ navigation }: CartScreenProps) {
     );
   }
 
+  if (isError) {
+    return (
+      <View style={[styles.centerContainer, { backgroundColor: colors.background.primary }]}>
+        <AppErrorState
+          title="Failed to load cart"
+          message="Could not load your cart items."
+          type="retryable"
+          onRetry={() => refetch()}
+        />
+      </View>
+    );
+  }
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
       {cartItems.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <View style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: '#D1FAE5', justifyContent: 'center', alignItems: 'center' }}>
-            <ShoppingBag width={56} height={56} color="#2D6A4F" />
+          <View style={{ width: 96, height: 96, borderRadius: 48, backgroundColor: colors.action.primarySoft, justifyContent: 'center', alignItems: 'center' }}>
+            <ShoppingBag width={56} height={56} color={colors.action.primary} />
           </View>
           <AppText variant="h3" style={{ color: colors.text.primary, marginBottom: spacing.sm, marginTop: spacing.lg }}>
             Your cart is empty
@@ -109,8 +123,8 @@ export function CartScreen({ navigation }: CartScreenProps) {
         <>
           <View style={[styles.header, { paddingHorizontal: spacing.lg, paddingTop: spacing.xl, paddingBottom: spacing.md }]}>
             <View style={styles.titleRow}>
-              <TouchableOpacity onPress={navigation.goBack} hitSlop={8}>
-                <AppText variant="h1">←</AppText>
+              <TouchableOpacity onPress={navigation.goBack} hitSlop={8} accessibilityLabel="Go back" accessibilityRole="button">
+                <ArrowLeft width={20} height={20} color={colors.text.primary} />
               </TouchableOpacity>
               <AppText variant="h1">Cart ({cartItems.length})</AppText>
               <View style={{ width: 24 }} />

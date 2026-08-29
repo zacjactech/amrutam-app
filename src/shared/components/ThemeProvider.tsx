@@ -1,7 +1,10 @@
-// Theme Provider with Context
+// Theme Provider with Context + SecureStore persistence
 
 import React, { createContext, useContext, ReactNode } from 'react';
 import { lightTheme, darkTheme, Theme } from '../design-system/theme';
+import * as SecureStore from 'expo-secure-store';
+
+const THEME_KEY = 'app_theme_mode';
 
 type ThemeMode = 'light' | 'dark';
 
@@ -18,12 +21,26 @@ interface ThemeProviderProps {
   initialMode?: ThemeMode;
 }
 
+function loadPersistedMode(): ThemeMode {
+  try {
+    const stored = SecureStore.getItem(THEME_KEY);
+    if (stored === 'light' || stored === 'dark') return stored;
+  } catch {}
+  return 'light';
+}
+
 export function ThemeProvider({
   children,
-  initialMode = 'light',
 }: ThemeProviderProps): React.JSX.Element {
-  const [mode, setMode] = React.useState<ThemeMode>(initialMode);
+  const [mode, setModeState] = React.useState<ThemeMode>(loadPersistedMode);
   const theme = mode === 'light' ? lightTheme : darkTheme;
+
+  const setMode = React.useCallback((newMode: ThemeMode) => {
+    setModeState(newMode);
+    try {
+      SecureStore.setItem(THEME_KEY, newMode);
+    } catch {}
+  }, []);
 
   const value: ThemeContextValue = {
     theme,

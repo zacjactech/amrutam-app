@@ -11,6 +11,7 @@ import { groupRecordsByMonth, getHealthRecordCache } from '../generator';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
 import { Button } from '../../../shared/components/Button';
 import { Flask, Pill, Stethoscope, Syringe, AlertTriangle, Shield, Search, IconTag, IconFilter, Close, CheckCircleFilled } from '../../../shared/assets/icons';
+import { lightTheme } from '../../../shared/design-system/theme';
 
 const RECORD_TYPE_ICONS: Record<HealthRecordType, React.ComponentType<{ width: number; height: number; color?: string }>> = {
   lab_report: Flask,
@@ -20,12 +21,14 @@ const RECORD_TYPE_ICONS: Record<HealthRecordType, React.ComponentType<{ width: n
   allergy: AlertTriangle,
 };
 
-const RECORD_TYPE_DOT_COLORS: Record<HealthRecordType, string> = {
-  lab_report: '#3B82F6',
-  prescription: '#2D6A4F',
-  consultation: '#7C3AED',
-  vaccination: '#06B6D4',
-  allergy: '#F97316',
+type RecordColorKey = 'lab' | 'labSoft' | 'prescription' | 'prescriptionSoft' | 'consultation' | 'consultationSoft' | 'vaccination' | 'vaccinationSoft' | 'allergy' | 'allergySoft';
+
+const RECORD_TYPE_DOT_THEME: Record<HealthRecordType, { color: RecordColorKey; soft: RecordColorKey }> = {
+  lab_report: { color: 'lab', soft: 'labSoft' },
+  prescription: { color: 'prescription', soft: 'prescriptionSoft' },
+  consultation: { color: 'consultation', soft: 'consultationSoft' },
+  vaccination: { color: 'vaccination', soft: 'vaccinationSoft' },
+  allergy: { color: 'allergy', soft: 'allergySoft' },
 };
 
 const FILTER_TYPES: { type: HealthRecordType; label: string }[] = [
@@ -64,9 +67,9 @@ export function TimelineScreen({ navigation }: TimelineScreenProps) {
   const { data, isLoading, isError, error, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useHealthRecords(filter);
 
-  const allRecords = data?.pages.flatMap((page) => page.data) ?? [];
+  const allRecords = useMemo(() => data?.pages.flatMap((page) => page.data) ?? [], [data]);
   const totalRecords = data?.pages[0]?.total ?? 0;
-  const timelineGroups = groupRecordsByMonth(allRecords);
+  const timelineGroups = useMemo(() => groupRecordsByMonth(allRecords), [allRecords]);
 
   const recordCounts = useMemo(() => {
     const all = getHealthRecordCache();
@@ -139,7 +142,7 @@ export function TimelineScreen({ navigation }: TimelineScreenProps) {
           </AppText>
         </View>
         {item.records.map((record, index) => {
-          const dotColor = RECORD_TYPE_DOT_COLORS[record.type];
+          const dotColor = colors.record[RECORD_TYPE_DOT_THEME[record.type].color];
           const isLast = index === item.records.length - 1;
           const date = new Date(record.occurredAt);
           return (
@@ -148,6 +151,8 @@ export function TimelineScreen({ navigation }: TimelineScreenProps) {
               style={styles.recordRow}
               onPress={() => handleRecordPress(record)}
               activeOpacity={0.7}
+              accessibilityLabel={`View ${record.title}`}
+              accessibilityRole="button"
             >
               <View style={styles.timelineColumn}>
                 <View
@@ -220,6 +225,8 @@ export function TimelineScreen({ navigation }: TimelineScreenProps) {
           onPress={() => navigation.navigate('RecordSearch')}
           activeOpacity={0.7}
           style={[styles.searchTrigger, { backgroundColor: colors.background.secondary, borderRadius: 24, paddingHorizontal: spacing.lg, paddingVertical: spacing.md, marginTop: spacing.md, flexDirection: 'row', alignItems: 'center' }]}
+          accessibilityLabel="Search health records"
+          accessibilityRole="search"
         >
           <Search width={18} height={18} color={colors.text.tertiary} style={{ marginRight: spacing.sm }} />
           <AppText variant="body" style={{ color: colors.text.tertiary }}>
@@ -245,6 +252,9 @@ export function TimelineScreen({ navigation }: TimelineScreenProps) {
                 marginRight: spacing.sm,
               },
             ]}
+            accessibilityLabel="Show all records"
+            accessibilityRole="button"
+            accessibilityState={{ selected: filter.types.length === 0 }}
           >
             <AppText
               variant="body"
@@ -268,8 +278,8 @@ export function TimelineScreen({ navigation }: TimelineScreenProps) {
                 style={[
                   styles.filterChip,
                   {
-                    backgroundColor: isActive ? RECORD_TYPE_DOT_COLORS[type] + '15' : 'transparent',
-                    borderColor: isActive ? RECORD_TYPE_DOT_COLORS[type] : colors.border.default,
+                    backgroundColor: isActive ? colors.record[RECORD_TYPE_DOT_THEME[type].soft] : 'transparent',
+                    borderColor: isActive ? colors.record[RECORD_TYPE_DOT_THEME[type].color] : colors.border.default,
                     borderWidth: 1,
                     borderRadius: 999,
                     paddingHorizontal: spacing.md,
@@ -277,11 +287,14 @@ export function TimelineScreen({ navigation }: TimelineScreenProps) {
                     marginRight: spacing.sm,
                   },
                 ]}
+                accessibilityLabel={`Filter by ${label}`}
+                accessibilityRole="button"
+                accessibilityState={{ selected: isActive }}
               >
                 <AppText
                   variant="body"
                   style={{
-                    color: isActive ? RECORD_TYPE_DOT_COLORS[type] : colors.text.secondary,
+                    color: isActive ? colors.record[RECORD_TYPE_DOT_THEME[type].color] : colors.text.secondary,
                     fontWeight: '500',
                   }}
                 >
@@ -297,6 +310,8 @@ export function TimelineScreen({ navigation }: TimelineScreenProps) {
             onPress={() => setShowFilterSheet(true)}
             activeOpacity={0.7}
             style={[styles.actionButton, { borderColor: colors.border.default, borderWidth: 1, borderRadius: spacing.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, flexDirection: 'row', alignItems: 'center', flex: 1, justifyContent: 'center' }]}
+            accessibilityLabel={`Open filter sheet${activeFilterCount > 0 ? ` (${activeFilterCount} active)` : ''}`}
+            accessibilityRole="button"
           >
             <IconFilter width={16} height={16} color={colors.text.primary} style={{ marginRight: spacing.xs }} />
             <AppText variant="body" style={{ color: colors.text.primary }}>
@@ -307,6 +322,8 @@ export function TimelineScreen({ navigation }: TimelineScreenProps) {
             onPress={() => setShowTagSheet(true)}
             activeOpacity={0.7}
             style={[styles.actionButton, { borderColor: colors.border.default, borderWidth: 1, borderRadius: spacing.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, flexDirection: 'row', alignItems: 'center', flex: 1, justifyContent: 'center' }]}
+            accessibilityLabel={`Open tag filter${filter.tags.length > 0 ? ` (${filter.tags.length} selected)` : ''}`}
+            accessibilityRole="button"
           >
             <IconTag width={16} height={16} color={colors.text.primary} style={{ marginRight: spacing.xs }} />
             <AppText variant="body" style={{ color: colors.text.primary }}>
@@ -472,7 +489,7 @@ function RecordFilterSheetInline({
         </View>
         <View style={styles.sheetHeader}>
           <AppText variant="h3" style={{ color: colors.text.primary }}>Filter Records</AppText>
-          <TouchableOpacity onPress={onClose}>
+          <TouchableOpacity onPress={onClose} accessibilityLabel="Close filter sheet" accessibilityRole="button">
             <Close width={20} height={20} color={colors.text.secondary} />
           </TouchableOpacity>
         </View>
@@ -483,7 +500,7 @@ function RecordFilterSheetInline({
 
         {HEALTH_RECORD_TYPES.map((type) => {
           const isSelected = localTypes.includes(type);
-          const typeColor = RECORD_TYPE_DOT_COLORS[type];
+          const typeColor = colors.record[RECORD_TYPE_DOT_THEME[type].color];
           const count = recordCounts[type] ?? 0;
           return (
             <TouchableOpacity
@@ -491,6 +508,9 @@ function RecordFilterSheetInline({
               onPress={() => toggleType(type)}
               activeOpacity={0.7}
               style={[styles.filterTypeRow, { paddingVertical: spacing.md, borderBottomColor: colors.border.light }]}
+              accessibilityLabel={`Filter by ${RECORD_TYPE_LABELS[type]}`}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: isSelected }}
             >
               <View style={[styles.filterTypeIcon, { backgroundColor: typeColor + '20', width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' }]}>                  {(() => { const IconComp = RECORD_TYPE_ICONS[type]; return <IconComp width={18} height={18} color={typeColor} />; })()}
               </View>
@@ -503,7 +523,7 @@ function RecordFilterSheetInline({
                 </AppText>
               </View>
               <View style={[styles.checkbox, { width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: isSelected ? typeColor : colors.border.default, backgroundColor: isSelected ? typeColor : 'transparent', justifyContent: 'center', alignItems: 'center' }]}>
-                {isSelected &&                    <CheckCircleFilled width={14} height={14} color="#FFF" />}
+                {isSelected &&                    <CheckCircleFilled width={14} height={14} color={colors.text.inverse} />}
               </View>
             </TouchableOpacity>
           );
@@ -558,7 +578,7 @@ function TagFilterSheetInline({
         </View>
         <View style={styles.sheetHeader}>
           <AppText variant="h3" style={{ color: colors.text.primary }}>Filter by tags</AppText>
-          <TouchableOpacity onPress={() => setLocalTags([])}>
+          <TouchableOpacity onPress={() => setLocalTags([])} accessibilityLabel="Reset tags" accessibilityRole="button">
             <AppText variant="body" style={{ color: colors.action.primary, fontWeight: '600' }}>Reset</AppText>
           </TouchableOpacity>
         </View>
@@ -572,6 +592,9 @@ function TagFilterSheetInline({
                 onPress={() => toggleTag(tag)}
                 activeOpacity={0.7}
                 style={[styles.tagChip, { backgroundColor: isSelected ? colors.action.primary : 'transparent', borderColor: isSelected ? colors.action.primary : colors.border.default, borderWidth: 1, borderRadius: 999, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, marginRight: spacing.sm, marginBottom: spacing.sm, flexDirection: 'row', alignItems: 'center' }]}
+                accessibilityLabel={`Filter by tag ${tag}`}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: isSelected }}
               >
                 {isSelected && (
                   <CheckCircleFilled width={14} height={14} color={colors.text.inverse} style={{ marginRight: spacing.xs }} />
@@ -611,11 +634,7 @@ const styles = StyleSheet.create({
   timelineDot: {},
   timelineLine: { width: 2, flex: 1, marginTop: 4, minHeight: 20 },
   recordCard: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
-    elevation: 2,
+    ...lightTheme.shadows.sm,
   },
   recordHeader: { flexDirection: 'row', alignItems: 'center' },
   recordIconContainer: {},

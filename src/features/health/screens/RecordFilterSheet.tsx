@@ -7,21 +7,22 @@ import { Button } from '../../../shared/components/Button';
 import { AppText } from '../../../shared/components/AppText';
 import { HealthRecordType, RECORD_TYPE_LABELS, HEALTH_RECORD_TYPES } from '../types';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
+import { Flask, Pill, Stethoscope, Syringe, AlertTriangle } from '../../../shared/assets/icons';
 
-const RECORD_TYPE_ICONS: Record<HealthRecordType, string> = {
-  lab_report: '🔬',
-  prescription: '💊',
-  consultation: '🩺',
-  vaccination: '💉',
-  allergy: '⚠️',
+const RECORD_TYPE_ICONS: Record<HealthRecordType, React.ComponentType<{ width: number; height: number; color?: string }>> = {
+  lab_report: Flask,
+  prescription: Pill,
+  consultation: Stethoscope,
+  vaccination: Syringe,
+  allergy: AlertTriangle,
 };
 
 const RECORD_TYPE_COLORS: Record<HealthRecordType, string> = {
-  lab_report: '#3B82F6',
-  prescription: '#2D6A4F',
-  consultation: '#7C3AED',
-  vaccination: '#06B6D4',
-  allergy: '#F97316',
+  lab_report: 'lab',
+  prescription: 'prescription',
+  consultation: 'consultation',
+  vaccination: 'vaccination',
+  allergy: 'allergy',
 };
 
 interface RecordFilterSheetProps {
@@ -83,7 +84,7 @@ export function RecordFilterSheet({
 
       {HEALTH_RECORD_TYPES.map((type) => {
         const isSelected = localTypes.includes(type);
-        const typeColor = RECORD_TYPE_COLORS[type];
+        const typeColor = colors.record[RECORD_TYPE_COLORS[type] as keyof typeof colors.record];
         const count = recordCounts[type] ?? 0;
 
         return (
@@ -103,9 +104,12 @@ export function RecordFilterSheet({
                 marginBottom: spacing.sm,
               },
             ]}
+            accessibilityLabel={`Filter by ${RECORD_TYPE_LABELS[type]}`}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: isSelected }}
           >
             <View style={[styles.typeIconContainer, { backgroundColor: typeColor + '20', width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' }]}>
-              <AppText variant="h3">{RECORD_TYPE_ICONS[type]}</AppText>
+              {(() => { const IconComp = RECORD_TYPE_ICONS[type]; return <IconComp width={20} height={20} color={typeColor} />; })()}
             </View>
 
             <View style={{ flex: 1, marginLeft: spacing.md }}>
@@ -133,7 +137,7 @@ export function RecordFilterSheet({
               ]}
             >
               {isSelected && (
-                <AppText variant="caption" style={{ color: '#FFFFFF', fontWeight: '700' }}>
+                <AppText variant="caption" style={{ color: colors.text.inverse, fontWeight: '700' }}>
                   ✓
                 </AppText>
               )}

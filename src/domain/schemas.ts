@@ -1,9 +1,6 @@
 // Zod Validation Schemas for Amrutam App
 
 import { z } from 'zod';
-import { env } from '../infrastructure/env';
-
-export type Env = typeof env;
 
 // ============================================================================
 // Consultation Schemas
@@ -174,11 +171,6 @@ export const apiErrorResponseSchema = z.object({
 // Type Exports
 // ============================================================================
 
-export type Doctor = z.infer<typeof doctorSchema>;
 export type ConsultationSlot = z.infer<typeof consultationSlotSchema>;
 export type Booking = z.infer<typeof bookingSchema>;
-export type Product = z.infer<typeof productSchema>;
-export type CartItem = z.infer<typeof cartItemSchema>;
-export type HealthRecord = z.infer<typeof healthRecordSchema>;
-export type SyncOperation = z.infer<typeof syncOperationSchema>;
 

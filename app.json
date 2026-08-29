@@ -2,6 +2,7 @@
   "expo": {
     "name": "Amrutam",
     "slug": "amrutam-app",
+    "scheme": "amrutam",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -9,7 +10,7 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#1B5E3A"
+      "backgroundColor": "#145C3A"
     },
     "assetBundlePatterns": ["**/*"],
     "ios": {
@@ -19,7 +20,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#1B5E3A"
+        "backgroundColor": "#145C3A"
       },
       "package": "com.amrutam.app"
     },

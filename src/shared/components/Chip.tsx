@@ -55,6 +55,9 @@ export function Chip({
       onPress={onPress}
       activeOpacity={0.7}
       disabled={onPress === undefined}
+      accessibilityLabel={label}
+      accessibilityRole="button"
+      accessibilityState={{ selected, disabled: onPress === undefined }}
     >
       <Text style={[styles.label, textStyle]} numberOfLines={1}>
         {label}
@@ -65,7 +68,7 @@ export function Chip({
           style={[
             styles.countBadge,
             {
-              backgroundColor: isFilled ? 'rgba(255,255,255,0.3)' : colors.border.light,
+              backgroundColor: isFilled ? colors.text.inverse : colors.border.light,
               marginLeft: spacing.xs,
             },
           ]}
@@ -86,6 +89,8 @@ export function Chip({
           onPress={onRemove}
           hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
           style={[styles.removeBtn, { marginLeft: spacing.xs }]}
+          accessibilityLabel={`Remove ${label}`}
+          accessibilityRole="button"
         >
           <Text style={[styles.removeIcon, { color: isFilled ? colors.text.inverse : colors.text.secondary }]}>
             ✕

@@ -41,12 +41,12 @@ export function useHealthRecord(recordId: string) {
 export function useRecordTimeline(filter: RecordFilter = DEFAULT_RECORD_FILTER) {
   const { patientId, isAuthenticated } = useAuthContext();
 
-  return useQuery({
-    queryKey: [...healthKeys.timeline(), patientId],
-    queryFn: async () => {
-      const result = await healthRecordRepository.getRecords(filter, { page: 0, pageSize: 1000 }, patientId!);
-      return result.data;
-    },
+  return useInfiniteQuery({
+    queryKey: [...healthKeys.timeline(), patientId, filter],
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) =>
+      healthRecordRepository.getRecords(filter, { page: pageParam, pageSize: PAGE_SIZE }, patientId!),
+    getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.page + 1 : undefined),
     enabled: isAuthenticated && patientId !== null,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,

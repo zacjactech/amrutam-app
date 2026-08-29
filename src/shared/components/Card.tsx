@@ -3,6 +3,9 @@
 import React, { ReactNode } from 'react';
 import { View, StyleSheet, ViewStyle, TouchableOpacity } from 'react-native';
 import { useThemeColors, useThemeSpacing } from './ThemeProvider';
+import { lightTheme } from '../design-system/theme';
+
+const themeShadows = lightTheme.shadows;
 
 type CardVariant = 'elevated' | 'outlined' | 'filled';
 
@@ -29,11 +32,7 @@ export function Card({
     { borderRadius: spacing.md, padding: spacing.md },
     variant === 'elevated' && {
       backgroundColor: colors.surface.default,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 3,
+      ...themeShadows.md,
     },
     variant === 'outlined' && {
       backgroundColor: colors.surface.default,
@@ -53,6 +52,8 @@ export function Card({
         onPress={onPress}
         activeOpacity={0.7}
         testID={testID}
+        accessibilityRole="button"
+        accessibilityLabel="Card"
       >
         {children}
       </TouchableOpacity>

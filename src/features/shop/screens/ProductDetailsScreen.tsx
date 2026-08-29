@@ -11,6 +11,8 @@ import { WishlistButton } from '../components/WishlistButton';
 import { AppSkeleton } from '../../../shared/components/AppSkeleton';
 import { AppErrorState } from '../../../shared/components/AppErrorState';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
+import { ArrowLeft } from '../../../shared/assets/icons';
+import { lightTheme } from '../../../shared/design-system/theme';
 
 const benefits = [
   'Supports natural immunity',
@@ -83,13 +85,13 @@ export function ProductDetailsScreen({ route, navigation }: ProductDetailsScreen
         <View style={styles.imageContainer}>
           <Image
             source={{ uri: product.imageUrl }}
-            style={styles.image}
+            style={[styles.image, { backgroundColor: colors.background.secondary }]}
             contentFit="cover"
             placeholder={{ blurhash: 'LGF5?xYk^6%M%%2e2~qoJ^Rj@AjZ' }}
           />
           <View style={[styles.imageOverlay, { paddingHorizontal: spacing.lg, paddingTop: spacing.xl }]}>
-            <TouchableOpacity onPress={navigation.goBack} hitSlop={8} style={[styles.backButton, { backgroundColor: colors.surface.default }]}>
-              <AppText variant="body" style={{ color: colors.text.primary }}>←</AppText>
+            <TouchableOpacity onPress={navigation.goBack} hitSlop={8} style={[styles.backButton, { backgroundColor: colors.surface.default }]} accessibilityLabel="Go back" accessibilityRole="button">
+              <ArrowLeft width={20} height={20} color={colors.text.primary} />
             </TouchableOpacity>
           </View>
           <View style={[styles.imageActions, { paddingHorizontal: spacing.lg, paddingTop: spacing.xl }]}>
@@ -110,7 +112,7 @@ export function ProductDetailsScreen({ route, navigation }: ProductDetailsScreen
 
           <View style={styles.ratingRow}>
             <View style={[styles.ratingBadge, { backgroundColor: colors.status.warning }]}>
-              <AppText variant="bodySmall" style={{ color: '#FFFFFF', fontWeight: '600' }}>★ {product.rating.toFixed(1)}</AppText>
+              <AppText variant="bodySmall" style={{ color: colors.text.inverse, fontWeight: '600' }}>★ {product.rating.toFixed(1)}</AppText>
             </View>
             <AppText variant="bodySmall" style={{ color: colors.text.secondary }}>
               {product.reviewCount} reviews
@@ -138,6 +140,8 @@ export function ProductDetailsScreen({ route, navigation }: ProductDetailsScreen
               <TouchableOpacity
                 style={[styles.quantityBtn, { backgroundColor: colors.background.secondary }]}
                 onPress={handleQuantityDecrease}
+                accessibilityLabel="Decrease quantity"
+                accessibilityRole="button"
               >
                 <AppText variant="body" style={{ color: colors.text.primary, fontWeight: '600' }}>-</AppText>
               </TouchableOpacity>
@@ -147,6 +151,8 @@ export function ProductDetailsScreen({ route, navigation }: ProductDetailsScreen
               <TouchableOpacity
                 style={[styles.quantityBtn, { backgroundColor: colors.background.secondary }]}
                 onPress={handleQuantityIncrease}
+                accessibilityLabel="Increase quantity"
+                accessibilityRole="button"
               >
                 <AppText variant="body" style={{ color: colors.text.primary, fontWeight: '600' }}>+</AppText>
               </TouchableOpacity>
@@ -212,7 +218,6 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: 350,
-    backgroundColor: '#F0F2EF',
   },
   imageOverlay: {
     position: 'absolute',
@@ -234,11 +239,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    ...lightTheme.shadows.sm,
   },
   paginationDots: {
     flexDirection: 'row',
@@ -283,8 +284,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   quantityBtn: {
-    width: 36,
-    height: 36,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },

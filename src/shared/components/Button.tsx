@@ -21,6 +21,7 @@ interface ButtonProps {
   size?: ButtonSize;
   disabled?: boolean;
   loading?: boolean;
+  accessibilityLabel?: string;
   style?: ViewStyle;
   textStyle?: TextStyle;
   testID?: string;
@@ -33,6 +34,7 @@ export function Button({
   size = 'medium',
   disabled = false,
   loading = false,
+  accessibilityLabel,
   style,
   textStyle,
   testID,
@@ -46,10 +48,10 @@ export function Button({
     styles.base,
     { borderRadius: spacing.sm },
     variant === 'primary' && {
-      backgroundColor: isDisabled ? colors.action.primary : colors.action.primary,
+      backgroundColor: isDisabled ? colors.text.disabled : colors.action.primary,
     },
     variant === 'secondary' && {
-      backgroundColor: isDisabled ? colors.action.primarySoft : colors.action.primarySoft,
+      backgroundColor: isDisabled ? colors.background.secondary : colors.action.primarySoft,
     },
     variant === 'outline' && {
       backgroundColor: 'transparent',
@@ -96,6 +98,9 @@ export function Button({
       disabled={isDisabled}
       activeOpacity={0.7}
       testID={testID}
+      accessibilityLabel={accessibilityLabel ?? title}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: isDisabled, busy: loading }}
     >
       {loading ? (
         <ActivityIndicator

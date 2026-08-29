@@ -11,17 +11,17 @@ import type { Product } from './types';
 import { getProductCacheAsync } from './generator';
 import { logger } from '../../infrastructure/logging/logger';
 
-/** Module-level error handler — set by ShopMutationProvider */
-let _showError: ((message: string) => void) | null = null;
+/** Error handler — set via setShopErrorHandler, avoids module-level mutable */
+const _errorHandlerRef: { current: ((message: string) => void) | null } = { current: null };
 
 export function setShopErrorHandler(handler: (message: string) => void): void {
-  _showError = handler;
+  _errorHandlerRef.current = handler;
 }
 
 function handleError(label: string, error: unknown): void {
   const message = error instanceof Error ? error.message : `${label} failed`;
   logger.error(label, { error: message });
-  _showError?.(message);
+  _errorHandlerRef.current?.(message);
 }
 
 export const shopKeys = {

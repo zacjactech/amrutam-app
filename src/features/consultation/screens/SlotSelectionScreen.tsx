@@ -12,7 +12,9 @@ import { useDoctor, useDoctorSlots } from '../hooks';
 import { ConsultationSlot } from '../types';
 import { Button } from '../../../shared/components/Button';
 import { AppText } from '../../../shared/components/AppText';
+import { AppErrorState } from '../../../shared/components';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
+import { ArrowLeft } from '../../../shared/assets/icons';
 
 interface SlotSelectionScreenProps {
   doctorId: string;
@@ -45,12 +47,12 @@ export function SlotSelectionScreen({
   const [selectedSlot, setSelectedSlot] = useState<ConsultationSlot | null>(null);
 
   const { isLoading: doctorLoading } = useDoctor(doctorId);
-  const { data: allSlots = [], isLoading: slotsLoading } = useDoctorSlots(doctorId);
+  const { data: allSlots = [], isLoading: slotsLoading, isError: slotsError, refetch: refetchSlots } = useDoctorSlots(doctorId);
 
   const weekDates = useMemo(() => {
     const dates: Date[] = [];
     const now = new Date();
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 7; i++) {
       const d = new Date(now);
       d.setDate(now.getDate() + i);
       dates.push(d);
@@ -93,18 +95,45 @@ export function SlotSelectionScreen({
     );
   }
 
+  if (slotsError) {
+    return (
+      <AppErrorState
+        title="Failed to load slots"
+        message="Could not load available time slots."
+        type="retryable"
+        onRetry={() => refetchSlots()}
+      />
+    );
+  }
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
-      <View style={[styles.header, { paddingHorizontal: spacing.lg, paddingTop: spacing.xxl, paddingBottom: spacing.sm }]}>
-        <TouchableOpacity onPress={onBack} style={styles.backBtn}>
-          <AppText variant="body" style={{ color: colors.action.primary }}>← Back</AppText>
+      <View
+        style={[
+          styles.header,
+          {
+            paddingHorizontal: spacing.lg,
+            paddingTop: spacing.xxl,
+            paddingBottom: spacing.md,
+          },
+        ]}
+      >
+        <TouchableOpacity
+          onPress={onBack}
+          style={{ padding: spacing.xs, marginRight: spacing.sm }}
+          accessibilityLabel="Go back"
+          accessibilityRole="button"
+        >
+          <ArrowLeft width={20} height={20} color={colors.text.primary} />
         </TouchableOpacity>
         <AppText variant="h1">Select Time</AppText>
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-        <View style={[styles.dateSection, { marginHorizontal: spacing.lg, backgroundColor: colors.surface.default, borderRadius: spacing.md, padding: spacing.lg }]}>
-          <AppText variant="h3" style={{ marginBottom: spacing.md }}>Select Date</AppText>
+        <View style={{ paddingHorizontal: spacing.lg }}>
+          <AppText variant="h3" style={{ marginBottom: spacing.md }}>
+            Select Date
+          </AppText>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View style={{ flexDirection: 'row', gap: spacing.sm }}>
               {weekDates.map((d) => {
@@ -114,15 +143,47 @@ export function SlotSelectionScreen({
                 return (
                   <TouchableOpacity
                     key={key}
-                    style={[styles.dateChip, {
-                      backgroundColor: isSelected ? colors.action.primary : 'transparent',
-                      borderColor: isSelected ? colors.action.primary : colors.border.default,
-                      borderRadius: spacing.sm,
-                    }]}
+                    style={[
+                      styles.dateChip,
+                      {
+                        backgroundColor: isSelected
+                          ? colors.action.primary
+                          : colors.surface.default,
+                        borderColor: isSelected
+                          ? colors.action.primary
+                          : colors.border.default,
+                        borderRadius: spacing.md,
+                        paddingVertical: spacing.md,
+                        paddingHorizontal: spacing.lg,
+                        minWidth: 56,
+                      },
+                    ]}
                     onPress={() => setSelectedDate(isSelected ? null : key)}
+                    accessibilityLabel={`Select date ${fmt.dayName} ${fmt.label}`}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isSelected }}
                   >
-                    <AppText variant="caption" style={{ color: isSelected ? colors.surface.default : colors.text.secondary }}>{fmt.dayName}</AppText>
-                    <AppText variant="h3" style={{ color: isSelected ? colors.surface.default : colors.text.primary, marginTop: spacing.xs }}>{fmt.label}</AppText>
+                    <AppText
+                      variant="caption"
+                      style={{
+                        color: isSelected
+                          ? colors.surface.default
+                          : colors.text.secondary,
+                      }}
+                    >
+                      {fmt.dayName}
+                    </AppText>
+                    <AppText
+                      variant="h3"
+                      style={{
+                        color: isSelected
+                          ? colors.surface.default
+                          : colors.text.primary,
+                        marginTop: spacing.xs,
+                      }}
+                    >
+                      {fmt.label}
+                    </AppText>
                   </TouchableOpacity>
                 );
               })}
@@ -130,10 +191,17 @@ export function SlotSelectionScreen({
           </ScrollView>
         </View>
 
-        <View style={[styles.slotsSection, { marginHorizontal: spacing.lg, marginTop: spacing.md, backgroundColor: colors.surface.default, borderRadius: spacing.md, padding: spacing.lg }]}>
-          <AppText variant="h3" style={{ marginBottom: spacing.md }}>Available Slots</AppText>
+        <View style={{ paddingHorizontal: spacing.lg, marginTop: spacing.xl }}>
+          <AppText variant="h3" style={{ marginBottom: spacing.md }}>
+            Available Slots
+          </AppText>
           {filteredSlots.length === 0 ? (
-            <AppText variant="body" style={{ color: colors.text.secondary, textAlign: 'center' }}>No slots available for this date.</AppText>
+            <AppText
+              variant="body"
+              style={{ color: colors.text.secondary, textAlign: 'center' }}
+            >
+              No slots available for this date.
+            </AppText>
           ) : (
             <View style={styles.slotGrid}>
               {filteredSlots.map((slot) => {
@@ -161,14 +229,23 @@ export function SlotSelectionScreen({
                 return (
                   <TouchableOpacity
                     key={slot.id}
-                    style={[styles.slotChip, {
-                      backgroundColor: bgColor,
-                      borderColor,
-                      borderRadius: spacing.sm,
-                      opacity: unavailable && !isSelected ? 0.6 : 1,
-                    }]}
+                    style={[
+                      styles.slotChip,
+                      {
+                        backgroundColor: bgColor,
+                        borderColor,
+                        borderRadius: spacing.md,
+                        opacity: unavailable && !isSelected ? 0.6 : 1,
+                        paddingVertical: spacing.md,
+                        paddingHorizontal: spacing.lg,
+                        minWidth: 90,
+                      },
+                    ]}
                     onPress={() => handleSlotPress(slot)}
                     disabled={unavailable}
+                    accessibilityLabel={`Select time slot ${formatTime(slot.startTime)}${expired ? ' expired' : booked ? ' booked' : ''}`}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isSelected, disabled: unavailable }}
                   >
                     <AppText
                       variant="body"
@@ -187,40 +264,126 @@ export function SlotSelectionScreen({
           )}
         </View>
 
-        <View style={[styles.legend, { marginHorizontal: spacing.lg, marginTop: spacing.md, flexDirection: 'row', gap: spacing.lg }]}>
+        <View
+          style={[
+            styles.legend,
+            {
+              marginHorizontal: spacing.lg,
+              marginTop: spacing.lg,
+              flexDirection: 'row',
+              gap: spacing.lg,
+            },
+          ]}
+        >
           <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: colors.border.default }]} />
-            <AppText variant="caption" style={{ color: colors.text.secondary }}>Available</AppText>
+            <View
+              style={[
+                styles.legendDot,
+                { backgroundColor: colors.border.default, width: 10, height: 10, borderRadius: 5 },
+              ]}
+            />
+            <AppText
+              variant="caption"
+              style={{ color: colors.text.secondary }}
+            >
+              Available
+            </AppText>
           </View>
           <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: colors.action.primary }]} />
-            <AppText variant="caption" style={{ color: colors.text.secondary }}>Selected</AppText>
+            <View
+              style={[
+                styles.legendDot,
+                { backgroundColor: colors.action.primary, width: 10, height: 10, borderRadius: 5 },
+              ]}
+            />
+            <AppText
+              variant="caption"
+              style={{ color: colors.text.secondary }}
+            >
+              Selected
+            </AppText>
           </View>
           <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: colors.background.secondary }]} />
-            <AppText variant="caption" style={{ color: colors.text.secondary }}>Unavailable</AppText>
+            <View
+              style={[
+                styles.legendDot,
+                { backgroundColor: colors.background.secondary, width: 10, height: 10, borderRadius: 5 },
+              ]}
+            />
+            <AppText
+              variant="caption"
+              style={{ color: colors.text.secondary }}
+            >
+              Unavailable
+            </AppText>
           </View>
           <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: colors.text.disabled }]} />
-            <AppText variant="caption" style={{ color: colors.text.secondary }}>Expired</AppText>
+            <View
+              style={[
+                styles.legendDot,
+                { backgroundColor: colors.text.disabled, width: 10, height: 10, borderRadius: 5 },
+              ]}
+            />
+            <AppText
+              variant="caption"
+              style={{ color: colors.text.secondary }}
+            >
+              Expired
+            </AppText>
           </View>
         </View>
 
         {selectedSlot !== null && (
-          <View style={[styles.summaryCard, { marginHorizontal: spacing.lg, marginTop: spacing.md, backgroundColor: colors.status.successSoft, borderRadius: spacing.md, padding: spacing.lg }]}>
-            <AppText variant="h3" style={{ color: colors.action.primary }}>Selected Slot</AppText>
-            <AppText variant="body" style={{ color: colors.text.primary, marginTop: spacing.xs }}>
+          <View
+            style={[
+              styles.summaryCard,
+              {
+                marginHorizontal: spacing.lg,
+                marginTop: spacing.lg,
+                backgroundColor: colors.status.successSoft,
+                borderRadius: spacing.md,
+                padding: spacing.lg,
+              },
+            ]}
+          >
+            <AppText
+              variant="body"
+              style={{ color: colors.text.secondary, fontWeight: '500' }}
+            >
+              Selected Slot
+            </AppText>
+            <AppText
+              variant="body"
+              style={{ color: colors.text.primary, fontWeight: '600', marginTop: spacing.xs }}
+            >
               {selectedDateObj !== null
-                ? selectedDateObj.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })
-                : new Date(selectedSlot.startTime).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
-              {' · '}
+                ? selectedDateObj.toLocaleDateString('en-IN', {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long',
+                  })
+                : new Date(selectedSlot.startTime).toLocaleDateString('en-IN', {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long',
+                  })}
+              {' • '}
               {formatTime(selectedSlot.startTime)}
             </AppText>
           </View>
         )}
       </ScrollView>
 
-      <View style={[styles.stickyFooter, { backgroundColor: colors.surface.default, borderTopColor: colors.border.default, padding: spacing.lg }]}>
+      <View
+        style={[
+          styles.stickyFooter,
+          {
+            backgroundColor: colors.surface.default,
+            borderTopColor: colors.border.default,
+            padding: spacing.lg,
+          },
+        ]}
+      >
         <Button
           title="Continue"
           variant="primary"
@@ -237,17 +400,20 @@ export function SlotSelectionScreen({
 const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  backBtn: { padding: 4 },
+  header: { flexDirection: 'row', alignItems: 'center' },
   scroll: { paddingBottom: 120 },
-  dateSection: {},
-  dateChip: { alignItems: 'center', paddingVertical: 12, paddingHorizontal: 16, borderWidth: 1, minWidth: 52 },
-  slotsSection: {},
+  dateChip: { alignItems: 'center', borderWidth: 1 },
   slotGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  slotChip: { borderWidth: 1, paddingVertical: 12, paddingHorizontal: 16, minWidth: 80, alignItems: 'center' },
+  slotChip: { borderWidth: 1, alignItems: 'center' },
   legend: {},
-  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  legendDot: { width: 8, height: 8, borderRadius: 4 },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  legendDot: {},
   summaryCard: {},
-  stickyFooter: { position: 'absolute', bottom: 0, left: 0, right: 0, borderTopWidth: 1 },
+  stickyFooter: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    borderTopWidth: 1,
+  },
 });

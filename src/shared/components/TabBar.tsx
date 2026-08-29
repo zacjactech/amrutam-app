@@ -1,7 +1,7 @@
 // TabBar - Bottom tab navigation bar
 
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
 import { useThemeColors, useThemeSpacing } from './ThemeProvider';
 import { TabHome, TabConsults, TabShop, TabRecords, TabProfile } from '../assets/icons';
 
@@ -38,8 +38,8 @@ export function TabBar({ activeTab, onTabPress, style }: TabBarProps): React.JSX
         {
           backgroundColor: colors.surface.default,
           borderTopColor: colors.border.default,
-          paddingBottom: spacing.sm,
-          paddingTop: spacing.sm,
+          paddingBottom: spacing.md,
+          paddingTop: spacing.md,
         },
         style,
       ]}
@@ -53,24 +53,15 @@ export function TabBar({ activeTab, onTabPress, style }: TabBarProps): React.JSX
             style={styles.tab}
             onPress={() => onTabPress(tab.key)}
             activeOpacity={0.7}
+            accessibilityLabel={tab.label}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: isActive }}
           >
             <IconComponent
-              width={24}
-              height={24}
+              width={32}
+              height={32}
               color={isActive ? colors.action.primary : colors.text.tertiary}
             />
-            <Text
-              style={[
-                styles.label,
-                {
-                  color: isActive ? colors.action.primary : colors.text.tertiary,
-                  fontWeight: isActive ? '600' : '400',
-                  marginTop: spacing.xs,
-                },
-              ]}
-            >
-              {tab.label}
-            </Text>
           </TouchableOpacity>
         );
       })}
@@ -89,8 +80,5 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  label: {
-    fontSize: 11,
   },
 });

@@ -58,22 +58,22 @@ function ShopErrorBridge(): null {
 
 export default function App(): React.JSX.Element {
   return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <SyncStatusProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <SyncStatusProvider>
           <SyncSchedulerProvider>
-          <ThemeProvider>
-            <ToastProvider>
-              <ShopErrorBridge />
-              <Navigation />
-              <StatusBar style="auto" />
-            </ToastProvider>
-          </ThemeProvider>
+            <ThemeProvider>
+              <ErrorBoundary>
+                <ToastProvider>
+                  <ShopErrorBridge />
+                  <Navigation />
+                  <StatusBar style="auto" />
+                </ToastProvider>
+              </ErrorBoundary>
+            </ThemeProvider>
           </SyncSchedulerProvider>
-          </SyncStatusProvider>
-        </AuthProvider>
-      </QueryClientProvider>
-    </ErrorBoundary>
+        </SyncStatusProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }

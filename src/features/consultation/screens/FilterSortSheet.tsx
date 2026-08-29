@@ -27,22 +27,16 @@ const SORT_OPTIONS = [
   { value: 'name' as const, label: 'Name' },
 ];
 
-const RATING_OPTIONS = [
-  { value: 4.5, label: '4.5+ ★' },
-  { value: 4.0, label: '4.0+ ★' },
-  { value: 3.5, label: '3.5+ ★' },
+const EXPERIENCE_OPTIONS = [
+  { value: null as null, label: 'Any' },
+  { value: 5 as const, label: '1-5 yrs' },
+  { value: 10 as const, label: '5-10 yrs' },
+  { value: 20 as const, label: '10+ yrs' },
 ];
 
-const FEE_OPTIONS = [
-  { value: 500, label: 'Under ₹500' },
-  { value: 1000, label: 'Under ₹1,000' },
-  { value: 2000, label: 'Under ₹2,000' },
-];
-
-const EXP_OPTIONS = [
-  { value: 5, label: '5+ years' },
-  { value: 10, label: '10+ years' },
-  { value: 20, label: '20+ years' },
+const AVAILABILITY_OPTIONS = [
+  { value: false, label: 'Any' },
+  { value: true, label: 'Available now' },
 ];
 
 export function FilterSortSheet({
@@ -74,24 +68,74 @@ export function FilterSortSheet({
       bottomAction={
         activeTab === 'filter' ? (
           <View style={styles.bottomActions}>
-            <Button title="Reset" variant="ghost" size="medium" onPress={handleReset} style={{ flex: 1 }} />
-            <Button title="Apply" variant="primary" size="medium" onPress={handleApply} style={{ flex: 1 }} />
+            <Button
+              title="Reset"
+              variant="ghost"
+              size="medium"
+              onPress={handleReset}
+              style={{ flex: 1 }}
+            />
+            <Button
+              title="Show results"
+              variant="primary"
+              size="medium"
+              onPress={handleApply}
+              style={{ flex: 2 }}
+            />
           </View>
         ) : undefined
       }
     >
-      <View style={styles.tabs}>
+      <View style={[styles.tabs, { borderBottomColor: colors.border.default }]}>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'filter' && { borderBottomColor: colors.action.primary }]}
+          style={[
+            styles.tab,
+            activeTab === 'filter' && {
+              borderBottomColor: colors.action.primary,
+            },
+          ]}
           onPress={() => onTabChange('filter')}
+          accessibilityLabel="Filter tab"
+          accessibilityRole="tab"
+          accessibilityState={{ selected: activeTab === 'filter' }}
         >
-          <AppText variant="body" style={{ color: activeTab === 'filter' ? colors.action.primary : colors.text.secondary, fontWeight: activeTab === 'filter' ? '600' : '400' }}>Filter</AppText>
+          <AppText
+            variant="body"
+            style={{
+              color:
+                activeTab === 'filter'
+                  ? colors.action.primary
+                  : colors.text.secondary,
+              fontWeight: activeTab === 'filter' ? '600' : '400',
+            }}
+          >
+            Filter
+          </AppText>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'sort' && { borderBottomColor: colors.action.primary }]}
+          style={[
+            styles.tab,
+            activeTab === 'sort' && {
+              borderBottomColor: colors.action.primary,
+            },
+          ]}
           onPress={() => onTabChange('sort')}
+          accessibilityLabel="Sort tab"
+          accessibilityRole="tab"
+          accessibilityState={{ selected: activeTab === 'sort' }}
         >
-          <AppText variant="body" style={{ color: activeTab === 'sort' ? colors.action.primary : colors.text.secondary, fontWeight: activeTab === 'sort' ? '600' : '400' }}>Sort</AppText>
+          <AppText
+            variant="body"
+            style={{
+              color:
+                activeTab === 'sort'
+                  ? colors.action.primary
+                  : colors.text.secondary,
+              fontWeight: activeTab === 'sort' ? '600' : '400',
+            }}
+          >
+            Sort
+          </AppText>
         </TouchableOpacity>
       </View>
 
@@ -102,11 +146,35 @@ export function FilterSortSheet({
             return (
               <TouchableOpacity
                 key={opt.value}
-                style={[styles.optionRow, { paddingVertical: spacing.md, borderBottomColor: colors.border.light, borderBottomWidth: 1 }]}
-                onPress={() => { onSortChange(opt.value); onClose(); }}
+                style={[
+                  styles.optionRow,
+                  {
+                    paddingVertical: spacing.md,
+                    borderBottomColor: colors.border.light,
+                    borderBottomWidth: 1,
+                  },
+                ]}
+                onPress={() => {
+                  onSortChange(opt.value);
+                  onClose();
+                }}
+                accessibilityLabel={`Sort by ${opt.label}`}
+                accessibilityRole="button"
+                accessibilityState={{ selected: active }}
               >
-                <AppText variant="body" style={{ color: colors.text.primary, flex: 1 }}>{opt.label}</AppText>
-                {active && <IconCheckContainer width={18} height={18} color={colors.action.primary} />}
+                <AppText
+                  variant="body"
+                  style={{ color: colors.text.primary, flex: 1 }}
+                >
+                  {opt.label}
+                </AppText>
+                {active && (
+                  <IconCheckContainer
+                    width={18}
+                    height={18}
+                    color={colors.action.primary}
+                  />
+                )}
               </TouchableOpacity>
             );
           })}
@@ -115,69 +183,175 @@ export function FilterSortSheet({
 
       {activeTab === 'filter' && (
         <View style={styles.section}>
-          <AppText variant="label" style={{ color: colors.text.secondary, marginBottom: spacing.sm }}>Specialization</AppText>
+          <AppText
+            variant="label"
+            style={{
+              color: colors.text.secondary,
+              marginBottom: spacing.sm,
+              textTransform: 'uppercase',
+            }}
+          >
+            Specialization
+          </AppText>
           <View style={styles.chipRow}>
             {SPECIALIZATIONS.map((spec) => {
               const active = filter.specialization === spec;
               return (
                 <TouchableOpacity
                   key={spec}
-                  style={[styles.chip, { borderColor: active ? colors.action.primary : colors.border.default, backgroundColor: active ? colors.action.primarySoft : 'transparent' }]}
-                  onPress={() => onFilterChange({ ...filter, specialization: active ? null : spec })}
+                  style={[
+                    styles.chip,
+                    {
+                      borderColor: active
+                        ? colors.action.primary
+                        : colors.border.default,
+                      backgroundColor: active
+                        ? colors.action.primarySoft
+                        : 'transparent',
+                    },
+                  ]}
+                  onPress={() =>
+                    onFilterChange({
+                      ...filter,
+                      specialization: active ? null : spec,
+                    })
+                  }
+                  accessibilityLabel={`Filter by ${spec}`}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
                 >
-                  <AppText variant="bodySmall" style={{ color: active ? colors.action.primary : colors.text.primary }}>{spec}</AppText>
+                  <AppText
+                    variant="bodySmall"
+                    style={{
+                      color: active
+                        ? colors.action.primary
+                        : colors.text.primary,
+                    }}
+                  >
+                    {spec}
+                  </AppText>
                 </TouchableOpacity>
               );
             })}
           </View>
 
-          <AppText variant="label" style={{ color: colors.text.secondary, marginTop: spacing.lg, marginBottom: spacing.sm }}>Rating</AppText>
-          <View style={styles.chipRow}>
-            {RATING_OPTIONS.map((opt) => {
-              const active = filter.minRating === opt.value;
-              return (
-                <TouchableOpacity
-                  key={opt.value}
-                  style={[styles.chip, { borderColor: active ? colors.action.primary : colors.border.default, backgroundColor: active ? colors.action.primarySoft : 'transparent' }]}
-                  onPress={() => onFilterChange({ ...filter, minRating: active ? null : opt.value })}
+          <AppText
+            variant="label"
+            style={{
+              color: colors.text.secondary,
+              marginTop: spacing.lg,
+              marginBottom: spacing.sm,
+              textTransform: 'uppercase',
+            }}
+          >
+            Experience
+          </AppText>
+          {EXPERIENCE_OPTIONS.map((opt) => {
+            const active = filter.minExperience === opt.value;
+            return (
+              <TouchableOpacity
+                key={opt.label}
+                style={[
+                  styles.radioRow,
+                  {
+                    paddingVertical: spacing.md,
+                    borderBottomColor: colors.border.light,
+                    borderBottomWidth: 1,
+                  },
+                ]}
+                onPress={() =>
+                  onFilterChange({
+                    ...filter,
+                    minExperience: active ? null : opt.value,
+                  })
+                }
+                accessibilityLabel={`Filter by experience ${opt.label}`}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: active }}
+              >
+                <AppText
+                  variant="body"
+                  style={{ color: colors.text.primary, flex: 1 }}
                 >
-                  <AppText variant="bodySmall" style={{ color: active ? colors.action.primary : colors.text.primary }}>{opt.label}</AppText>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+                  {opt.label}
+                </AppText>
+                <View
+                  style={[
+                    styles.radio,
+                    {
+                      borderColor: active
+                        ? colors.action.primary
+                        : colors.border.default,
+                      backgroundColor: active
+                        ? colors.action.primary
+                        : 'transparent',
+                    },
+                  ]}
+                >
+                  {active && <View style={[styles.radioDot, { backgroundColor: colors.text.inverse }]} />}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
 
-          <AppText variant="label" style={{ color: colors.text.secondary, marginTop: spacing.lg, marginBottom: spacing.sm }}>Max Fee</AppText>
-          <View style={styles.chipRow}>
-            {FEE_OPTIONS.map((opt) => {
-              const active = filter.maxFee === opt.value;
-              return (
-                <TouchableOpacity
-                  key={opt.value}
-                  style={[styles.chip, { borderColor: active ? colors.action.primary : colors.border.default, backgroundColor: active ? colors.action.primarySoft : 'transparent' }]}
-                  onPress={() => onFilterChange({ ...filter, maxFee: active ? null : opt.value })}
+          <AppText
+            variant="label"
+            style={{
+              color: colors.text.secondary,
+              marginTop: spacing.lg,
+              marginBottom: spacing.sm,
+              textTransform: 'uppercase',
+            }}
+          >
+            Availability
+          </AppText>
+          {AVAILABILITY_OPTIONS.map((opt) => {
+            const active = filter.availableOnly === opt.value;
+            return (
+              <TouchableOpacity
+                key={opt.label}
+                style={[
+                  styles.radioRow,
+                  {
+                    paddingVertical: spacing.md,
+                    borderBottomColor: colors.border.light,
+                    borderBottomWidth: 1,
+                  },
+                ]}
+                onPress={() =>
+                  onFilterChange({
+                    ...filter,
+                    availableOnly: opt.value as boolean,
+                  })
+                }
+                accessibilityLabel={`Filter by availability ${opt.label}`}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: active }}
+              >
+                <AppText
+                  variant="body"
+                  style={{ color: colors.text.primary, flex: 1 }}
                 >
-                  <AppText variant="bodySmall" style={{ color: active ? colors.action.primary : colors.text.primary }}>{opt.label}</AppText>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-
-          <AppText variant="label" style={{ color: colors.text.secondary, marginTop: spacing.lg, marginBottom: spacing.sm }}>Experience</AppText>
-          <View style={styles.chipRow}>
-            {EXP_OPTIONS.map((opt) => {
-              const active = filter.minExperience === opt.value;
-              return (
-                <TouchableOpacity
-                  key={opt.value}
-                  style={[styles.chip, { borderColor: active ? colors.action.primary : colors.border.default, backgroundColor: active ? colors.action.primarySoft : 'transparent' }]}
-                  onPress={() => onFilterChange({ ...filter, minExperience: active ? null : opt.value })}
+                  {opt.label}
+                </AppText>
+                <View
+                  style={[
+                    styles.radio,
+                    {
+                      borderColor: active
+                        ? colors.action.primary
+                        : colors.border.default,
+                      backgroundColor: active
+                        ? colors.action.primary
+                        : 'transparent',
+                    },
+                  ]}
                 >
-                  <AppText variant="bodySmall" style={{ color: active ? colors.action.primary : colors.text.primary }}>{opt.label}</AppText>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+                  {active && <View style={[styles.radioDot, { backgroundColor: colors.text.inverse }]} />}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
         </View>
       )}
     </BottomSheet>
@@ -185,11 +359,40 @@ export function FilterSortSheet({
 }
 
 const styles = StyleSheet.create({
-  tabs: { flexDirection: 'row', marginBottom: 16, borderBottomWidth: 1, borderBottomColor: '#E5E7EB' },
-  tab: { flex: 1, paddingVertical: 12, alignItems: 'center', borderBottomWidth: 2, borderBottomColor: 'transparent' },
+  tabs: {
+    flexDirection: 'row',
+    marginBottom: 16,
+    borderBottomWidth: 1,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
   section: { paddingTop: 8 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, borderWidth: 1 },
+  chip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
   optionRow: { flexDirection: 'row', alignItems: 'center' },
+  radioRow: { flexDirection: 'row', alignItems: 'center' },
+  radio: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  radioDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
   bottomActions: { flexDirection: 'row', gap: 12 },
 });

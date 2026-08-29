@@ -60,7 +60,7 @@ export function CheckoutScreen({ navigation }: CheckoutScreenProps) {
     <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
       <View style={[styles.header, { paddingHorizontal: spacing.lg, paddingTop: spacing.xl, paddingBottom: spacing.md, borderBottomColor: colors.border.default }]}>
         <View style={styles.titleRow}>
-          <TouchableOpacity onPress={navigation.goBack} hitSlop={8}>
+          <TouchableOpacity onPress={navigation.goBack} hitSlop={8} accessibilityLabel="Go back" accessibilityRole="button">
             <AppText variant="h1">←</AppText>
           </TouchableOpacity>
           <AppText variant="h3" style={{ fontWeight: '700' }}>Checkout</AppText>
@@ -95,7 +95,7 @@ export function CheckoutScreen({ navigation }: CheckoutScreenProps) {
         <Card variant="elevated" style={{ marginHorizontal: spacing.lg, marginBottom: spacing.md }}>
           <View style={styles.addressHeader}>
             <AppText variant="h4">Delivery Address</AppText>
-            <TouchableOpacity>
+            <TouchableOpacity accessibilityLabel="Change delivery address" accessibilityRole="button">
               <AppText variant="body" style={{ color: colors.action.primary, fontWeight: '600' }}>[Change]</AppText>
             </TouchableOpacity>
           </View>
@@ -132,6 +132,9 @@ export function CheckoutScreen({ navigation }: CheckoutScreenProps) {
           <TouchableOpacity
             style={[styles.paymentOption, { borderColor: paymentMethod === 'upi' ? colors.action.primary : colors.border.default, backgroundColor: paymentMethod === 'upi' ? colors.action.primarySoft : 'transparent' }]}
             onPress={() => setPaymentMethod('upi')}
+            accessibilityLabel="Pay with UPI"
+            accessibilityRole="radio"
+            accessibilityState={{ selected: paymentMethod === 'upi' }}
           >
             <View style={[styles.radio, { borderColor: paymentMethod === 'upi' ? colors.action.primary : colors.text.disabled }]}>
               {paymentMethod === 'upi' && <View style={[styles.radioInner, { backgroundColor: colors.action.primary }]} />}
@@ -141,6 +144,9 @@ export function CheckoutScreen({ navigation }: CheckoutScreenProps) {
           <TouchableOpacity
             style={[styles.paymentOption, { borderColor: paymentMethod === 'card' ? colors.action.primary : colors.border.default, backgroundColor: paymentMethod === 'card' ? colors.action.primarySoft : 'transparent' }]}
             onPress={() => setPaymentMethod('card')}
+            accessibilityLabel="Pay with credit or debit card"
+            accessibilityRole="radio"
+            accessibilityState={{ selected: paymentMethod === 'card' }}
           >
             <View style={[styles.radio, { borderColor: paymentMethod === 'card' ? colors.action.primary : colors.text.disabled }]}>
               {paymentMethod === 'card' && <View style={[styles.radioInner, { backgroundColor: colors.action.primary }]} />}

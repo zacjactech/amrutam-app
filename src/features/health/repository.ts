@@ -61,7 +61,9 @@ export class HealthRecordRepositoryImpl implements HealthRecordRepository {
     }
 
     if (filter.searchQuery) {
-      query = query.or(`title.ilike.%${filter.searchQuery}%,description.ilike.%${filter.searchQuery}%`);
+      // Sanitize search input to prevent ilike filter injection
+      const sanitized = filter.searchQuery.replace(/[%_]/g, (match) => `\\${match}`);
+      query = query.or(`title.ilike.%${sanitized}%,description.ilike.%${sanitized}%`);
     }
 
     if (filter.types.length > 0) {
@@ -117,10 +119,12 @@ export class HealthRecordRepositoryImpl implements HealthRecordRepository {
   }
 
   async searchRecords(query: string, patientId?: string): Promise<HealthRecord[]> {
+    // Sanitize search input to prevent ilike filter injection
+    const sanitized = query.replace(/[%_]/g, (match) => `\\${match}`);
     let queryBuilder = supabase
       .from('health_records')
       .select('*')
-      .or(`title.ilike.%${query}%,description.ilike.%${query}%`);
+      .or(`title.ilike.%${sanitized}%,description.ilike.%${sanitized}%`);
 
     if (patientId) {
       queryBuilder = queryBuilder.eq('patient_id', patientId);

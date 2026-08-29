@@ -1,10 +1,12 @@
 // AppErrorState - Error state with retry
 
 import React from 'react';
-import { View, Text, StyleSheet, ViewStyle } from 'react-native';
+import { View, StyleSheet, ViewStyle } from 'react-native';
+import { AppText } from './AppText';
 import { Button } from './Button';
 import { useThemeColors, useThemeSpacing } from './ThemeProvider';
 import { classifyApiError } from '../errors/errorClasses';
+import { AlertCircle } from '../assets/icons';
 
 interface AppErrorStateProps {
   error?: unknown;
@@ -39,14 +41,14 @@ export function AppErrorState({
   return (
     <View style={[styles.container, { padding: spacing.xxl }, style]}>
       <View style={[styles.iconCircle, { backgroundColor: colors.status.errorSoft, marginBottom: spacing.lg }]}>
-        <Text style={[styles.errorIcon, { color: colors.status.error }]}>✕</Text>
+        <AlertCircle width={32} height={32} color={colors.status.error} />
       </View>
-      <Text style={[styles.title, { color: colors.text.primary, marginBottom: spacing.sm }]}>
+      <AppText variant="h3" style={{ color: colors.text.primary, marginBottom: spacing.sm, textAlign: 'center' }}>
         {displayTitle}
-      </Text>
-      <Text style={[styles.message, { color: colors.text.secondary, marginBottom: spacing.xl }]}>
+      </AppText>
+      <AppText variant="body" style={{ color: colors.text.secondary, marginBottom: spacing.xl, textAlign: 'center' }}>
         {displayMessage}
-      </Text>
+      </AppText>
       <View style={styles.actions}>
         {isRetryable && onRetry && (
           <Button title={actionLabel} variant="outline" size="medium" onPress={onRetry} />
@@ -68,25 +70,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   iconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  errorIcon: {
-    fontSize: 28,
-    fontWeight: '700',
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-  message: {
-    fontSize: 14,
-    lineHeight: 20,
-    textAlign: 'center',
   },
   actions: {
     flexDirection: 'row',

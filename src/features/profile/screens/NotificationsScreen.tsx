@@ -14,6 +14,7 @@ import {
   ShoppingBag,
   Shield,
 } from '../../../shared/assets/icons';
+import { lightTheme } from '../../../shared/design-system/theme';
 
 type NotificationType = 'consultation' | 'order' | 'health' | 'reminder' | 'system';
 
@@ -34,12 +35,12 @@ const NOTIFICATION_ICONS: Record<NotificationType, React.ComponentType<{ width: 
   system: AlertTriangle,
 };
 
-const NOTIFICATION_COLORS: Record<NotificationType, string> = {
-  consultation: '#2D6A4F',
-  order: '#F59E0B',
-  health: '#3B82F6',
-  reminder: '#7C3AED',
-  system: '#DC2626',
+const NOTIFICATION_THEME: Record<NotificationType, { color: string; soft: string; colorSource: 'record' | 'status' }> = {
+  consultation: { color: 'consultation', soft: 'consultationSoft', colorSource: 'record' },
+  order: { color: 'warning', soft: 'warningSoft', colorSource: 'status' },
+  health: { color: 'info', soft: 'infoSoft', colorSource: 'status' },
+  reminder: { color: 'consultation', soft: 'consultationSoft', colorSource: 'record' },
+  system: { color: 'error', soft: 'errorSoft', colorSource: 'status' },
 };
 
 interface NotificationsScreenProps {
@@ -94,7 +95,7 @@ export function NotificationsScreen({ navigation }: NotificationsScreenProps) {
     <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
       <View style={[styles.header, { paddingHorizontal: spacing.lg, paddingTop: spacing.xxl, paddingBottom: spacing.sm }]}>
         <View style={styles.titleRow}>
-          <TouchableOpacity onPress={navigation.goBack} hitSlop={8}>
+          <TouchableOpacity onPress={navigation.goBack} hitSlop={8} accessibilityLabel="Go back" accessibilityRole="button">
             <AppText variant="body" style={{ color: colors.action.primary }}>
               ← Back
             </AppText>
@@ -110,7 +111,7 @@ export function NotificationsScreen({ navigation }: NotificationsScreenProps) {
             )}
           </View>
           {unreadCount > 0 && (
-            <TouchableOpacity onPress={handleMarkAllRead}>
+            <TouchableOpacity onPress={handleMarkAllRead} accessibilityLabel="Mark all notifications as read" accessibilityRole="button">
               <AppText variant="bodySmall" style={{ color: colors.action.primary, fontWeight: '600' }}>
                 Mark all read
               </AppText>
@@ -147,7 +148,13 @@ export function NotificationsScreen({ navigation }: NotificationsScreenProps) {
         ) : (
           notifications.map((notification) => {
             const IconComponent = NOTIFICATION_ICONS[notification.type];
-            const iconColor = NOTIFICATION_COLORS[notification.type];
+            const theme = NOTIFICATION_THEME[notification.type];
+            const iconColor = theme.colorSource === 'record'
+              ? colors.record[theme.color as keyof typeof colors.record]
+              : colors.status[theme.color as keyof typeof colors.status];
+            const iconSoft = theme.colorSource === 'record'
+              ? colors.record[theme.soft as keyof typeof colors.record]
+              : colors.status[theme.soft as keyof typeof colors.status];
 
             return (
               <TouchableOpacity
@@ -163,12 +170,14 @@ export function NotificationsScreen({ navigation }: NotificationsScreenProps) {
                 ]}
                 onPress={() => handleNotificationPress(notification)}
                 activeOpacity={0.7}
+                accessibilityLabel={`${notification.read ? '' : 'Unread: '}${notification.title}`}
+                accessibilityRole="button"
               >
                 <View style={styles.notificationRow}>
                   <View
                     style={[
                       styles.iconContainer,
-                      { backgroundColor: iconColor + '15', width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
+                      { backgroundColor: iconSoft, width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
                     ]}
                   >
                     <IconComponent width={20} height={20} color={iconColor} />
@@ -243,11 +252,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   notificationCard: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
-    elevation: 2,
+    ...lightTheme.shadows.sm,
   },
   notificationRow: {
     flexDirection: 'row',

@@ -31,7 +31,7 @@ export function AttachmentThumbnail({ attachment, onPress }: AttachmentThumbnail
       ) : (
         <Image
           source={{ uri: attachment.thumbnailUrl }}
-          style={styles.image}
+          style={[styles.image, { backgroundColor: colors.background.secondary }]}
           contentFit="cover"
           placeholder={{ blurhash: 'LGF5?xYk^6%M%%2e2~qoJ^Rj@AjZ' }}
         />
@@ -52,7 +52,6 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 8,
-    backgroundColor: '#F0F2EF',
   },
   pdfPlaceholder: {
     width: 80,

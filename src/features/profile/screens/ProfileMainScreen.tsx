@@ -65,14 +65,18 @@ export function ProfileMainScreen({ navigation }: ProfileMainScreenProps) {
         </View>
         <View style={[styles.section, { backgroundColor: colors.surface.default, borderColor: colors.border.default }]}>
           <TouchableOpacity
-            style={styles.row}
+            style={[styles.row, { borderBottomColor: colors.border.default }]}
             onPress={() => navigation.navigate('Settings')}
+            accessibilityLabel="Settings"
+            accessibilityRole="button"
           >
             <AppText variant="body" style={{ color: colors.text.primary }}>Settings</AppText>
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.row}
+            style={[styles.row, { borderBottomColor: colors.border.default }]}
             onPress={() => navigation.navigate('Notifications')}
+            accessibilityLabel="Notifications"
+            accessibilityRole="button"
           >
             <AppText variant="body" style={{ color: colors.text.primary }}>Notifications</AppText>
           </TouchableOpacity>
@@ -111,6 +115,5 @@ const styles = StyleSheet.create({
   row: {
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
   },
 });

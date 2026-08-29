@@ -11,12 +11,13 @@ import { useThemeColors, useThemeSpacing } from '../../../shared/components/Them
 import { ArrowLeft, Share, IconDownload, FileText } from '../../../shared/assets/icons';
 import { shareRecordAsPdf, downloadRecordAsPdf } from '../pdfExporter';
 
-const RECORD_TYPE_COLORS: Record<string, string> = {
-  lab_report: '#3B82F6',
-  prescription: '#2D6A4F',
-  consultation: '#7C3AED',
-  vaccination: '#06B6D4',
-  allergy: '#F97316',
+import { lightTheme } from '../../../shared/design-system/theme';
+const RECORD_TYPE_THEME: Record<string, string> = {
+  lab_report: 'lab',
+  prescription: 'prescription',
+  consultation: 'consultation',
+  vaccination: 'vaccination',
+  allergy: 'allergy',
 };
 
 interface RecordDetailScreenProps {
@@ -76,13 +77,14 @@ export function RecordDetailScreen({ route, navigation }: RecordDetailScreenProp
     );
   }
 
-  const typeColor = RECORD_TYPE_COLORS[record.type] ?? '#6B7280';
+  const typeKey = RECORD_TYPE_THEME[record.type] ?? 'lab';
+  const typeColor = colors.record[typeKey as keyof typeof colors.record];
   const date = new Date(record.occurredAt);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
       <View style={[styles.topBar, { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.sm, backgroundColor: colors.surface.default, borderBottomColor: colors.border.light, borderBottomWidth: 1 }]}>
-        <TouchableOpacity onPress={navigation.goBack} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <TouchableOpacity onPress={navigation.goBack} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel="Go back" accessibilityRole="button">
           <ArrowLeft width={20} height={20} color={colors.text.primary} />
         </TouchableOpacity>
         <View style={styles.topBarRight}>
@@ -137,6 +139,8 @@ export function RecordDetailScreen({ route, navigation }: RecordDetailScreenProp
                 onPress={() => navigation.navigate('AttachmentPreview', { attachment: att })}
                 activeOpacity={0.7}
                 style={[styles.attachmentCard, { backgroundColor: colors.surface.default, borderRadius: spacing.md, padding: spacing.md, marginBottom: spacing.sm, flexDirection: 'row', alignItems: 'center' }]}
+                accessibilityLabel={`View attachment ${att.name}`}
+                accessibilityRole="button"
               >
                 <View style={[styles.attachmentIcon, { backgroundColor: att.mimeType === 'application/pdf' ? colors.status.error + '20' : colors.status.info + '20', width: 48, height: 48, borderRadius: spacing.sm, justifyContent: 'center', alignItems: 'center', marginRight: spacing.md }]}>
                   {att.mimeType === 'application/pdf' ? <FileText width={24} height={24} color={colors.status.error} /> : <AppText variant="h3">🖼️</AppText>}
@@ -190,11 +194,11 @@ function LabReportContent({ record, colors, spacing }: { record: HealthRecord; c
             >
               <AppText variant="body" style={{ flex: 2, color: colors.text.primary }}>{test.name}</AppText>
               <View style={{ flex: 1.5, flexDirection: 'row', alignItems: 'center' }}>
-                <AppText variant="body" style={{ color: test.normal ? '#2D6A4F' : '#F97316', fontWeight: '600' }}>
+                <AppText variant="body" style={{ color: test.normal ? colors.status.success : colors.status.warning, fontWeight: '600' }}>
                   {test.result}
                 </AppText>
                 {!test.normal && (
-                  <AppText variant="caption" style={{ color: '#F97316', marginLeft: 4 }}>▲</AppText>
+                  <AppText variant="caption" style={{ color: colors.status.warning, marginLeft: 4 }}>▲</AppText>
                 )}
               </View>
               <AppText variant="body" style={{ flex: 1.5, color: colors.text.tertiary, textAlign: 'right' }}>
@@ -206,7 +210,7 @@ function LabReportContent({ record, colors, spacing }: { record: HealthRecord; c
       </View>
 
       <View style={[styles.section, { marginTop: spacing.xl }]}>
-        <AppText variant="label" style={{ color: '#F97316', marginBottom: spacing.sm, textTransform: 'uppercase', fontWeight: '700' }}>
+        <AppText variant="label" style={{ color: colors.record.allergy, marginBottom: spacing.sm, textTransform: 'uppercase', fontWeight: '700' }}>
           Doctor's Summary
         </AppText>
         <View style={[styles.summaryCard, { backgroundColor: colors.surface.default, borderRadius: spacing.md, padding: spacing.md }]}>
@@ -235,10 +239,10 @@ function PrescriptionContent({ colors, spacing }: { record: HealthRecord; colors
         {medications.map((med) => (
           <View
             key={med.name}
-            style={[styles.medCard, { backgroundColor: colors.surface.default, borderRadius: spacing.md, padding: spacing.md, marginBottom: spacing.sm, borderLeftWidth: 3, borderLeftColor: '#2D6A4F' }]}
+            style={[styles.medCard, { backgroundColor: colors.surface.default, borderRadius: spacing.md, padding: spacing.md, marginBottom: spacing.sm, borderLeftWidth: 3, borderLeftColor: colors.record.prescription }]}
           >
             <View style={styles.medHeader}>
-              <AppText variant="body" style={{ color: '#2D6A4F', fontWeight: '700', flex: 1 }}>
+              <AppText variant="body" style={{ color: colors.record.prescription, fontWeight: '700', flex: 1 }}>
                 {med.name}
               </AppText>
               <AppText variant="caption" style={{ color: colors.text.secondary }}>
@@ -265,24 +269,24 @@ function PrescriptionContent({ colors, spacing }: { record: HealthRecord; colors
       </View>
 
       <View style={[styles.section, { marginTop: spacing.lg }]}>
-        <View style={[styles.instructionsCard, { backgroundColor: '#D1FAE5', borderRadius: spacing.md, padding: spacing.md }]}>
-          <AppText variant="label" style={{ color: '#2D6A4F', marginBottom: spacing.xs, textTransform: 'uppercase', fontWeight: '700' }}>
+        <View style={[styles.instructionsCard, { backgroundColor: colors.action.primarySoft, borderRadius: spacing.md, padding: spacing.md }]}>
+          <AppText variant="label" style={{ color: colors.action.primary, marginBottom: spacing.xs, textTransform: 'uppercase', fontWeight: '700' }}>
             Special Instructions
           </AppText>
-          <AppText variant="body" style={{ color: '#1B4332', lineHeight: 20 }}>
+          <AppText variant="body" style={{ color: colors.action.primaryPressed, lineHeight: 20 }}>
             Take medicines on an empty stomach for best absorption. Avoid cold and spicy foods during the course. Continue for the full prescribed duration even if symptoms improve.
           </AppText>
         </View>
       </View>
 
       <View style={[styles.section, { marginTop: spacing.lg }]}>
-        <View style={[styles.followUpBanner, { backgroundColor: '#FEF3C7', borderRadius: spacing.md, padding: spacing.md, flexDirection: 'row', alignItems: 'center' }]}>
+        <View style={[styles.followUpBanner, { backgroundColor: colors.status.warningSoft, borderRadius: spacing.md, padding: spacing.md, flexDirection: 'row', alignItems: 'center' }]}>
           <AppText variant="h3" style={{ marginRight: spacing.sm }}>⏰</AppText>
           <View style={{ flex: 1 }}>
-            <AppText variant="body" style={{ color: '#92400E', fontWeight: '600' }}>
+            <AppText variant="body" style={{ color: colors.status.warning, fontWeight: '600' }}>
               Follow-up in 14 days
             </AppText>
-            <AppText variant="caption" style={{ color: '#A16207' }}>
+            <AppText variant="caption" style={{ color: colors.text.secondary }}>
               September 10, 2026
             </AppText>
           </View>
@@ -320,9 +324,9 @@ function ConsultationContent({ colors, spacing }: { record: HealthRecord; colors
           {['Ashwagandha', 'Brahmi', 'Triphala', 'Brahmi Syrup'].map((med) => (
             <View
               key={med}
-              style={[styles.medChip, { backgroundColor: '#D1FAE5', paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: 999 }]}
+              style={[styles.medChip, { backgroundColor: colors.action.primarySoft, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: 999 }]}
             >
-              <AppText variant="body" style={{ color: '#2D6A4F', fontWeight: '500' }}>
+              <AppText variant="body" style={{ color: colors.action.primary, fontWeight: '500' }}>
                 💊 {med}
               </AppText>
             </View>
@@ -345,14 +349,14 @@ function VaccinationContent({ record, colors, spacing }: { record: HealthRecord;
   return (
     <>
       <View style={[styles.section, { marginTop: spacing.xl }]}>
-        <View style={[styles.highlightCard, { backgroundColor: '#CFFAFE', borderRadius: spacing.md, padding: spacing.md, borderLeftWidth: 4, borderLeftColor: '#06B6D4' }]}>
-          <AppText variant="label" style={{ color: '#0E7490', marginBottom: spacing.xs, textTransform: 'uppercase', fontWeight: '700' }}>
+        <View style={[styles.highlightCard, { backgroundColor: colors.record.vaccinationSoft, borderRadius: spacing.md, padding: spacing.md, borderLeftWidth: 4, borderLeftColor: colors.record.vaccination }]}>
+          <AppText variant="label" style={{ color: colors.record.vaccination, marginBottom: spacing.xs, textTransform: 'uppercase', fontWeight: '700' }}>
             Next Booster Due
           </AppText>
-          <AppText variant="h3" style={{ color: '#155E75', marginBottom: spacing.xs }}>
+          <AppText variant="h3" style={{ color: colors.text.primary, marginBottom: spacing.xs }}>
             {nextBooster.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
           </AppText>
-          <AppText variant="bodySmall" style={{ color: '#0E7490' }}>
+          <AppText variant="bodySmall" style={{ color: colors.record.vaccination }}>
             Schedule within 2 weeks before the due date
           </AppText>
         </View>
@@ -409,10 +413,10 @@ function AllergyContent({ record, colors, spacing }: { record: HealthRecord; col
           {(['mild', 'moderate', 'severe'] as const).map((level) => {
             const isSelected = severity === level;
             const bgColor = isSelected
-              ? level === 'mild' ? '#F97316' : level === 'moderate' ? '#DC2626' : '#7F1D1D'
+              ? level === 'mild' ? colors.record.allergy : level === 'moderate' ? colors.status.error : colors.action.primaryPressed
               : 'transparent';
             const borderColor = isSelected
-              ? level === 'mild' ? '#F97316' : level === 'moderate' ? '#DC2626' : '#7F1D1D'
+              ? level === 'mild' ? colors.record.allergy : level === 'moderate' ? colors.status.error : colors.action.primaryPressed
               : colors.border.default;
             return (
               <TouchableOpacity
@@ -422,7 +426,7 @@ function AllergyContent({ record, colors, spacing }: { record: HealthRecord; col
               >
                 <AppText
                   variant="body"
-                  style={{ color: isSelected ? '#FFFFFF' : colors.text.primary, fontWeight: isSelected ? '700' : '500', textTransform: 'capitalize' }}
+                  style={{ color: isSelected ? colors.text.inverse : colors.text.primary, fontWeight: isSelected ? '700' : '500', textTransform: 'capitalize' }}
                 >
                   {level === 'mild' ? '😊' : level === 'moderate' ? '😐' : '😟'} {level}
                 </AppText>
@@ -433,11 +437,11 @@ function AllergyContent({ record, colors, spacing }: { record: HealthRecord; col
       </View>
 
       <View style={[styles.section, { marginTop: spacing.xl }]}>
-        <View style={[styles.clinicalCard, { backgroundColor: '#FFEDD5', borderRadius: spacing.md, padding: spacing.md }]}>
-          <AppText variant="label" style={{ color: '#C2410C', marginBottom: spacing.sm, textTransform: 'uppercase', fontWeight: '700' }}>
+        <View style={[styles.clinicalCard, { backgroundColor: colors.record.allergySoft, borderRadius: spacing.md, padding: spacing.md }]}>
+          <AppText variant="label" style={{ color: colors.record.allergy, marginBottom: spacing.sm, textTransform: 'uppercase', fontWeight: '700' }}>
             Clinical Notes
           </AppText>
-          <AppText variant="body" style={{ color: '#9A3412', lineHeight: 22 }}>
+          <AppText variant="body" style={{ color: colors.text.primary, lineHeight: 22 }}>
             {record.description ?? 'Patient has a documented history of this allergy. Prescribed antihistamines for acute episodes. Epinephrine auto-injector recommended for severe reactions. Allergy immunotherapy may be considered after further assessment.'}
           </AppText>
         </View>
@@ -456,27 +460,15 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginBottom: 4 },
   section: {},
   tableCard: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 2,
+    ...lightTheme.shadows.md,
   },
   tableHeader: {},
   tableRow: {},
   summaryCard: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    ...lightTheme.shadows.sm,
   },
   medCard: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 2,
-    elevation: 2,
+    ...lightTheme.shadows.sm,
   },
   medHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   timeChipRow: {},
@@ -484,31 +476,19 @@ const styles = StyleSheet.create({
   instructionsCard: {},
   followUpBanner: {},
   infoCard: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 2,
-    elevation: 1,
+    ...lightTheme.shadows.sm,
   },
   chipRow: {},
   medChip: {},
   highlightCard: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 2,
-    elevation: 1,
+    ...lightTheme.shadows.sm,
   },
   detailRow: {},
   severityRow: {},
   severityButton: {},
   clinicalCard: {},
   attachmentCard: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    ...lightTheme.shadows.sm,
   },
   attachmentIcon: {},
 });

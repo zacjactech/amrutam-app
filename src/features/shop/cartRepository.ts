@@ -69,24 +69,19 @@ export const cartRepository: CartRepository = {
 
   async addItem(productId: string, unitPrice: number, patientId?: string): Promise<CartItem> {
     const db = await getDatabase();
+    const now = new Date().toISOString();
+
+    // Use INSERT OR REPLACE to avoid race condition between SELECT + UPDATE/INSERT
     const existing = await db.getFirstAsync<{ quantity: number }>(
       'SELECT quantity FROM cart_items WHERE product_id = ?',
       [productId],
     );
     const newQuantity = (existing?.quantity ?? 0) + 1;
-    const now = new Date().toISOString();
 
-    const updateResult = await db.runAsync(
-      'UPDATE cart_items SET quantity = ?, unit_price = ?, updated_at = ? WHERE product_id = ?',
-      [newQuantity, unitPrice, now, productId],
+    await db.runAsync(
+      'INSERT INTO cart_items (product_id, quantity, unit_price, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(product_id) DO UPDATE SET quantity = ?, unit_price = ?, updated_at = ?',
+      [productId, newQuantity, unitPrice, now, newQuantity, unitPrice, now],
     );
-
-    if ((updateResult as { rowsAffected?: number }).rowsAffected === 0) {
-      await db.runAsync(
-        'INSERT INTO cart_items (product_id, quantity, unit_price, updated_at) VALUES (?, ?, ?, ?)',
-        [productId, newQuantity, unitPrice, now],
-      );
-    }
 
     if (patientId) {
       syncCartToCloud(patientId).catch((error) => {

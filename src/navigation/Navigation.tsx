@@ -24,7 +24,7 @@ import { SplashScreen } from '../features/auth/screens/SplashScreen';
 import { OnboardingScreen } from '../features/auth/screens/OnboardingScreen';
 import { SignInScreen } from '../features/auth/screens/SignInScreen';
 import { SignUpScreen } from '../features/auth/screens/SignUpScreen';
-import { OTPVerificationScreen } from '../features/auth/screens/OTPVerificationScreen';
+import { EmailVerificationScreen } from '../features/auth/screens/EmailVerificationScreen';
 import { HomeDashboardScreen } from '../features/home/screens/HomeDashboardScreen';
 
 import { ConsultationHomeScreen } from '../features/consultation/screens/ConsultationHomeScreen';
@@ -172,7 +172,6 @@ function BookingSuccessNavigator({ route, navigation }: { route: RouteProp<Consu
   return (
     <BookingSuccessScreen
       doctorName={doctor?.name ?? 'Doctor'}
-      doctorPhoto={doctor?.photoUrl ?? ''}
       date={slotDate.toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
       time={slotDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}
       duration={`${durationMinutes} minutes`}
@@ -216,7 +215,7 @@ function ConsultationDetailsNavigator({ route, navigation }: { route: RouteProp<
         onClose={() => setCancelVisible(false)}
         onConfirmCancel={() => {
           setCancelVisible(false);
-          navigation.navigate('CancellationSuccess');
+          navigation.navigate('CancellationSuccess', { doctorName: cancelDoctorName });
         }}
         doctorName={cancelDoctorName}
         consultationDate={cancelDate}
@@ -225,9 +224,11 @@ function ConsultationDetailsNavigator({ route, navigation }: { route: RouteProp<
   );
 }
 
-function CancellationSuccessNavigator({ navigation }: { navigation: NavigationProp<ConsultationStackParamList> }): React.JSX.Element {
+function CancellationSuccessNavigator({ route, navigation }: { route: RouteProp<ConsultationStackParamList, 'CancellationSuccess'>; navigation: NavigationProp<ConsultationStackParamList> }): React.JSX.Element {
+  const { doctorName } = route.params;
   return (
     <CancellationSuccessScreen
+      doctorName={doctorName}
       onBackToConsultations={() => navigation.goBack()}
     />
   );
@@ -513,8 +514,8 @@ export function Navigation(): React.JSX.Element {
           options={{ animation: 'slide_from_right' }}
         />
         <RootStack.Screen
-          name="OTPVerification"
-          component={OTPVerificationScreen}
+          name="EmailVerification"
+          component={EmailVerificationScreen}
           options={{ animation: 'slide_from_right' }}
         />
         <RootStack.Screen name="MainTabs" component={MainTabsWithSyncBar} />
@@ -527,8 +528,6 @@ export function Navigation(): React.JSX.Element {
 
 const styles = StyleSheet.create({
   tabBar: {
-    backgroundColor: '#FFFFFF',
-    borderTopColor: '#E5E7EB',
     borderTopWidth: 1,
     height: 60,
     paddingBottom: 8,

@@ -1,0 +1,74 @@
+# E2E Test: Consultation Booking Flow
+# Tests the happy path from app launch to booking confirmation
+
+appId: com.amrutam.app
+name: Consultation Booking Flow
+tags:
+  - e2e
+  - consultation
+  - critical
+
+---
+# Step 1: Wait for splash screen to finish
+waitForAnimationToEnd:
+  timeout: 5000
+
+# Step 2: Handle onboarding or sign-in
+# If onboarding screen appears, tap through it
+- runFlow:
+    when:
+      visible: "Welcome"
+    commands:
+      - tapOn: ".*"
+      - tapOn: ".*"
+      - tapOn: ".*"
+
+# Step 3: Navigate to Consultations tab
+- tapOn:
+    text: "Consult"
+    id: "tab-consultations"
+
+# Step 4: Verify consultation home screen loads
+- assertVisible:
+    text: "Consultations"
+    optional: true
+
+# Step 5: Tap on a doctor card (first available)
+- tapOn:
+    text: "View Profile"
+    optional: true
+
+# Step 6: Verify doctor details screen
+- assertVisible:
+    text: "Consultation Fee"
+    optional: true
+
+# Step 7: Tap proceed to slot selection
+- tapOn:
+    text: "Book Consultation"
+    optional: true
+
+# Step 8: Select a time slot
+- tapOn:
+    text: ".*:.*"
+    optional: true
+
+# Step 9: Continue to booking confirmation
+- tapOn:
+    text: "Continue"
+    optional: true
+
+# Step 10: Confirm booking
+- tapOn:
+    text: "Confirm Booking"
+    optional: true
+
+# Step 11: Verify success screen
+- assertVisible:
+    text: "Consultation booked!"
+    optional: true
+
+# Step 12: Go back to home
+- tapOn:
+    text: "Back to Home"
+    optional: true

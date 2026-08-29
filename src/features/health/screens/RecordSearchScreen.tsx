@@ -8,21 +8,22 @@ import { AppText } from '../../../shared/components/AppText';
 import { HealthRecord, RECORD_TYPE_LABELS } from '../types';
 import { useSearchRecords } from '../hooks';
 import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
+import { Flask, Pill, Stethoscope, Syringe, AlertTriangle, ArrowLeft } from '../../../shared/assets/icons';
 
-const RECORD_TYPE_ICONS: Record<string, string> = {
-  lab_report: '🔬',
-  prescription: '💊',
-  consultation: '🩺',
-  vaccination: '💉',
-  allergy: '⚠️',
+const RECORD_TYPE_ICONS: Record<string, React.ComponentType<{ width: number; height: number; color?: string }>> = {
+  lab_report: Flask,
+  prescription: Pill,
+  consultation: Stethoscope,
+  vaccination: Syringe,
+  allergy: AlertTriangle,
 };
 
-const RECORD_TYPE_COLORS: Record<string, string> = {
-  lab_report: '#3B82F6',
-  prescription: '#2D6A4F',
-  consultation: '#7C3AED',
-  vaccination: '#06B6D4',
-  allergy: '#F97316',
+const RECORD_TYPE_THEME: Record<string, string> = {
+  lab_report: 'lab',
+  prescription: 'prescription',
+  consultation: 'consultation',
+  vaccination: 'vaccination',
+  allergy: 'allergy',
 };
 
 interface RecordSearchScreenProps {
@@ -60,8 +61,9 @@ export function RecordSearchScreen({ navigation }: RecordSearchScreenProps) {
 
   const renderResultItem = useCallback(
     ({ item }: { item: HealthRecord }) => {
-      const typeColor = RECORD_TYPE_COLORS[item.type] ?? '#6B7280';
-      const typeIcon = RECORD_TYPE_ICONS[item.type] ?? '📋';
+      const typeKey = RECORD_TYPE_THEME[item.type] ?? 'lab';
+      const typeColor = colors.record[typeKey as keyof typeof colors.record];
+      const IconComponent = RECORD_TYPE_ICONS[item.type];
       const date = new Date(item.occurredAt);
 
       return (
@@ -77,6 +79,8 @@ export function RecordSearchScreen({ navigation }: RecordSearchScreenProps) {
           ]}
           onPress={() => navigation.navigate('RecordDetail', { recordId: item.id })}
           activeOpacity={0.7}
+          accessibilityLabel={`View ${item.title}`}
+          accessibilityRole="button"
         >
           <View style={styles.resultRow}>
             <View
@@ -92,7 +96,7 @@ export function RecordSearchScreen({ navigation }: RecordSearchScreenProps) {
                 },
               ]}
             >
-              <AppText variant="h3">{typeIcon}</AppText>
+              {IconComponent && <IconComponent width={18} height={18} color={typeColor} />}
             </View>
             <View style={{ flex: 1, marginLeft: spacing.md }}>
               <AppText variant="body" style={{ color: colors.text.primary, fontWeight: '600' }}>
@@ -121,8 +125,8 @@ export function RecordSearchScreen({ navigation }: RecordSearchScreenProps) {
   return (
     <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
       <View style={[styles.header, { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.sm, backgroundColor: colors.surface.default }]}>
-        <TouchableOpacity onPress={navigation.goBack} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} style={styles.backBtn}>
-          <AppText variant="h2" style={{ color: colors.text.primary }}>←</AppText>
+        <TouchableOpacity onPress={navigation.goBack} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} style={styles.backBtn} accessibilityLabel="Go back" accessibilityRole="button">
+          <ArrowLeft width={20} height={20} color={colors.text.primary} />
         </TouchableOpacity>
         <View style={{ flex: 1, marginLeft: spacing.md }}>
           <SearchBar
@@ -157,6 +161,8 @@ export function RecordSearchScreen({ navigation }: RecordSearchScreenProps) {
                     alignItems: 'center',
                   },
                 ]}
+                accessibilityLabel={`Search for ${search}`}
+                accessibilityRole="button"
               >
                 <AppText variant="body" style={{ color: colors.text.primary, marginRight: spacing.sm }}>
                   {search}
@@ -164,6 +170,8 @@ export function RecordSearchScreen({ navigation }: RecordSearchScreenProps) {
                 <TouchableOpacity
                   onPress={() => handleRemoveRecent(search)}
                   hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                  accessibilityLabel={`Remove ${search} from recent searches`}
+                  accessibilityRole="button"
                 >
                   <AppText variant="caption" style={{ color: colors.text.tertiary }}>✕</AppText>
                 </TouchableOpacity>

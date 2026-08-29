@@ -5,7 +5,7 @@ import { View, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'reac
 import { Image } from 'expo-image';
 import { AppText } from '../../../shared/components/AppText';
 import { Attachment } from '../types';
-import { useThemeSpacing } from '../../../shared/components/ThemeProvider';
+import { useThemeColors, useThemeSpacing } from '../../../shared/components/ThemeProvider';
 import { ArrowLeft, Share, IconDownload, FileText, IconPrinter, Search } from '../../../shared/assets/icons';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -21,49 +21,50 @@ interface AttachmentPreviewScreenProps {
 
 export function AttachmentPreviewScreen({ route, navigation }: AttachmentPreviewScreenProps) {
   const spacing = useThemeSpacing();
+  const colors = useThemeColors();
   const { attachment } = route.params;
   const isPdf = attachment.mimeType === 'application/pdf';
   const [currentPage, setCurrentPage] = useState(0);
   const totalPages = 3;
 
   return (
-    <View style={[styles.container, { backgroundColor: '#1A1A1A' }]}>
-      <View style={[styles.topBar, { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.sm }]}>
+    <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
+      <View style={[styles.topBar, { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.sm, backgroundColor: colors.background.primary }]}>
         <TouchableOpacity onPress={navigation.goBack} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-          <ArrowLeft width={20} height={20} color="#FFFFFF" />
+          <ArrowLeft width={20} height={20} color={colors.text.inverse} />
         </TouchableOpacity>
-        <AppText variant="body" style={{ color: '#FFFFFF', fontWeight: '600', flex: 1, textAlign: 'center', marginHorizontal: spacing.md }} numberOfLines={1}>
+        <AppText variant="body" style={{ color: colors.text.inverse, fontWeight: '600', flex: 1, textAlign: 'center', marginHorizontal: spacing.md }} numberOfLines={1}>
           {attachment.name}
         </AppText>
         <View style={styles.topBarActions}>
           <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} style={styles.topBarBtn}>
-            <Share width={18} height={18} color="#FFFFFF" />
+            <Share width={18} height={18} color={colors.text.inverse} />
           </TouchableOpacity>
           <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} style={styles.topBarBtn}>
-            <IconDownload width={18} height={18} color="#FFFFFF" />
+            <IconDownload width={18} height={18} color={colors.text.inverse} />
           </TouchableOpacity>
         </View>
       </View>
 
       {isPdf ? (
         <ScrollView contentContainerStyle={styles.pdfContainer} showsVerticalScrollIndicator={false}>
-          <View style={[styles.pdfPreviewCard, { backgroundColor: '#2A2A2A', borderRadius: spacing.md, padding: spacing.xxl, alignItems: 'center', marginHorizontal: spacing.lg, marginTop: spacing.xxl }]}>
-            <FileText width={48} height={48} color="#FFFFFF" style={{ marginBottom: spacing.sm }} />
-            <AppText variant="h3" style={{ color: '#FFFFFF', marginBottom: spacing.xs }}>
+          <View style={[styles.pdfPreviewCard, { backgroundColor: colors.surface.default, borderRadius: spacing.md, padding: spacing.xxl, alignItems: 'center', marginHorizontal: spacing.lg, marginTop: spacing.xxl }]}>
+            <FileText width={48} height={48} color={colors.text.secondary} style={{ marginBottom: spacing.sm }} />
+            <AppText variant="h3" style={{ color: colors.text.primary, marginBottom: spacing.xs }}>
               PDF Document
             </AppText>
-            <AppText variant="body" style={{ color: '#9CA3AF', textAlign: 'center' }}>
+            <AppText variant="body" style={{ color: colors.text.tertiary, textAlign: 'center' }}>
               {attachment.name}
             </AppText>
             {attachment.sizeBytes && (
-              <AppText variant="caption" style={{ color: '#6B7280', marginTop: spacing.sm }}>
+              <AppText variant="caption" style={{ color: colors.text.secondary, marginTop: spacing.sm }}>
                 {(attachment.sizeBytes / 1024).toFixed(1)} KB
               </AppText>
             )}
           </View>
 
           <View style={[styles.pageThumbnails, { marginTop: spacing.xl, paddingHorizontal: spacing.lg }]}>
-            <AppText variant="label" style={{ color: '#9CA3AF', marginBottom: spacing.md }}>
+            <AppText variant="label" style={{ color: colors.text.tertiary, marginBottom: spacing.md }}>
               Pages
             </AppText>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -75,7 +76,7 @@ export function AttachmentPreviewScreen({ route, navigation }: AttachmentPreview
                   style={[
                     styles.pageThumb,
                     {
-                      backgroundColor: currentPage === idx ? '#2D6A4F' : '#333333',
+                      backgroundColor: currentPage === idx ? colors.action.primary : colors.background.primary,
                       borderRadius: spacing.sm,
                       marginRight: spacing.sm,
                       width: 64,
@@ -83,11 +84,11 @@ export function AttachmentPreviewScreen({ route, navigation }: AttachmentPreview
                       justifyContent: 'center',
                       alignItems: 'center',
                       borderWidth: currentPage === idx ? 2 : 0,
-                      borderColor: '#2D6A4F',
+                      borderColor: colors.action.primary,
                     },
                   ]}
                 >
-                  <AppText variant="caption" style={{ color: currentPage === idx ? '#FFFFFF' : '#9CA3AF' }}>
+                  <AppText variant="caption" style={{ color: currentPage === idx ? colors.text.inverse : colors.text.tertiary }}>
                     {idx + 1}
                   </AppText>
                 </TouchableOpacity>
@@ -96,7 +97,7 @@ export function AttachmentPreviewScreen({ route, navigation }: AttachmentPreview
           </View>
 
           <View style={[styles.openWithSection, { marginTop: spacing.xl, paddingHorizontal: spacing.lg }]}>
-            <AppText variant="label" style={{ color: '#9CA3AF', marginBottom: spacing.md, textTransform: 'uppercase' }}>
+            <AppText variant="label" style={{ color: colors.text.tertiary, marginBottom: spacing.md, textTransform: 'uppercase' }}>
               Open with
             </AppText>
             <View style={[styles.openWithRow, { flexDirection: 'row', gap: spacing.sm }]}>
@@ -108,10 +109,10 @@ export function AttachmentPreviewScreen({ route, navigation }: AttachmentPreview
                 <TouchableOpacity
                   key={option.label}
                   activeOpacity={0.7}
-                  style={[styles.openWithBtn, { backgroundColor: '#333333', borderRadius: spacing.md, padding: spacing.md, flex: 1, alignItems: 'center' }]}
+                  style={[styles.openWithBtn, { backgroundColor: colors.surface.default, borderRadius: spacing.md, padding: spacing.md, flex: 1, alignItems: 'center' }]}
                 >
-                  {option.isSvg ? <IconPrinter width={24} height={24} color="#FFFFFF" style={{ marginBottom: spacing.xs }} /> : <AppText variant="h3" style={{ marginBottom: spacing.xs }}>{option.icon}</AppText>}
-                  <AppText variant="caption" style={{ color: '#FFFFFF' }}>{option.label}</AppText>
+                  {option.isSvg ? <IconPrinter width={24} height={24} color={colors.text.primary} style={{ marginBottom: spacing.xs }} /> : <AppText variant="h3" style={{ marginBottom: spacing.xs }}>{option.icon}</AppText>}
+                  <AppText variant="caption" style={{ color: colors.text.primary }}>{option.label}</AppText>
                 </TouchableOpacity>
               ))}
             </View>
@@ -128,39 +129,39 @@ export function AttachmentPreviewScreen({ route, navigation }: AttachmentPreview
             />
           ) : (
             <View style={[styles.noPreview, { padding: spacing.xxl }]}>
-              <AppText variant="h1" style={{ color: '#FFFFFF', marginBottom: spacing.sm }}>🖼️</AppText>
-              <AppText variant="h3" style={{ color: '#FFFFFF', marginBottom: spacing.xs }}>
+              <AppText variant="h1" style={{ color: colors.text.inverse, marginBottom: spacing.sm }}>🖼️</AppText>
+              <AppText variant="h3" style={{ color: colors.text.inverse, marginBottom: spacing.xs }}>
                 No Preview Available
               </AppText>
-              <AppText variant="body" style={{ color: '#9CA3AF', textAlign: 'center' }}>
+              <AppText variant="body" style={{ color: colors.text.tertiary, textAlign: 'center' }}>
                 Image preview is not available for this attachment.
               </AppText>
             </View>
           )}
 
-          <View style={[styles.zoomHint, { position: 'absolute', bottom: spacing.xxl, alignSelf: 'center', backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: 999 }]}>
+          <View style={[styles.zoomHint, { position: 'absolute', bottom: spacing.xxl, alignSelf: 'center', backgroundColor: colors.overlay, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, borderRadius: 999 }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Search width={14} height={14} color="#FFFFFF" style={{ marginRight: 4 }} />
-              <AppText variant="caption" style={{ color: '#FFFFFF' }}>
+              <Search width={14} height={14} color={colors.text.inverse} style={{ marginRight: 4 }} />
+              <AppText variant="caption" style={{ color: colors.text.inverse }}>
                 Pinch to zoom
               </AppText>
             </View>
           </View>
 
           <TouchableOpacity
-            style={[styles.navArrow, styles.navArrowLeft, { backgroundColor: 'rgba(0,0,0,0.5)', width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' }]}
+            style={[styles.navArrow, styles.navArrowLeft, { backgroundColor: colors.overlay, width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' }]}
             onPress={() => setCurrentPage((p) => Math.max(0, p - 1))}
             activeOpacity={0.7}
           >
-            <AppText variant="h3" style={{ color: '#FFFFFF' }}>‹</AppText>
+            <AppText variant="h3" style={{ color: colors.text.inverse }}>‹</AppText>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.navArrow, styles.navArrowRight, { backgroundColor: 'rgba(0,0,0,0.5)', width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' }]}
+            style={[styles.navArrow, styles.navArrowRight, { backgroundColor: colors.overlay, width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' }]}
             onPress={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
             activeOpacity={0.7}
           >
-            <AppText variant="h3" style={{ color: '#FFFFFF' }}>›</AppText>
+            <AppText variant="h3" style={{ color: colors.text.inverse }}>›</AppText>
           </TouchableOpacity>
         </View>
       )}
@@ -193,7 +194,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   imageContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  fullImage: { width: SCREEN_WIDTH, height: SCREEN_WIDTH, backgroundColor: '#1A1A1A' },
+  fullImage: { width: SCREEN_WIDTH, height: SCREEN_WIDTH },
   noPreview: { alignItems: 'center' },
   zoomHint: {},
   navArrow: { position: 'absolute' },

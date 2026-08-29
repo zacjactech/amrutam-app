@@ -21,7 +21,12 @@ export function SlotExpiredModal({
   const colors = useThemeColors();
 
   const clockIcon = (
-    <View style={[styles.iconContainer, { backgroundColor: colors.background.secondary }]}>
+    <View
+      style={[
+        styles.iconContainer,
+        { backgroundColor: colors.background.secondary },
+      ]}
+    >
       <ClockCircle width={32} height={32} color={colors.text.tertiary} />
     </View>
   );
@@ -31,7 +36,7 @@ export function SlotExpiredModal({
       visible={visible}
       onClose={onClose}
       title="Slot expired"
-      description="This time slot has already passed. Please choose a different time to book your consultation."
+      description="This consultation slot has already passed. Please choose another available time."
       icon={clockIcon}
       primaryAction={
         <Button

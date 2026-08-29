@@ -18,8 +18,13 @@ web-build/
 
 # IDE
 .idea/
+.vscode/
 *.swp
 *.swo
+
+# Tool caches
+.freebuff/
+.impeccable/
 
 # OS
 .DS_Store
@@ -39,3 +44,7 @@ api/db.json
 npm-debug.*
 yarn-debug.*
 yarn-error.*
+
+# Supabase
+supabase/.temp/
+supabase/.gitignore

@@ -21,6 +21,8 @@ export const HealthRecordCard = memo(function HealthRecordCard({ record, onPress
       style={[styles.container, { backgroundColor: colors.surface.default, borderRadius: spacing.md, padding: spacing.md, marginHorizontal: spacing.lg, marginVertical: spacing.sm }]}
       onPress={() => onPress(record)}
       activeOpacity={0.7}
+      accessibilityLabel={`View ${record.title}`}
+      accessibilityRole="button"
     >
       <View style={styles.header}>
         <View style={{ flex: 1 }}>
