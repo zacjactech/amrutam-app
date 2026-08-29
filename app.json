@@ -7,12 +7,9 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#145C3A"
-    },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.amrutam.app"
@@ -40,14 +37,13 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "your-project-id"
+        "projectId": "4d907dd2-959b-41b6-83cf-b0c5aecc5d04"
       }
     },
-    "updates": {
-      "url": "https://u.expo.dev/your-project-id"
-    },
+    "updates": {},
     "runtimeVersion": {
       "policy": "appVersion"
-    }
+    },
+    "owner": "zacjactech"
   }
 }

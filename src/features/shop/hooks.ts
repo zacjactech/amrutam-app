@@ -64,7 +64,10 @@ export function useInfiniteProducts(
         { page: pageParam, pageSize: PAGE_SIZE },
         sortBy,
       ),
-    getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.page + 1 : undefined),
+    getNextPageParam: (lastPage) => {
+      if (lastPage === undefined || lastPage === null) return undefined;
+      return lastPage.hasMore ? lastPage.page + 1 : undefined;
+    },
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
   });

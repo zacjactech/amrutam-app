@@ -22,7 +22,10 @@ export function useHealthRecords(filter: RecordFilter = DEFAULT_RECORD_FILTER) {
     initialPageParam: 0,
     queryFn: ({ pageParam }) =>
       healthRecordRepository.getRecords(filter, { page: pageParam, pageSize: PAGE_SIZE }, patientId!),
-    getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.page + 1 : undefined),
+    getNextPageParam: (lastPage) => {
+      if (lastPage === undefined || lastPage === null) return undefined;
+      return lastPage.hasMore ? lastPage.page + 1 : undefined;
+    },
     enabled: isAuthenticated && patientId !== null,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
@@ -46,7 +49,10 @@ export function useRecordTimeline(filter: RecordFilter = DEFAULT_RECORD_FILTER) 
     initialPageParam: 0,
     queryFn: ({ pageParam }) =>
       healthRecordRepository.getRecords(filter, { page: pageParam, pageSize: PAGE_SIZE }, patientId!),
-    getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.page + 1 : undefined),
+    getNextPageParam: (lastPage) => {
+      if (lastPage === undefined || lastPage === null) return undefined;
+      return lastPage.hasMore ? lastPage.page + 1 : undefined;
+    },
     enabled: isAuthenticated && patientId !== null,
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
