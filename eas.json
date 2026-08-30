@@ -10,6 +10,9 @@
     "preview": {
       "distribution": "internal",
       "environment": "staging",
+      "env": {
+        "NODE_ENV": "staging"
+      },
       "android": {
         "buildType": "apk"
       }
