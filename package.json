@@ -17,6 +17,7 @@
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
     "format": "prettier --check \"**/*.{ts,tsx,json,md}\"",
     "format:fix": "prettier --write \"**/*.{ts,tsx,json,md}\"",
+    "postinstall": "node scripts/generate-env-preview.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
