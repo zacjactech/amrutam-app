@@ -51,6 +51,7 @@
     "@types/react": "~19.2.18",
     "@typescript-eslint/eslint-plugin": "^8.20.0",
     "@typescript-eslint/parser": "^8.20.0",
+    "eas-cli": "23.0.0",
     "eslint": "^9.18.0",
     "eslint-plugin-react": "^7.37.0",
     "eslint-plugin-react-hooks": "^5.0.0",
