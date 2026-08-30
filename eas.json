@@ -10,6 +10,10 @@
     "preview": {
       "distribution": "internal",
       "environment": "preview",
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://isdgoxwktkpldrynrrig.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlzZGdveHdrdGtwbGRyeW5ycmlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5NjA0OTMsImV4cCI6MjEwMzUzNjQ5M30.JV_PG9BUeICPW1JtlDG8gypq8dL8e0mrE2SznvqJFe0"
+      },
       "android": {
         "buildType": "apk"
       }
