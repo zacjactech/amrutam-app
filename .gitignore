@@ -15,7 +15,6 @@ web-build/
 .env.development
 .env.staging
 .env.production
-.env.preview
 
 # IDE
 .idea/
