@@ -30,9 +30,8 @@ function parseEnv(): Env {
       const hasSupabaseKey = !!process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
       if (!hasSupabaseUrl && !hasSupabaseKey) {
-        // No Supabase configured at all — use empty defaults but warn loudly
+        // No Supabase configured — warn loudly
         logger.warn('Missing environment variables (using dev defaults)', { missingFields });
-        logger.warn('Supabase features will not work without valid credentials');
         cachedEnv = {
           APP_ENV: 'development',
           EXPO_PUBLIC_SUPABASE_URL: '',
