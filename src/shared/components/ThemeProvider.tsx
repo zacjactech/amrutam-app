@@ -21,7 +21,7 @@ interface ThemeProviderProps {
   initialMode?: ThemeMode;
 }
 
-function loadPersistedMode(): ThemeMode {
+function loadPersistedModeSync(): ThemeMode {
   try {
     const stored = SecureStore.getItem(THEME_KEY);
     if (stored === 'light' || stored === 'dark') return stored;
@@ -32,7 +32,7 @@ function loadPersistedMode(): ThemeMode {
 export function ThemeProvider({
   children,
 }: ThemeProviderProps): React.JSX.Element {
-  const [mode, setModeState] = React.useState<ThemeMode>(loadPersistedMode);
+  const [mode, setModeState] = React.useState<ThemeMode>(loadPersistedModeSync);
   const theme = mode === 'light' ? lightTheme : darkTheme;
 
   const setMode = React.useCallback((newMode: ThemeMode) => {

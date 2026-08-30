@@ -7,8 +7,6 @@ import { supabase } from '../supabase/client';
 import { logger } from '../logging/logger';
 import { getRateLimitStatus } from './otpRateLimiter';
 
-WebBrowser.maybeCompleteAuthSession();
-
 // Expo auth proxy URL (you must be logged into Expo: npx expo login)
 const EXPO_AUTH_PROXY = 'https://auth.expo.io/@keyral/amrutam-app';
 
@@ -36,6 +34,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    WebBrowser.maybeCompleteAuthSession();
+
     supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
       setSession(initialSession);
       setIsLoading(false);
