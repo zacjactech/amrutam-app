@@ -25,6 +25,7 @@ web-build/
 # Tool caches
 .freebuff/
 .impeccable/
+.maestro/
 
 # OS
 .DS_Store
