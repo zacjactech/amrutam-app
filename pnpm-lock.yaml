@@ -29,9 +29,6 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.62.0
         version: 5.102.5(react@19.2.3)
-      eas-cli:
-        specifier: ^23.0.0
-        version: 23.0.0(@types/node@26.3.0)(typescript@6.0.3)
       expo:
         specifier: ~57.0.18
         version: 57.0.18(@babel/core@7.29.7)(@expo/dom-webview@57.0.1)(react-native@0.86.3(@babel/core@7.29.7)(@react-native/jest-preset@0.86.3(@babel/core@7.29.7)(react@19.2.3))(@types/react@19.2.18)(react@19.2.3))(react@19.2.3)(typescript@6.0.3)
@@ -96,6 +93,9 @@ importers:
       '@typescript-eslint/parser':
         specifier: ^8.20.0
         version: 8.68.0(eslint@9.39.5)(typescript@6.0.3)
+      eas-cli:
+        specifier: ^23.0.0
+        version: 23.0.0(@types/node@26.3.0)(typescript@6.0.3)
       eslint:
         specifier: ^9.18.0
         version: 9.39.5
@@ -626,7 +626,7 @@ packages:
 
   '@expo/bunyan@4.0.1':
     resolution: {integrity: sha512-+Lla7nYSiHZirgK+U/uYzsLv/X+HaJienbD5AKX1UQZHYfWaP+9uuQluRB4GrEVWF0GZ7vEVp/jzaOT9k/SQlg==}
-    engines: {'0': node >=0.10.0}
+    engines: {node: '>=0.10.0'}
 
   '@expo/cli@57.0.20':
     resolution: {integrity: sha512-ZjWz7SA5TBTyKq4+aFRUPgMFxmqHtKkDMv6d85J2UAAjdRhkNRf+B80t+rr5IFo2ywuTvyrPRBth4ei4w08olA==}
