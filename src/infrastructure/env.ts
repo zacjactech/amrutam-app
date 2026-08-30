@@ -16,6 +16,24 @@ let cachedEnv: Env | null = null;
 function parseEnv(): Env {
   if (cachedEnv) return cachedEnv;
 
+  const hasSupabaseUrl = !!process.env.EXPO_PUBLIC_SUPABASE_URL;
+  const hasSupabaseKey = !!process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!hasSupabaseUrl || !hasSupabaseKey) {
+    logger.warn('Missing Supabase environment variables (using defaults)', {
+      missingFields: [
+        !hasSupabaseUrl ? 'EXPO_PUBLIC_SUPABASE_URL' : null,
+        !hasSupabaseKey ? 'EXPO_PUBLIC_SUPABASE_ANON_KEY' : null,
+      ].filter(Boolean).join(', '),
+    });
+    cachedEnv = {
+      APP_ENV: 'development',
+      EXPO_PUBLIC_SUPABASE_URL: process.env.EXPO_PUBLIC_SUPABASE_URL || '',
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '',
+    };
+    return cachedEnv;
+  }
+
   try {
     cachedEnv = envSchema.parse(process.env);
     return cachedEnv;
@@ -24,22 +42,6 @@ function parseEnv(): Env {
       const missingFields = error.errors
         .map((e) => `${e.path.join('.')}: ${e.message}`)
         .join('\n');
-
-      // APP_ENV defaults to development; only fail hard for missing Supabase credentials
-      const hasSupabaseUrl = !!process.env.EXPO_PUBLIC_SUPABASE_URL;
-      const hasSupabaseKey = !!process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
-
-      if (!hasSupabaseUrl && !hasSupabaseKey) {
-        // No Supabase configured — warn loudly
-        logger.warn('Missing environment variables (using dev defaults)', { missingFields });
-        cachedEnv = {
-          APP_ENV: 'development',
-          EXPO_PUBLIC_SUPABASE_URL: '',
-          EXPO_PUBLIC_SUPABASE_ANON_KEY: '',
-        };
-        return cachedEnv;
-      }
-
       throw new Error(`Invalid environment configuration:\n${missingFields}`);
     }
     throw error;
